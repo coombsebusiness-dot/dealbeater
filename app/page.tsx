@@ -82,7 +82,9 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#101b26] text-white">
       <header className="border-b border-white/10">
+      
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 lg:px-10">
+          
           <div>
             <div className="text-3xl font-extrabold tracking-tight">
               Deal<span className="text-[#2ee866]">Beater</span>
@@ -441,6 +443,7 @@ function TrustItem({
       <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#2ee866] text-sm font-black text-[#2ee866]">
         ✓
       </div>
+      Impact-Site-Verification: ec27a0d1-2d84-4df8-9a86-d902c22ab577
 
       <div>
         <p className="font-bold">{title}</p>
