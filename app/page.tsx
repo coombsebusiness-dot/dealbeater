@@ -395,7 +395,7 @@ export default function Home() {
               >
                 Cookie Policy
               </Link>
-
+Impact-Site-Verification: ec27a0d1-2d84-4df8-9a86-d902c22ab577
               <Link
                 href="/contact"
                 className="text-white/70 transition hover:text-[#2ee866]"
@@ -413,7 +413,7 @@ export default function Home() {
 
         <div className="flex flex-col gap-3 text-sm text-white/50 md:flex-row md:items-center md:justify-between">
 <div className="mb-6 inline-flex rounded-full border border-[#2ee866]/30 bg-[#2ee866]/10 px-4 py-2 text-sm font-medium text-[#2ee866]">
-  🚀 Deal Beater is currently in development Impact-Site-Verification: ec27a0d1-2d84-4df8-9a86-d902c22ab577
+  🚀 Deal Beater is currently in development
 </div>
           <p>
             © 2026 Deal Beater. All rights reserved.
