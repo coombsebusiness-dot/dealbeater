@@ -413,7 +413,7 @@ export default function Home() {
 
         <div className="flex flex-col gap-3 text-sm text-white/50 md:flex-row md:items-center md:justify-between">
 <div className="mb-6 inline-flex rounded-full border border-[#2ee866]/30 bg-[#2ee866]/10 px-4 py-2 text-sm font-medium text-[#2ee866]">
-  🚀 Deal Beater is currently in development
+  🚀 Deal Beater is currently in development Impact-Site-Verification: ec27a0d1-2d84-4df8-9a86-d902c22ab577
 </div>
           <p>
             © 2026 Deal Beater. All rights reserved.
@@ -443,7 +443,7 @@ function TrustItem({
       <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#2ee866] text-sm font-black text-[#2ee866]">
         ✓
       </div>
-      Impact-Site-Verification: ec27a0d1-2d84-4df8-9a86-d902c22ab577
+      
 
       <div>
         <p className="font-bold">{title}</p>
