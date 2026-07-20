@@ -2,9 +2,19 @@ import OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
 import { z } from "zod";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+function getOpenAIClient() {
+  const apiKey = process.env.OPENAI_API_KEY;
+
+  if (!apiKey) {
+    throw new Error(
+      "OPENAI_API_KEY is missing from the server environment."
+    );
+  }
+
+  return new OpenAI({
+    apiKey,
+  });
+}
 
 const BetterAlternativeSchema = z.object({
   name: z.string(),
@@ -163,6 +173,7 @@ export async function analyseDealWithAI(
       "OPENAI_API_KEY is missing from the server environment."
     );
   }
+  const openai = getOpenAIClient();
 
   if (!input.userInput.trim()) {
     throw new Error("A product link or description is required.");
