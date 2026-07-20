@@ -262,6 +262,7 @@ export function compareExactProductVariant(
     points: number
   ) => {
     if (!originalValue) {
+      
       return;
     }
 

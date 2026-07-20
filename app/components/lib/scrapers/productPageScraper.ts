@@ -64,6 +64,7 @@ export interface ScrapedProductPage {
   title?: string;
   productName?: string;
   description?: string;
+  image?: string;
   brand?: string;
   model?: string;
   sku?: string;
@@ -128,6 +129,12 @@ export async function scrapeProductPage(
     getMetaContent($, "meta[property='og:description']"),
     getMetaContent($, "meta[name='description']"),
   ]);
+
+  const image = firstUsefulString([
+  getMetaContent($, "meta[property='og:image']"),
+  getMetaContent($, "meta[name='twitter:image']"),
+  $("img[itemprop='image']").first().attr("src"),
+]);
 
   const brand = firstUsefulString([
     extractBrand(productJsonLd?.brand),
@@ -202,6 +209,7 @@ export async function scrapeProductPage(
     title,
     productName,
     description,
+    image,
     brand,
     model,
     sku,
@@ -212,12 +220,13 @@ export async function scrapeProductPage(
     reviewCount,
     visibleText,
   });
-
+console.log("SCRAPER IMAGE:", image);
   return {
     requestedUrl: requestedUrl.toString(),
     finalUrl,
     retailer,
     title,
+    image,
     productName,
     description,
     brand,

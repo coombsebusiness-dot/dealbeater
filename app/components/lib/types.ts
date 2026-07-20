@@ -27,10 +27,11 @@ export interface DealReport {
   scoreBreakdown: ScoreBreakdown;
 
   product: {
-    name: string;
-    brand: string;
-    model: string;
-  };
+  name: string;
+  brand: string;
+  model: string;
+  imageUrl?: string;
+};
 
   reviews: ReviewData;
 pricing: PriceData;

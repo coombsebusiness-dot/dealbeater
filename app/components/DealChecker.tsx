@@ -1,6 +1,7 @@
 "use client";
-
+import DealHeroCard from "./DealHeroCard";
 import AnalysisExperience from "./AnalysisExperience";
+
 import {
   ChangeEvent,
   FormEvent,
@@ -22,8 +23,19 @@ type BetterAlternative = {
 
 type DealAIReport = {
   productName: string;
+  productImage?: string;
   retailerName: string;
+  retailerUrl?: string;
   price: string;
+  saving?: string;
+  checkedAt?: string;
+
+  marketPosition:
+    | "BEST_PRICE"
+    | "BELOW_AVERAGE"
+    | "AVERAGE"
+    | "ABOVE_AVERAGE";
+
   score: number;
   confidence: number;
   verdict: DealVerdict;
@@ -149,6 +161,26 @@ export default function DealChecker() {
 
   const styles = result ? getVerdictStyles(result.verdict) : null;
 
+  const canBuy =
+  result?.verdict === "BUY" ||
+  result?.verdict === "GOOD DEAL";
+
+const primaryActionLabel =
+  result?.verdict === "AVOID"
+    ? "View Better Alternatives"
+    : result?.verdict === "WAIT"
+      ? "Check Again Later"
+      : result?.verdict === "CONSIDER"
+        ? "Compare Alternatives"
+        : "Buy Now";
+
+const verdictLabel =
+  result?.verdict === "BUY"
+    ? "BUY NOW"
+    : result?.verdict === "GOOD DEAL"
+      ? "GOOD DEAL"
+      : result?.verdict;
+
   return (
     <div className="mx-auto w-full max-w-5xl rounded-[32px] border border-white/10 bg-[#2f3d4c] p-5 shadow-2xl shadow-black/25 sm:p-8 lg:p-10">
       <div className="text-center">
@@ -242,31 +274,22 @@ export default function DealChecker() {
 
       {result && !isAnalysing && (
         <div className={`mt-6 rounded-2xl border bg-[#17252f] p-5 sm:p-6 ${styles?.border ?? "border-white/10"}`}>
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="max-w-2xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#52ee7e]">
-                💚 Deal Beater Verdict
-              </p>
-              <h3 className="mt-2 text-2xl font-black sm:text-3xl">{result.productName}</h3>
-              <p className="mt-2 text-sm text-white/60">{result.retailerName} · {result.price}</p>
-            </div>
-
-            <div className="flex shrink-0 flex-col items-center">
-              <div className={`flex h-24 w-24 items-center justify-center rounded-full border-4 bg-[#101b26] shadow-lg ${styles?.scoreBorder ?? "border-white/40"} ${styles?.shadow ?? ""}`}>
-                <span className="text-4xl font-black">{animatedScore}</span>
-              </div>
-              <p className={`mt-3 text-sm font-black ${styles?.text ?? "text-white"}`}>{result.verdict}</p>
-              <p className="text-xs text-white/50">Confidence {result.confidence}%</p>
-            </div>
-          </div>
-
-          <div className={`mt-5 rounded-2xl border p-5 ${styles?.border ?? "border-white/10"} ${styles?.background ?? "bg-white/5"}`}>
-            <p className={`text-lg font-black ${styles?.text ?? "text-white"}`}>{result.headline}</p>
-            <p className="mt-3 text-sm leading-6 text-white/80">{result.summary}</p>
-            <p className="mt-4 border-t border-white/10 pt-4 text-sm font-semibold leading-6 text-white/90">
-              {result.recommendation}
-            </p>
-          </div>
+       <DealHeroCard
+  productName={result.productName}
+  productImage={result.productImage}
+  retailerName={result.retailerName}
+  retailerUrl={result.retailerUrl}
+  price={result.price}
+  saving={result.saving}
+  checkedAt={result.checkedAt}
+  marketPosition={result.marketPosition}
+  score={animatedScore}
+  confidence={result.confidence}
+  verdict={result.verdict}
+  headline={result.headline}
+  summary={result.summary}
+  recommendation={result.recommendation}
+/>
 
           <div className="mt-5 grid gap-4 lg:grid-cols-3">
             <AnalysisCard title="💷 Price Intelligence" text={result.priceAnalysis} />

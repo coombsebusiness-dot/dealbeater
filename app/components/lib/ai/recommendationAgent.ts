@@ -27,9 +27,13 @@ export async function recommendationAgent({
     decision.verdict
   );
 
-  const recommendedRetailer = retailers.find(
-    retailer => retailer.recommended
-  );
+ const recommendedRetailer =
+  retailers.length > 0
+    ? [...retailers].sort(
+        (a, b) =>
+          b.retailScore - a.retailScore
+      )[0]
+    : undefined;
 
   return {
     recommendation,
@@ -38,28 +42,36 @@ export async function recommendationAgent({
 
     dealScore: decision.score,
 
-    scoreBreakdown: {
-      price: getPriceBreakdown(pricing),
-      reviews: getReviewBreakdown(reviews),
-      retailer: retailers.length > 0 ? 18 : 10,
-      warranty: retailers.length > 0 ? 8 : 5,
-      value: getValueBreakdown(decision),
-    },
+   scoreBreakdown: {
+    price: decision.breakdown.price,
+
+    reviews: decision.breakdown.reviews,
+
+    retailer: decision.breakdown.retailer,
+
+    warranty:
+      recommendedRetailer?.warrantyYears ?? 0,
+
+    value:
+      decision.breakdown.alternatives,
+},
 
     product: {
       name: product.name,
       brand: product.brand,
       model: product.model,
+    imageUrl: product.image,
     },
 
     reviews,
 
     pricing,
 
-    summary: buildSummary(
-      product,
-      decision
-    ),
+   summary: buildSummary(
+  product,
+  pricing,
+  decision
+),
 
     ifItWasOurMoney: buildMoneyVerdict(
       decision,
@@ -107,10 +119,14 @@ function mapDecisionToRecommendation(
 
 function buildSummary(
   product: ProductData,
+  pricing: PriceData,
   decision: DecisionData
 ): string {
   const productName = product.name || "This product";
-  const mainReason = decision.reasons[0];
+  const mainReason =
+  pricing.marketSummary ||
+  decision.reasons[0] ||
+  "Our analysis found no major concerns.";
 
   switch (decision.verdict) {
     case "BUY_NOW":
@@ -141,8 +157,8 @@ function buildMoneyVerdict(
   alternatives: AlternativeData[]
 ): string {
   const retailerText = recommendedRetailer
-    ? ` We would favour ${recommendedRetailer.name} because it is the recommended retailer.`
-    : "";
+  ? ` We would choose ${recommendedRetailer.name} because it has a retailer trust score of ${recommendedRetailer.retailScore}/100, a ${recommendedRetailer.returnsDays}-day returns policy and a ${recommendedRetailer.warrantyYears}-year warranty.`
+  : "";
 
   const bestAlternative = alternatives.find(
     alternative =>

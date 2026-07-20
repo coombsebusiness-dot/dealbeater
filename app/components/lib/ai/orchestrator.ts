@@ -7,6 +7,7 @@ import { alternativeAgent } from "./alternativeAgent";
 import { decisionAgent } from "@/app/components/lib/agents/decisionAgent";
 import { recommendationAgent } from "./recommendationAgent";
 
+
 export async function analyseDeal(
   input: string
 ): Promise<DealReport> {
