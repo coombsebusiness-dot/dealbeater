@@ -4,8 +4,8 @@ import { priceAgent } from "./priceAgent";
 import { reviewAgent } from "./reviewAgent";
 import { retailerAgent } from "./retailerAgent";
 import { alternativeAgent } from "./alternativeAgent";
-import { recommendationAgent } from "./recommendationAgent";
 import { decisionAgent } from "@/app/components/lib/agents/decisionAgent";
+import { recommendationAgent } from "./recommendationAgent";
 
 export async function analyseDeal(
   input: string
@@ -26,11 +26,19 @@ export async function analyseDeal(
       alternativeAgent(product),
     ]);
 
+  const decision = decisionAgent(
+    pricing,
+    reviews,
+    retailers,
+    alternatives
+  );
+
   return recommendationAgent({
     product,
     pricing,
     reviews,
     retailers,
     alternatives,
+    decision,
   });
 }
