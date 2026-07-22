@@ -186,7 +186,7 @@ return (
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-xs font-black uppercase tracking-[0.16em] text-[#68f18e]">
-                ✓ Verified best price
+                💚 BEST VERIFIED DEAL TODAY
               </p>
 <div
   style={{
@@ -221,11 +221,17 @@ return (
               </p>
             </div>
 
-            {saving && (
-              <p className="mt-3 text-sm font-bold text-[#68f18e]">
-                💰 {saving}
-              </p>
-            )}
+           {saving && (
+  <p className="mt-3 text-sm font-bold text-[#68f18e]">
+    💚 You save {saving} compared with today's average market price.
+  </p>
+)}
+
+<div className="mt-4 space-y-2 text-sm text-white/80">
+  <div>💚 Price checked today</div>
+  <div>💚 Trusted retailer</div>
+  <div>💚 AI verified by Deal Beater</div>
+</div>
           </div>
 
         {retailerUrl ? (
@@ -235,7 +241,7 @@ return (
     rel="noopener noreferrer sponsored"
     className="flex min-h-14 w-full items-center justify-center rounded-2xl bg-[#20c95a] px-8 py-4 text-base font-black text-white shadow-lg shadow-black/25 transition hover:-translate-y-0.5 hover:bg-[#2ee866] lg:w-auto"
   >
-    Buy Now →
+    💚 View Best Deal →
   </a>
 ) : (
   <button
@@ -345,7 +351,7 @@ return (
                   rel="noopener noreferrer sponsored"
                   className="flex min-h-11 items-center justify-center rounded-xl bg-[#20c95a] px-5 py-3 text-sm font-black text-white transition hover:-translate-y-0.5 hover:bg-[#2ee866]"
                 >
-                  Buy Now →
+                  💚 View Best Deal →
                 </a>
               ) : (
                 <span className="rounded-xl border border-white/10 px-4 py-3 text-xs font-bold text-white/35">

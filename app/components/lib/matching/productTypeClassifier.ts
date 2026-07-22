@@ -43,6 +43,16 @@ const REPLACEMENT_PART_PATTERNS: RegExp[] = [
 ];
 
 const ACCESSORY_PATTERNS: RegExp[] = [
+  /\bcase\b/i,
+  /\bcover\b/i,
+  /\bsleeve\b/i,
+  /\bprotector\b/i,
+  /\btempered\s+glass\b/i,
+
+  /\beyecup\b/i,
+  /\bviewfinder\s+eyecup\b/i,
+  /\bscreen\s+protector\b/i,
+  /\bprotective\s+glass\b/i,
   /\beyecup\b/i,
   /\bviewfinder\s+eyecup\b/i,
   /\bscreen\s+protector\b/i,

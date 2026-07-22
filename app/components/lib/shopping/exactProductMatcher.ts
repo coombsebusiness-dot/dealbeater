@@ -6,6 +6,7 @@ import {
 export interface ProductFingerprint {
   brand: string | null;
   family: string | null;
+  variant: string | null; 
   modelNumbers: string[];
   year: string | null;
   storage: string | null;
@@ -376,12 +377,12 @@ if (
     15
   );
 
-  checkRequiredField(
-    "product family",
-    original.family,
-    candidate.family,
-    25
-  );
+ checkRequiredField(
+  "model variant",
+  original.variant,
+  candidate.variant,
+  25
+);
 
   checkRequiredField(
     "year or generation",
@@ -559,6 +560,7 @@ return {
   bundleType: extractBundleType(normalised),
     productType:
     classifyProductType(normalised).type,
+    variant: extractVariant(normalised),
 };
 }
 
@@ -586,6 +588,31 @@ function extractFamily(
   }
 
   return null;
+}
+function extractVariant(value: string): string | null {
+  const text = value.toLowerCase();
+
+  if (/\bpro\s+max\b/.test(text)) {
+    return "pro-max";
+  }
+
+  if (/\bplus\b/.test(text)) {
+    return "plus";
+  }
+
+  if (/\bpro\b/.test(text)) {
+    return "pro";
+  }
+
+  if (/\bultra\b/.test(text)) {
+    return "ultra";
+  }
+
+  if (/\bmini\b/.test(text)) {
+    return "mini";
+  }
+
+  return "standard";
 }
 
 function extractYear(

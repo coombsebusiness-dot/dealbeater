@@ -200,6 +200,14 @@ if (isHardRejection) {
   return null;
 }
 
+if (basicRejectionReason === "appears to be an accessory") {
+  console.log(
+    `🚫 Rejected accessory: ${title}`
+  );
+
+  return null;
+}
+
 if (basicRejectionReason) {
   console.log(
     `⚠️ Possible mismatch, sending to variant matcher: ${title} — ${basicRejectionReason}`

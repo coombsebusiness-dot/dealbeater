@@ -119,6 +119,8 @@ export async function searchEbay(
     return [];
   }
 
+  
+
   const safeLimit = Math.min(
     Math.max(limit, 1),
     200
@@ -165,4 +167,88 @@ export async function searchEbay(
       (offer): offer is EbayOffer =>
         offer !== null
     );
+}
+type EbayLegacyItemResponse = {
+  itemId?: string;
+  title?: string;
+  price?: EbayAmount;
+  image?: EbayImage;
+  itemWebUrl?: string;
+  itemAffiliateWebUrl?: string;
+  condition?: string;
+  seller?: EbaySeller;
+  buyingOptions?: string[];
+};
+
+export type EbayResolvedItem = {
+  itemId: string | null;
+  legacyItemId: string;
+  title: string;
+  price: number | null;
+  currency: string;
+  condition: string | null;
+  imageUrl: string | null;
+  itemUrl: string | null;
+};
+
+export async function getEbayItemByLegacyId(
+  legacyItemId: string
+): Promise<EbayResolvedItem> {
+  const trimmedId = legacyItemId.trim();
+
+  if (!/^\d{9,15}$/.test(trimmedId)) {
+    throw new Error("The eBay item number is invalid.");
+  }
+
+  const token = await getEbayAccessToken();
+
+  const params = new URLSearchParams({
+    legacy_item_id: trimmedId,
+  });
+
+  const response = await fetch(
+    `https://api.ebay.com/buy/browse/v1/item/get_item_by_legacy_id?${params.toString()}`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "X-EBAY-C-MARKETPLACE-ID": "EBAY_GB",
+        "X-EBAY-C-ENDUSERCTX":
+          "contextualLocation=country%3DGB",
+        Accept: "application/json",
+      },
+      cache: "no-store",
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+
+    throw new Error(
+      `eBay listing lookup failed: ${response.status} ${response.statusText} - ${errorText}`
+    );
+  }
+
+  const item =
+    (await response.json()) as EbayLegacyItemResponse;
+
+  if (!item.title) {
+    throw new Error(
+      "eBay returned the listing, but its product title was unavailable."
+    );
+  }
+
+  return {
+    itemId: item.itemId ?? null,
+    legacyItemId: trimmedId,
+    title: item.title,
+    price: parseMoney(item.price?.value),
+    currency: item.price?.currency ?? "GBP",
+    condition: item.condition ?? null,
+    imageUrl: item.image?.imageUrl ?? null,
+    itemUrl:
+      item.itemAffiliateWebUrl ??
+      item.itemWebUrl ??
+      null,
+  };
 }

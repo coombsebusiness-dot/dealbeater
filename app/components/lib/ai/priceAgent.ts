@@ -156,6 +156,13 @@ const verifiedOffers = allOffers.filter(
         product.name,
         offer.title
       );
+console.log("================================");
+console.log("QUERY:", product.name);
+console.log("TITLE:", offer.title);
+console.log("ACCEPTED:", match.accepted);
+console.log("CONFIDENCE:", match.confidence);
+console.log("REASONS:", match.reasons);
+console.log("================================");
 
     if (!match.accepted) {
       console.log(
@@ -182,19 +189,15 @@ const verifiedOffers = allOffers.filter(
       offer.price > 0
   )
   .sort((a, b) => a.price - b.price)
-  .filter(
-    (offer, index, verifiedOffers) =>
-      index ===
-      allOffers.findIndex(
-        (candidate) =>
-          candidate.retailer
-            .trim()
-            .toLowerCase() ===
-          offer.retailer
-            .trim()
-            .toLowerCase()
-      )
-  )
+.filter(
+  (offer, index, offers) =>
+    index ===
+    offers.findIndex(
+      (candidate) =>
+        candidate.retailer.trim().toLowerCase() ===
+        offer.retailer.trim().toLowerCase()
+    )
+)
   .slice(0, 3)
   .map((offer) => ({
   retailer: offer.retailer,
@@ -328,7 +331,7 @@ if (savings > 0) {
 
   const marketConfidence = Math.min(
   100,
-  50 + verifiedOffers.length* 5
+  50 + allOffers.length* 5
 );
 
 const difference =

@@ -18,11 +18,18 @@ export default function MoneyRecommendationCard({
           {recommendation}
         </p>
 
-        <p className="mt-4 text-sm leading-6 text-zinc-400">
-          Our recommendation is based on the retailer, seller,
-          condition, warranty, returns and delivery information
-          available for this offer.
-        </p>
+        <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4">
+          <p className="text-sm font-semibold text-white">
+            Why we're recommending this
+          </p>
+
+          <p className="mt-2 text-sm leading-6 text-zinc-300">
+            Every recommendation is based on today's available prices,
+            retailer reputation, delivery, returns, warranty and overall
+            value—not simply the lowest price. If we don't think it's a
+            good buy, we'll tell you.
+          </p>
+        </div>
       </div>
     </section>
   );
