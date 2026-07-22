@@ -1,7 +1,7 @@
 "use client";
 import DealHeroCard from "./DealHeroCard";
 import AnalysisExperience from "./AnalysisExperience";
-
+import { useRef } from "react";
 import {
   ChangeEvent,
   FormEvent,
@@ -75,6 +75,7 @@ export default function DealChecker() {
   const [error, setError] = useState("");
   const [result, setResult] = useState<DealAIReport | null>(null);
   const [animatedScore, setAnimatedScore] = useState(0);
+  const resultsRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!result) {
@@ -115,6 +116,13 @@ export default function DealChecker() {
     event.preventDefault();
     setError("");
     setResult(null);
+
+    setTimeout(() => {
+  resultsRef.current?.scrollIntoView({
+    behavior: "smooth",
+    block: "start",
+  });
+}, 100);
 
     if (mode !== "upload" && !input.trim()) {
       setError(
