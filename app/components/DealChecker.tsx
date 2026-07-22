@@ -98,6 +98,15 @@ export default function DealChecker() {
     return () => window.clearInterval(timer);
   }, [result]);
 
+  useEffect(() => {
+  if (isAnalysing && resultsRef.current && window.innerWidth < 768) {
+    resultsRef.current.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }
+}, [isAnalysing]);
+
   const resetChecker = () => {
     setInput("");
     setFile(null);
@@ -117,12 +126,7 @@ export default function DealChecker() {
     setError("");
     setResult(null);
 
-    setTimeout(() => {
-  resultsRef.current?.scrollIntoView({
-    behavior: "smooth",
-    block: "start",
-  });
-}, 100);
+   
 
     if (mode !== "upload" && !input.trim()) {
       setError(
@@ -287,7 +291,10 @@ const verdictLabel =
         </button>
       </form>
 
-      {isAnalysing && <AnalysisExperience onComplete={() => undefined} />}
+      <div ref={resultsRef}>
+  {isAnalysing && (
+    <AnalysisExperience onComplete={() => undefined} />
+  )}
 
       {result && !isAnalysing && (
         <div className={`mt-6 rounded-2xl border bg-[#17252f] p-5 sm:p-6 ${styles?.border ?? "border-white/10"}`}>
@@ -360,8 +367,9 @@ const verdictLabel =
           >
             Check another deal
           </button>
-        </div>
+         </div>
       )}
+</div>
 
       <p className="mt-5 text-center text-xs leading-5 text-white/40">
         Deal Beater may earn a commission from selected retailer links at no
