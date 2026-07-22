@@ -123,20 +123,7 @@ export default function RootLayout({
         {children}
 
         {/* eBay Partner Network Smart Links */}
-        <Script id="ebay-epn-config" strategy="afterInteractive">
-          {`
-            window._epn = {
-              campaign: 5339170680,
-              SmartPopover: false
-            };
-          `}
-        </Script>
-
-        <Script
-          id="ebay-epn-smart-links"
-          src="https://epnt.ebay.com/static/epn-smart-tools.js"
-          strategy="afterInteractive"
-        />
+      
 
        
 

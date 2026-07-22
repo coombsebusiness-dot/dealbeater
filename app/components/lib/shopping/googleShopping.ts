@@ -1,4 +1,5 @@
 import { compareExactProductVariant } from "./exactProductMatcher";
+import { findEbayAffiliateListing } from "@/app/components/lib/ebay";
 
 export interface ShoppingOffer {
   title: string;
@@ -341,13 +342,15 @@ console.log("LINK:", result.link);
 const offersToEnrich = sortedOffers.slice(0, 5);
 
 const enrichedOffers = await Promise.all(
-  offersToEnrich.map((offer) =>
-    enrichOfferWithDirectLink(
+  offersToEnrich.map(async (offer) => {
+    const directOffer = await enrichOfferWithDirectLink(
       offer,
       apiKey,
       cleanQuery
-    )
-  )
+    );
+
+    return enrichEbayAffiliateLink(directOffer);
+  })
 );
 
 const remainingOffers = sortedOffers.slice(5);
@@ -355,7 +358,6 @@ const remainingOffers = sortedOffers.slice(5);
 return [...enrichedOffers, ...remainingOffers].sort(
   (a, b) => a.price - b.price
 );
-}
 
 async function enrichOfferWithDirectLink(
   offer: ShoppingOffer,
@@ -817,4 +819,53 @@ function extractPrice(
   return Number.isFinite(parsedPrice)
     ? parsedPrice
     : null;
+}
+function isEbayOffer(offer: ShoppingOffer): boolean {
+  const retailer = offer.retailer?.toLowerCase() ?? "";
+  const link = offer.link?.toLowerCase() ?? "";
+
+  return (
+    retailer.includes("ebay") ||
+    link.includes("ebay.co.uk") ||
+    link.includes("ebay.com")
+  );
+}
+async function enrichEbayAffiliateLink(
+  offer: ShoppingOffer
+): Promise<ShoppingOffer> {
+  if (!isEbayOffer(offer)) {
+    return offer;
+  }
+
+  try {
+    const result = await findEbayAffiliateListing(
+      offer.title,
+      offer.price
+    );
+    console.log("EBAY API RESULT:", result);
+
+    if (!result) {
+      console.warn(
+        "No eBay affiliate listing found:",
+        offer.title
+      );
+
+      return offer;
+    }
+
+    console.log("EBAY AFFILIATE URL:", result.affiliateUrl);
+
+    return {
+      ...offer,
+      link: result.affiliateUrl,
+    };
+  } catch (error) {
+    console.error(
+      "Failed to generate eBay affiliate link:",
+      error
+    );
+
+    return offer;
+  }
+}
 }
