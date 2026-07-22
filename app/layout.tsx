@@ -138,12 +138,7 @@ export default function RootLayout({
           strategy="afterInteractive"
         />
 
-        {/* Skimlinks */}
-        <Script
-          id="skimlinks"
-          src="https://s.skimresources.com/js/306518X1794764.skimlinks.js"
-          strategy="afterInteractive"
-        />
+       
 
         <GoogleAnalytics gaId="G-B2CL1EN8PB" />
       </body>
