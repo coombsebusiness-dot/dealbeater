@@ -9,6 +9,7 @@ export interface ShoppingOffer {
   reviewCount: number | null;
   delivery: string | null;
   thumbnail: string | null;
+  immersiveToken: string | null;
 }
 
 interface SerpApiShoppingResult {
@@ -22,10 +23,29 @@ interface SerpApiShoppingResult {
   reviews?: number;
   delivery?: string;
   thumbnail?: string;
+  immersive_product_page_token?: string;
 }
 
 interface SerpApiResponse {
   shopping_results?: SerpApiShoppingResult[];
+  error?: string;
+}
+
+interface ImmersiveStore {
+  name?: string;
+  link?: string;
+  title?: string;
+  price?: string;
+  extracted_price?: number;
+  rating?: number;
+  reviews?: number;
+  shipping?: string;
+}
+
+interface ImmersiveProductResponse {
+  product_results?: {
+    stores?: ImmersiveStore[];
+  };
   error?: string;
 }
 
@@ -262,30 +282,35 @@ console.log(
 
         return null;
       }
-
-      return {
-        title,
-        retailer:
-          result.source?.trim() ||
-          "Unknown retailer",
-        price,
-        link:
-          result.product_link ??
-          result.link ??
-          null,
-        rating:
-          typeof result.rating === "number"
-            ? result.rating
-            : null,
-        reviewCount:
-          typeof result.reviews === "number"
-            ? result.reviews
-            : null,
-        delivery:
-          result.delivery?.trim() || null,
-        thumbnail:
-          result.thumbnail?.trim() || null,
-      };
+console.log("================================");
+console.log("TITLE:", result.title);
+console.log("PRODUCT LINK:", result.product_link);
+console.log("LINK:", result.link);
+     return {
+  title,
+  retailer:
+    result.source?.trim() ||
+    "Unknown retailer",
+  price,
+  link:
+    result.product_link ??
+    result.link ??
+    null,
+  rating:
+    typeof result.rating === "number"
+      ? result.rating
+      : null,
+  reviewCount:
+    typeof result.reviews === "number"
+      ? result.reviews
+      : null,
+  delivery:
+    result.delivery?.trim() || null,
+  thumbnail:
+    result.thumbnail?.trim() || null,
+  immersiveToken:
+    result.immersive_product_page_token ?? null,
+};
     })
     .filter(
       (offer): offer is ShoppingOffer =>
@@ -307,9 +332,245 @@ console.log(
     );
   });
 
-  return cleanedOffers.sort(
-    (a, b) => a.price - b.price
+  const sortedOffers = cleanedOffers.sort(
+  (a, b) => a.price - b.price
+);
+
+// Only enrich the offers most likely to be displayed.
+// This avoids using an extra SerpAPI credit for every raw result.
+const offersToEnrich = sortedOffers.slice(0, 5);
+
+const enrichedOffers = await Promise.all(
+  offersToEnrich.map((offer) =>
+    enrichOfferWithDirectLink(
+      offer,
+      apiKey,
+      cleanQuery
+    )
+  )
+);
+
+const remainingOffers = sortedOffers.slice(5);
+
+return [...enrichedOffers, ...remainingOffers].sort(
+  (a, b) => a.price - b.price
+);
+}
+
+async function enrichOfferWithDirectLink(
+  offer: ShoppingOffer,
+  apiKey: string,
+  originalQuery: string
+): Promise<ShoppingOffer> {
+  if (!offer.immersiveToken) {
+    console.log(
+      `⚠️ No immersive token for: ${offer.title}`
+    );
+
+    return offer;
+  }
+
+  try {
+    const params = new URLSearchParams({
+      engine: "google_immersive_product",
+      page_token: offer.immersiveToken,
+      more_stores: "true",
+      api_key: apiKey,
+    });
+
+    const response = await fetch(
+      `https://serpapi.com/search.json?${params.toString()}`,
+      {
+        method: "GET",
+        cache: "no-store",
+      }
+    );
+
+    if (!response.ok) {
+      console.log(
+        `⚠️ Immersive lookup failed for ${offer.title}:`,
+        response.status
+      );
+
+      return offer;
+    }
+
+    const data =
+      (await response.json()) as ImmersiveProductResponse;
+
+    if (data.error) {
+      console.log(
+        `⚠️ Immersive API error for ${offer.title}:`,
+        data.error
+      );
+
+      return offer;
+    }
+
+    const stores =
+      data.product_results?.stores?.filter(
+        (store) =>
+          typeof store.link === "string" &&
+          isDirectRetailerUrl(store.link)
+      ) ?? [];
+
+    if (stores.length === 0) {
+      console.log(
+        `⚠️ No direct retailer stores found for: ${offer.title}`
+      );
+
+      return offer;
+    }
+
+    const matchingStores = stores.filter((store) => {
+      const storeTitle = store.title?.trim() ?? "";
+
+      if (!storeTitle) {
+        return true;
+      }
+
+      const match = compareExactProductVariant(
+        originalQuery,
+        storeTitle
+      );
+
+      return match.accepted;
+    });
+
+    const validStores =
+      matchingStores.length > 0
+        ? matchingStores
+        : stores;
+
+    const retailerMatch = validStores.find((store) =>
+      retailerNamesMatch(
+        offer.retailer,
+        store.name ?? ""
+      )
+    );
+
+    const selectedStore =
+      retailerMatch ??
+      findClosestPricedStore(
+        offer.price,
+        validStores
+      );
+
+    if (!selectedStore?.link) {
+      return offer;
+    }
+
+    console.log(
+      `🔗 Direct retailer link found: ${selectedStore.name} — ${selectedStore.link}`
+    );
+
+    return {
+      ...offer,
+      title:
+        selectedStore.title?.trim() ||
+        offer.title,
+      retailer:
+        selectedStore.name?.trim() ||
+        offer.retailer,
+      price:
+        typeof selectedStore.extracted_price === "number"
+          ? selectedStore.extracted_price
+          : offer.price,
+      link: selectedStore.link,
+      rating:
+        typeof selectedStore.rating === "number"
+          ? selectedStore.rating
+          : offer.rating,
+      reviewCount:
+        typeof selectedStore.reviews === "number"
+          ? selectedStore.reviews
+          : offer.reviewCount,
+      delivery:
+        selectedStore.shipping?.trim() ||
+        offer.delivery,
+    };
+  } catch (error) {
+    console.error(
+      `⚠️ Direct-link lookup failed for ${offer.title}:`,
+      error
+    );
+
+    return offer;
+  }
+}
+function retailerNamesMatch(
+  first: string,
+  second: string
+): boolean {
+  const firstName = normaliseRetailerName(first);
+  const secondName = normaliseRetailerName(second);
+
+  if (!firstName || !secondName) {
+    return false;
+  }
+
+  return (
+    firstName.includes(secondName) ||
+    secondName.includes(firstName)
   );
+}
+
+function normaliseRetailerName(
+  value: string
+): string {
+  return value
+    .toLowerCase()
+    .replace(/amazon\.co\.uk/g, "amazon")
+    .replace(/ebay\.co\.uk/g, "ebay")
+    .replace(/\s*-\s*seller.*$/g, "")
+    .replace(/\s*store\s*$/g, "")
+    .replace(/[^a-z0-9]+/g, "")
+    .trim();
+}
+
+function findClosestPricedStore(
+  targetPrice: number,
+  stores: ImmersiveStore[]
+): ImmersiveStore | undefined {
+  return stores
+    .filter(
+      (store) =>
+        typeof store.extracted_price === "number" &&
+        store.extracted_price > 0
+    )
+    .sort((first, second) => {
+      const firstDifference = Math.abs(
+        (first.extracted_price ?? 0) -
+          targetPrice
+      );
+
+      const secondDifference = Math.abs(
+        (second.extracted_price ?? 0) -
+          targetPrice
+      );
+
+      return firstDifference - secondDifference;
+    })[0];
+}
+
+function isDirectRetailerUrl(
+  value: string
+): boolean {
+  try {
+    const url = new URL(value);
+    const hostname = url.hostname
+      .replace(/^www\./, "")
+      .toLowerCase();
+
+    return (
+      hostname !== "google.com" &&
+      hostname !== "google.co.uk" &&
+      !hostname.endsWith(".google.com") &&
+      !hostname.endsWith(".google.co.uk")
+    );
+  } catch {
+    return false;
+  }
 }
 
 function getRejectionReason(

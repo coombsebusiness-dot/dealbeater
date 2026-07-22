@@ -115,20 +115,38 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
 
-       <Script
-        src="https://s.skimresources.com/js/306518X1794764.skimlinks.js"
-        strategy="afterInteractive"
-      />
-      <GoogleAnalytics gaId="G-B2CL1EN8PB" />
-      
+        {/* eBay Partner Network Smart Links */}
+        <Script id="ebay-epn-config" strategy="afterInteractive">
+          {`
+            window._epn = {
+              campaign: 5339170680,
+              SmartPopover: false
+            };
+          `}
+        </Script>
+
+        <Script
+          id="ebay-epn-smart-links"
+          src="https://epnt.ebay.com/static/epn-smart-tools.js"
+          strategy="afterInteractive"
+        />
+
+        {/* Skimlinks */}
+        <Script
+          id="skimlinks"
+          src="https://s.skimresources.com/js/306518X1794764.skimlinks.js"
+          strategy="afterInteractive"
+        />
+
+        <GoogleAnalytics gaId="G-B2CL1EN8PB" />
+      </body>
     </html>
   );
 }
-
