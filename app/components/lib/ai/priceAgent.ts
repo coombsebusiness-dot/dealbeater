@@ -1,5 +1,21 @@
 import type { ProductData } from "./productAgent";
 import { searchGoogleShopping } from "../shopping/googleShopping";
+import { searchEbay } from "../ebay/browse";
+import {
+  addAmazonAffiliateTag,
+} from "../affiliate/amazon";
+import { searchAmazon } from "../scrapers/amazon";
+import {
+  compareExactProductVariant,
+} from "@/app/components/lib/shopping/exactProductMatcher";
+
+export interface PriceOffer {
+  retailer: string;
+  title: string;
+  price: number;
+  url?: string;
+  image?: string;
+}
 
 
 export interface PriceData {
@@ -17,7 +33,13 @@ export interface PriceData {
 
   bestRetailer?: string;
 
+  bestRetailerUrl?: string;
+
+  productImage?: string;
+
   marketConfidence: number;
+
+  topOffers: PriceOffer[];
 
   priceScore: number;
 
@@ -49,11 +71,147 @@ export async function priceAgent(
 ): Promise<PriceData> {
   console.log(`Checking live prices for ${product.name}`);
 
-  const offers = await searchGoogleShopping(product.name);
+ const [googleOffers, amazon, ebayOffers] =
+  await Promise.all([
+    searchGoogleShopping(product.name),
 
-  const cheapestOffer =
-  offers.length > 0
-    ? offers.reduce((lowest, offer) =>
+    searchAmazon(product.name, {
+      limit: 1,
+    }).catch(() => ({
+      products: [],
+    })),
+
+    searchEbay(product.name, 10).catch(() => []),
+  ]);
+
+const offers = [...googleOffers];
+
+const amazonBest = amazon.products[0];
+
+const enhancedOffers = offers.map((offer) => {
+  const retailer = offer.retailer
+    .trim()
+    .toLowerCase();
+
+  if (!retailer.includes("amazon")) {
+    return offer;
+  }
+
+  if (!amazonBest) {
+    return offer;
+  }
+
+  return {
+    ...offer,
+
+    title: amazonBest.title,
+
+    price:
+      amazonBest.price ??
+      offer.price,
+
+    link:
+      amazonBest.canonicalUrl,
+
+    thumbnail:
+      amazonBest.image,
+
+    rating:
+      amazonBest.rating,
+
+    reviewCount:
+      amazonBest.reviewCount,
+
+    delivery:
+      amazonBest.availability
+        ? amazonBest.availability.join(" • ")
+        : offer.delivery,
+  };
+});
+const allOffers = [
+  ...enhancedOffers,
+
+  ...ebayOffers.map((offer) => ({
+    title: offer.title,
+
+    retailer: "eBay",
+
+    price: offer.totalPrice,
+
+    link: offer.itemUrl,
+
+    thumbnail: offer.imageUrl,
+
+    rating: null,
+
+    reviewCount: null,
+
+    delivery: null,
+  })),
+];
+const verifiedOffers = allOffers.filter(
+  (offer) => {
+    const match =
+      compareExactProductVariant(
+        product.name,
+        offer.title
+      );
+
+    if (!match.accepted) {
+      console.log(
+        `🚫 Final offer rejected: ${offer.title} — ${match.reasons.join(
+          "; "
+        )}`
+      );
+
+      return false;
+    }
+
+    console.log(
+      `✅ Final offer verified: ${offer.title} (${match.confidence}%)`
+    );
+
+    return true;
+  }
+);
+
+  const topOffers = verifiedOffers
+  .filter(
+    (offer) =>
+      Number.isFinite(offer.price) &&
+      offer.price > 0
+  )
+  .sort((a, b) => a.price - b.price)
+  .filter(
+    (offer, index, verifiedOffers) =>
+      index ===
+      allOffers.findIndex(
+        (candidate) =>
+          candidate.retailer
+            .trim()
+            .toLowerCase() ===
+          offer.retailer
+            .trim()
+            .toLowerCase()
+      )
+  )
+  .slice(0, 3)
+  .map((offer) => ({
+  retailer: offer.retailer,
+  title: offer.title,
+  price: offer.price,
+
+  url: addAmazonAffiliateTag(
+    offer.link
+  ),
+
+  image:
+    offer.thumbnail ?? undefined,
+}));
+
+ const cheapestOffer =
+ verifiedOffers.length > 0
+    ? verifiedOffers.reduce((lowest, offer) =>
         offer.price < lowest.price
           ? offer
           : lowest
@@ -61,10 +219,12 @@ export async function priceAgent(
     : null;
 
  
-
+const imageOffer =
+  verifiedOffers.find((offer) => offer.thumbnail) ??
+  cheapestOffer;
   
 
-  if (offers.length === 0) {
+ if (allOffers.length === 0){
 return {
   currentPrice: null,
 
@@ -80,9 +240,15 @@ return {
 
   bestRetailer: undefined,
 
-  marketConfidence: 0,
+bestRetailerUrl: undefined,
+
+marketConfidence: 0,
 
   priceScore: 0,
+
+  productImage: undefined,
+
+  topOffers: [],
 
   pricePosition: "AVERAGE",
 
@@ -97,7 +263,7 @@ return {
 
   }
 
-  const prices = offers.map(o => o.price);
+ const prices = verifiedOffers.map((offer) => offer.price);
 
   const lowestPrice = Math.min(...prices);
   const highestPrice = Math.max(...prices);
@@ -123,9 +289,9 @@ if (currentPrice === lowestPrice) {
   );
 }
 
-if (offers.length >= 5) {
+if (verifiedOffers.length>= 5) {
   reasons.push(
-    `${offers.length} verified retailers were compared.`
+    `${verifiedOffers.length} verified retailers were compared.`
   );
 }
 
@@ -162,7 +328,7 @@ if (savings > 0) {
 
   const marketConfidence = Math.min(
   100,
-  50 + offers.length * 5
+  50 + verifiedOffers.length* 5
 );
 
 const difference =
@@ -225,17 +391,29 @@ else {
   marketAverage,
   lowestPrice,
   highestPrice,
+  topOffers,
 
   priceSpread,
 
   savings,
 
-  bestRetailer:
-    cheapestOffer?.retailer,
+ bestRetailer:
+  cheapestOffer?.retailer,
 
+
+
+bestRetailerUrl:
+  addAmazonAffiliateTag(
+    cheapestOffer?.link
+  ),
+
+productImage:
+  imageOffer?.thumbnail ?? undefined,
   marketConfidence,
 
   priceScore,
+
+  
 
   pricePosition,
 

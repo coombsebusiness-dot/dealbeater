@@ -29,6 +29,15 @@ type DealAIReport = {
   price: string;
   saving?: string;
   checkedAt?: string;
+  ctaLabel?: string;
+
+  topOffers: {
+    retailer: string;
+    title: string;
+    price: number;
+    url?: string;
+    image?: string;
+  }[];
 
   marketPosition:
     | "BEST_PRICE"
@@ -279,6 +288,7 @@ const verdictLabel =
   productImage={result.productImage}
   retailerName={result.retailerName}
   retailerUrl={result.retailerUrl}
+  ctaLabel={result.ctaLabel}
   price={result.price}
   saving={result.saving}
   checkedAt={result.checkedAt}
@@ -289,6 +299,7 @@ const verdictLabel =
   headline={result.headline}
   summary={result.summary}
   recommendation={result.recommendation}
+ topOffers={result.topOffers ?? []}
 />
 
           <div className="mt-5 grid gap-4 lg:grid-cols-3">

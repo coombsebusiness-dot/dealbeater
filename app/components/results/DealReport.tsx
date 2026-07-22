@@ -13,6 +13,8 @@ interface Props {
   score: number;
   confidence: number;
   alternatives: AlternativeData[];
+  ctaUrl?: string;
+  ctaLabel?: string;
 }
 
 const containerVariants = {
@@ -50,6 +52,8 @@ export default function DealReport({
   score,
   confidence,
   alternatives,
+  ctaUrl,
+  ctaLabel,
 }: Props) {
   return (
     <motion.div
@@ -59,11 +63,13 @@ export default function DealReport({
       className="mx-auto max-w-5xl space-y-8 py-10"
     >
       <motion.div variants={cardVariants}>
-        <DealVerdictCard
-          explanation={explanation}
-          score={score}
-          confidence={confidence}
-        />
+  <DealVerdictCard
+  explanation={explanation}
+  score={score}
+  confidence={confidence}
+  ctaUrl={ctaUrl}
+  ctaLabel={ctaLabel}
+/>
       </motion.div>
 
       <motion.div variants={cardVariants}>

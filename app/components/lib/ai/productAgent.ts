@@ -1,12 +1,19 @@
 import { scrapeCurrys } from "../scrapers/currys";
 import type { ProductInfo } from "../scrapers/types";
-
+import { searchAmazon } from "../scrapers/amazon";
 
 export type ProductData = ProductInfo & {
   confidence: number;
   retailer?: string;
   colour?: string;
   variant?: string;
+
+  imageUrl?: string;
+  rating?: number;
+  reviewCount?: number;
+
+  ctaUrl?: string;
+  ctaLabel?: string;
 };
 
 export async function productAgent(
@@ -35,6 +42,92 @@ export async function productAgent(
   const hostname = url.hostname.replace(/^www\./, "");
 
   console.log("🌍 URL detected:", hostname);
+
+  if (
+  hostname === "amazon.co.uk" ||
+  hostname.endsWith(".amazon.co.uk")
+) {
+  try {
+    console.log("📦 Amazon URL detected");
+
+    const asinMatch = url.pathname.match(
+      /\/dp\/([A-Z0-9]{10})/i
+    );
+
+    if (!asinMatch) {
+      throw new Error("No ASIN found.");
+    }
+
+    const asin = asinMatch[1];
+
+    console.log("ASIN:", asin);
+
+    const amazon = await searchAmazon(asin, {
+      limit: 1,
+    });
+
+    const product = amazon.products[0];
+
+    if (!product) {
+      throw new Error("Amazon product not found.");
+    }
+
+   const titleWords = product.title
+  .split(/\s+/)
+  .filter(Boolean);
+
+return {
+  name: product.title,
+
+  brand:
+    titleWords[0] ??
+    "Not identified",
+
+  model: asin,
+
+  category:
+    identifyCategory(product.title),
+
+  price:
+    product.price,
+
+  specs: {},
+
+  confidence: 99,
+
+  retailer: "Amazon",
+
+  colour:
+    extractColour(product.title),
+
+  variant:
+    extractVariant(product.title),
+
+  imageUrl:
+    product.image ?? undefined,
+
+  rating:
+    product.rating ?? undefined,
+
+  reviewCount:
+    product.reviewCount ?? undefined,
+
+  ctaUrl:
+    product.canonicalUrl,
+
+  ctaLabel:
+    "Buy on Amazon",
+};
+  } catch (error) {
+    console.warn(
+      "Amazon lookup failed. Falling back to URL parser."
+    );
+
+    console.error(error);
+
+    return productFromUrl(url, "Amazon");
+  }
+}
 
   if (
     hostname === "currys.co.uk" ||

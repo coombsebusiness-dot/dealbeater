@@ -23,6 +23,17 @@ interface DealHeroCardProps {
   headline: string;
   summary: string;
   recommendation: string;
+   ctaUrl?: string;
+  ctaLabel?: string;
+
+  topOffers: {
+  retailer: string;
+  title: string;
+  price: number;
+  url?: string;
+  image?: string;
+}[];
+
   marketPosition:
   | "BEST_PRICE"
   | "BELOW_AVERAGE"
@@ -44,6 +55,7 @@ export default function DealHeroCard({
   headline,
   summary,
   recommendation,
+  topOffers,
   marketPosition,
 }: DealHeroCardProps) {
   const styles = getVerdictStyles(verdict);
@@ -67,12 +79,12 @@ export default function DealHeroCard({
           : "Buy Now";
 
   const scrollToAlternatives = () => {
-    document
-      .getElementById("better-alternatives")
-      ?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
+  document
+    .getElementById("compare-prices")
+    ?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
   };
 const marketBadge = (() => {
   switch (marketPosition) {
@@ -107,7 +119,9 @@ const marketBadge = (() => {
       };
   }
 })();
-  return (
+  console.log("TOP OFFERS:", topOffers);
+
+return (
     <div className="overflow-hidden rounded-[28px] border border-white/10 bg-[#101b26]">
       <div className="grid gap-6 p-5 sm:p-7 lg:grid-cols-[1fr_240px] lg:items-center">
         <div>
@@ -214,42 +228,137 @@ const marketBadge = (() => {
             )}
           </div>
 
-          {canBuy && retailerUrl ? (
-            <a
-              href={retailerUrl}
-              target="_blank"
-              rel="noopener noreferrer sponsored"
-              className="flex min-h-14 w-full items-center justify-center rounded-2xl bg-[#20c95a] px-8 py-4 text-base font-black text-white shadow-lg shadow-black/25 transition hover:-translate-y-0.5 hover:bg-[#2ee866] lg:w-auto"
-            >
-              Buy Now →
-            </a>
-          ) : (
-            <button
-              type="button"
-              onClick={
-                verdict === "AVOID" ||
-                verdict === "CONSIDER"
-                  ? scrollToAlternatives
-                  : undefined
-              }
-              disabled={canBuy}
-              className={`flex min-h-14 w-full items-center justify-center rounded-2xl px-8 py-4 text-base font-black transition lg:w-auto ${
-                canBuy
-                  ? "cursor-not-allowed bg-white/10 text-white/45"
-                  : "border border-white/15 bg-white/5 text-white hover:border-[#2ee866]/50 hover:text-[#68f18e]"
-              }`}
-            >
-              {canBuy
-                ? "Retailer link unavailable"
-                : actionLabel}
-            </button>
-          )}
-        </div>
+        {retailerUrl ? (
+  <a
+    href={retailerUrl}
+    target="_blank"
+    rel="noopener noreferrer sponsored"
+    className="flex min-h-14 w-full items-center justify-center rounded-2xl bg-[#20c95a] px-8 py-4 text-base font-black text-white shadow-lg shadow-black/25 transition hover:-translate-y-0.5 hover:bg-[#2ee866] lg:w-auto"
+  >
+    Buy Now →
+  </a>
+) : (
+  <button
+    type="button"
+    onClick={
+      verdict === "AVOID" ||
+      verdict === "CONSIDER"
+        ? scrollToAlternatives
+        : undefined
+    }
+    className="flex min-h-14 w-full items-center justify-center rounded-2xl border border-white/15 bg-white/5 px-8 py-4 text-base font-black text-white transition hover:border-[#2ee866]/50 hover:text-[#68f18e] lg:w-auto"
+  >
+    {actionLabel}
+  </button>
+)}
+       </div>
 
-        <p className="mt-4 border-t border-white/10 pt-4 text-sm font-semibold leading-6 text-white/85">
-          {recommendation}
-        </p>
-      </div>
+<p className="mt-4 border-t border-white/10 pt-4 text-sm font-semibold leading-6 text-white/85">
+  {recommendation}
+</p>
+</div>
+
+{/* DEBUG */}
+<div className="border-t border-white/10 bg-[#0c1720] p-5 sm:p-7">
+  <p className="text-white">
+    Top offers received: {topOffers?.length ?? 0}
+  </p>
+</div>
+
+{topOffers?.length > 0 && (
+  <div
+    id="compare-prices"
+    className="border-t border-white/10 bg-[#0c1720] p-5 sm:p-7"
+  >
+   
+  
+    <div className="mb-5">
+      <p className="text-xs font-black uppercase tracking-[0.16em] text-[#68f18e]">
+        Compare prices
+      </p>
+
+      <h4 className="mt-2 text-xl font-black text-white">
+        Three verified offers
+      </h4>
+
+      <p className="mt-1 text-sm text-white/55">
+        Compare retailers before choosing where to buy.
+      </p>
+    </div>
+
+   <div className="grid gap-3">
+  {topOffers.map((offer, index) => {
+        const cheapestPrice =
+          topOffers[0]?.price ?? offer.price;
+
+        const difference =
+          offer.price - cheapestPrice;
+
+        return (
+          <div
+            key={`${offer.retailer}-${offer.price}-${index}`}
+            className="grid gap-4 rounded-2xl border border-white/10 bg-white/[0.035] p-4 sm:grid-cols-[1fr_auto] sm:items-center"
+          >
+            <div className="flex min-w-0 items-center gap-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-lg">
+                {index === 0
+                  ? "🥇"
+                  : index === 1
+                    ? "🥈"
+                    : "🥉"}
+              </div>
+
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="font-black text-white">
+                    {offer.retailer}
+                  </p>
+
+                  {index === 0 && (
+                    <span className="rounded-full bg-[#20c95a]/15 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-[#68f18e]">
+                      Cheapest
+                    </span>
+                  )}
+                </div>
+
+                <p className="mt-1 line-clamp-1 text-xs text-white/45">
+                  {offer.title}
+                </p>
+
+                {difference > 0 && (
+                  <p className="mt-1 text-xs font-bold text-white/55">
+                    £{difference.toFixed(2)} more
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-4 sm:justify-end">
+              <p className="text-2xl font-black text-white">
+                £{offer.price.toFixed(2)}
+              </p>
+
+              {offer.url ? (
+                <a
+                  href={offer.url}
+                  target="_blank"
+                  rel="noopener noreferrer sponsored"
+                  className="flex min-h-11 items-center justify-center rounded-xl bg-[#20c95a] px-5 py-3 text-sm font-black text-white transition hover:-translate-y-0.5 hover:bg-[#2ee866]"
+                >
+                  Buy Now →
+                </a>
+              ) : (
+                <span className="rounded-xl border border-white/10 px-4 py-3 text-xs font-bold text-white/35">
+                  Link unavailable
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+)}
     </div>
   );
 }

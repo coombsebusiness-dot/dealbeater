@@ -1,3 +1,8 @@
+import {
+  classifyProductType,
+  type ProductType,
+} from "../matching/productTypeClassifier";
+
 export interface ProductFingerprint {
   brand: string | null;
   family: string | null;
@@ -9,6 +14,8 @@ export interface ProductFingerprint {
   connectivity: string | null;
   colour: string | null;
   condition: ProductCondition;
+  bundleType: ProductBundleType;
+  productType: ProductType;
 }
 
 export type ProductCondition =
@@ -17,6 +24,12 @@ export type ProductCondition =
   | "used"
   | "unknown";
 
+  export type ProductBundleType =
+  | "body-only"
+  | "lens-kit"
+  | "unknown";
+
+
 export interface ProductMatchResult {
   accepted: boolean;
   confidence: number;
@@ -24,6 +37,23 @@ export interface ProductMatchResult {
   original: ProductFingerprint;
   candidate: ProductFingerprint;
 }
+const BODY_ONLY_TERMS = [
+  "body only",
+  "camera body",
+  "body",
+];
+
+const LENS_BUNDLE_PATTERNS = [
+  /\bwith\s+(?:sony\s+|tamron\s+|sigma\s+)?\d{1,3}(?:-\d{1,3})?mm\b/i,
+  /\b\d{1,3}(?:-\d{1,3})?mm\s+lens\b/i,
+  /\bkit\s+lens\b/i,
+  /\blens\s+kit\b/i,
+  /\bcamera\s+kit\b/i,
+  /\bwith\s+tamron\b/i,
+  /\bwith\s+sigma\b/i,
+  /\bwith\s+sony\s+fe\b/i,
+  /\bsel\d+/i,
+];
 
 const KNOWN_BRANDS = [
   "apple",
@@ -129,6 +159,38 @@ const FAMILY_PATTERNS: Array<{
   family: string;
   patterns: RegExp[];
 }> = [
+    {
+  family: "sony a7 iii",
+  patterns: [
+    /\bsony\s+a7\s*iii\b/i,
+    /\bsony\s+alpha\s+7\s*iii\b/i,
+    /\ba7\s*iii\b/i,
+    /\balpha\s+7\s*iii\b/i,
+    /\bilce-?7m3\b/i,
+  ],
+},
+{
+  family: "sony a7r iii",
+  patterns: [
+    /\bsony\s+a7r\s*iii\b/i,
+    /\bsony\s+alpha\s+a7r\s*iii\b/i,
+    /\bsony\s+alpha\s+7r\s*iii\b/i,
+    /\ba7r\s*iii(?:a)?\b/i,
+    /\balpha\s+(?:a)?7r\s*iii(?:a)?\b/i,
+    /\bilce-?7rm3a?\b/i,
+  ],
+},
+{
+  family: "sony a7s iii",
+  patterns: [
+    /\bsony\s+a7s\s*iii\b/i,
+    /\bsony\s+alpha\s+a7s\s*iii\b/i,
+    /\bsony\s+alpha\s+7s\s*iii\b/i,
+    /\ba7s\s*iii\b/i,
+    /\balpha\s+(?:a)?7s\s*iii\b/i,
+    /\bilce-?7sm3\b/i,
+  ],
+},
   {
     family: "ipad air",
     patterns: [/\bipad\s+air\b/i],
@@ -219,6 +281,12 @@ const USED_TERMS = [
   "second hand",
   "open box",
   "open-box",
+  "b stock",
+  "b-stock",
+  "top mint",
+  "mint condition",
+  "shutter count",
+  "no charger",
 ];
 
 const WIFI_TERMS = [
@@ -284,6 +352,22 @@ export function compareExactProductVariant(
 
     earnedScore += points;
   };
+  if (
+  original.productType !== "unknown" &&
+  candidate.productType !== original.productType
+) {
+  reject(
+    `product type mismatch: expected ${original.productType}, found ${candidate.productType}`
+  );
+}
+if (
+  original.productType !== "unknown" &&
+  candidate.productType === "unknown"
+) {
+  reject(
+    `product type could not be verified as ${original.productType}`
+  );
+}
 
   checkRequiredField(
     "brand",
@@ -380,6 +464,23 @@ export function compareExactProductVariant(
       `condition mismatch: expected ${original.condition}, found ${candidate.condition}`
     );
   }
+  if (
+  original.bundleType !== "lens-kit" &&
+  candidate.bundleType === "lens-kit"
+) {
+  reject(
+    "bundle mismatch: candidate includes a lens or camera kit"
+  );
+}
+
+if (
+  original.bundleType === "lens-kit" &&
+  candidate.bundleType === "body-only"
+) {
+  reject(
+    "bundle mismatch: expected a lens kit, found body only"
+  );
+}
 
   const confidence =
     possibleScore > 0
@@ -412,26 +513,53 @@ export function compareExactProductVariant(
   };
 }
 
+function extractBundleType(
+  value: string
+): ProductBundleType {
+  const hasLensBundle =
+    LENS_BUNDLE_PATTERNS.some((pattern) =>
+      pattern.test(value)
+    );
+
+  if (hasLensBundle) {
+    return "lens-kit";
+  }
+
+  const isBodyOnly =
+    BODY_ONLY_TERMS.some((term) =>
+      containsWholePhrase(value, term)
+    );
+
+  if (isBodyOnly) {
+    return "body-only";
+  }
+
+  return "unknown";
+}
+
 export function createProductFingerprint(
   text: string
 ): ProductFingerprint {
   const normalised = normaliseText(text);
 
-  return {
-    brand: extractBrand(normalised),
-    family: extractFamily(normalised),
-    modelNumbers:
-      extractModelNumbers(normalised),
-    year: extractYear(normalised),
-    storage: extractStorage(normalised),
-    memory: extractMemory(normalised),
-    screenSize:
-      extractScreenSize(normalised),
-    connectivity:
-      extractConnectivity(normalised),
-    colour: extractColour(normalised),
-    condition: extractCondition(normalised),
-  };
+return {
+  brand: extractBrand(normalised),
+  family: extractFamily(normalised),
+  modelNumbers:
+    extractModelNumbers(normalised),
+  year: extractYear(normalised),
+  storage: extractStorage(normalised),
+  memory: extractMemory(normalised),
+  screenSize:
+    extractScreenSize(normalised),
+  connectivity:
+    extractConnectivity(normalised),
+  colour: extractColour(normalised),
+  condition: extractCondition(normalised),
+  bundleType: extractBundleType(normalised),
+    productType:
+    classifyProductType(normalised).type,
+};
 }
 
 function extractBrand(

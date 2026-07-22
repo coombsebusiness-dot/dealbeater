@@ -13,6 +13,7 @@ interface RecommendationInput {
   retailers: RetailerData[];
   alternatives: AlternativeData[];
   decision: DecisionData;
+  
 }
 
 export async function recommendationAgent({
@@ -56,16 +57,19 @@ export async function recommendationAgent({
       decision.breakdown.alternatives,
 },
 
-    product: {
-      name: product.name,
-      brand: product.brand,
-      model: product.model,
-    imageUrl: product.image,
-    },
+   product: {
+  name: product.name,
+  brand: product.brand,
+  model: product.model,
+  imageUrl: product.image,
+  ctaUrl: product.ctaUrl,
+  ctaLabel: product.ctaLabel,
+},
 
     reviews,
 
     pricing,
+    topOffers: pricing.topOffers,
 
    summary: buildSummary(
   product,

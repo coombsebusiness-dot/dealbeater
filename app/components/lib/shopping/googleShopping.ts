@@ -166,15 +166,44 @@ export async function searchGoogleShopping(
         return null;
       }
 
-     const basicRejectionReason =
+   const basicRejectionReason =
   getRejectionReason(cleanQuery, title);
 
-if (basicRejectionReason) {
+const hardRejectionTerms = [
+  "used",
+  "refurbished",
+  "renewed",
+  "pre-owned",
+  "preowned",
+  "lease",
+  "subscription",
+  "monthly payment",
+  "pay monthly",
+  "contract",
+  "parts only",
+  "spares or repair",
+];
+
+const isHardRejection =
+  basicRejectionReason &&
+  hardRejectionTerms.some((term) =>
+    basicRejectionReason
+      .toLowerCase()
+      .includes(term)
+  );
+
+if (isHardRejection) {
   console.log(
-    `🚫 Rejected: ${title} — ${basicRejectionReason}`
+    `🚫 Hard rejected: ${title} — ${basicRejectionReason}`
   );
 
   return null;
+}
+
+if (basicRejectionReason) {
+  console.log(
+    `⚠️ Possible mismatch, sending to variant matcher: ${title} — ${basicRejectionReason}`
+  );
 }
 
 const exactMatch = compareExactProductVariant(
@@ -182,9 +211,14 @@ const exactMatch = compareExactProductVariant(
   title
 );
 
-if (!exactMatch.accepted) {
+const minimumConfidence = 75;
+
+if (
+  !exactMatch.accepted &&
+  exactMatch.confidence < minimumConfidence
+) {
   console.log(
-    `🚫 Exact match rejected: ${title}`
+    `🚫 Variant rejected: ${title}`
   );
 
   console.log(
@@ -201,7 +235,7 @@ if (!exactMatch.accepted) {
 }
 
 console.log(
-  `✅ Exact match accepted: ${title} (${exactMatch.confidence}%)`
+  `✅ Variant accepted: ${title} (${exactMatch.confidence}%)`
 );
 
       const price =

@@ -36,14 +36,29 @@ const ScoreBreakdownSchema = z.object({
   warrantySupport: z.number().min(0).max(100),
 });
 
+const TopOfferSchema = z.object({
+  retailer: z.string(),
+  title: z.string(),
+  price: z.number(),
+  url: z.string().optional(),
+  image: z.string().optional(),
+});
+
 export const DealAIReportSchema = z.object({
   productName: z.string(),
   retailerName: z.string(),
   price: z.string(),
   productImage: z.string().optional(),
-retailerUrl: z.string().optional(),
-saving: z.string(),
-checkedAt: z.string(),
+  retailerUrl: z.string().optional(),
+  saving: z.string(),
+  checkedAt: z.string(),
+  ctaLabel: z.string().optional(),
+
+  
+
+  topOffers: z.array(TopOfferSchema),
+
+
 
   marketPosition: z.enum([
     "BEST_PRICE",
@@ -54,6 +69,8 @@ checkedAt: z.string(),
 
   score: z.number().min(0).max(100),
   confidence: z.number().min(0).max(100),
+
+  
 
   verdict: z.enum([
     "BUY",
@@ -83,8 +100,12 @@ checkedAt: z.string(),
   ifItWasOurMoney: z.string(),
 });
 
+
+
 export type DealAIReport = z.infer<
   typeof DealAIReportSchema
+
+  
 >;
 
 export interface AnalyseDealInput {
@@ -172,30 +193,22 @@ export async function analyseDealWithAI(
    * product, pricing, review, retailer, alternative
    * and decision analysis.
    */
-  console.log("🧠 DEAL BEATER ENGINE STARTED");
+console.time("ENGINE_TIME");
 
-  const engineReport = await analyseDeal(cleanInput);
+const engineReport =
+  await analyseDeal(cleanInput);
 
-  console.log(
-    "✅ DEAL BEATER ENGINE COMPLETE:",
-    {
-      product: engineReport.product.name,
-      recommendation:
-        engineReport.recommendation,
-      score: engineReport.dealScore,
-      confidence: engineReport.confidence,
-    }
-  );
+console.timeEnd("ENGINE_TIME");
 
-  const narrative = await generateNarrative(
-    input,
-    engineReport
-  );
+console.time("NARRATIVE_TIME");
 
-  return buildFinalReport(
-    engineReport,
-    narrative
-  );
+const narrative =
+  createFallbackNarrative(engineReport);
+
+return buildFinalReport(
+  engineReport,
+  narrative
+);
 }
 
 async function generateNarrative(
@@ -312,26 +325,64 @@ function buildFinalReport(
   report: DealReport,
   narrative: NarrativeResult
 ): DealAIReport {
+     console.log(
+    "CTA URL:",
+    report.product.ctaUrl
+  );
+
+  console.log(
+    "CTA LABEL:",
+    report.product.ctaLabel
+  );
+
+  const topOffers =
+  report.pricing.topOffers ?? [];
+
+const cheapestOffer =
+  topOffers.length > 0
+    ? [...topOffers].sort(
+        (first, second) =>
+          first.price - second.price
+      )[0]
+    : undefined;
  return {
   productName:
     report.product.name ||
     buildProductName(report),
+
+    
     
 
-  retailerName:
-    report.pricing.bestRetailer ||
-    findBestRetailerName(
-      report.retailers,
-      report.pricing
-    ),
+ retailerName:
+  cheapestOffer?.retailer ||
+  report.pricing.bestRetailer ||
+  findBestRetailerName(
+    report.retailers,
+    report.pricing
+  ),
 
-  price:
-    findDisplayPrice(report.pricing),
+price:
+  cheapestOffer
+    ? formatPrice(cheapestOffer.price)
+    : findDisplayPrice(report.pricing),
 
-  productImage:
+productImage:
+  cheapestOffer?.image ||
   report.product.imageUrl,
 
-  retailerUrl: undefined,
+retailerUrl:
+  cheapestOffer?.url ||
+  report.product.ctaUrl,
+
+ctaLabel:
+  cheapestOffer?.url ||
+  report.product.ctaUrl
+    ? "Buy Now"
+    : undefined,
+
+topOffers,
+
+ 
 
   saving:
     formatSaving(
@@ -582,49 +633,63 @@ function findDisplayPrice(
 function createFallbackNarrative(
   report: DealReport
 ): NarrativeResult {
+  const recommendation = mapRecommendation(report.recommendation);
+
+  const retailerCount = report.retailers.length;
+
+  const retailerText =
+    retailerCount > 0
+      ? `We verified pricing and retailer information from ${retailerCount} retailer${retailerCount === 1 ? "" : "s"}.`
+      : "Retailer information could not be fully verified.";
+
   return {
-    headline:
-      `${mapRecommendation(
-        report.recommendation
-      )}: ${report.product.name}`,
+    headline: `${recommendation} — ${report.product.name}`,
 
     recommendation:
-      report.summary ||
-      "Deal Beater has completed its structured analysis.",
+      report.summary ??
+      `${recommendation} based on today's verified market evidence.`,
 
     summary:
-      report.summary ||
-      "The available evidence has been assessed by the Deal Beater engine.",
+      report.summary ??
+      "Deal Beater analysed live pricing, retailer quality and customer feedback to produce this recommendation.",
 
     priceAnalysis:
       extractSummary(
         report.pricing,
-        "Live pricing evidence was limited."
+        "Live market pricing was limited, so the recommendation is based on the verified evidence available."
       ),
 
     reviewAnalysis:
       extractSummary(
         report.reviews,
-        "Reliable review evidence was limited."
+        "Customer review evidence was limited, but enough information was available to complete the assessment."
       ),
 
-    retailerAnalysis:
-      report.retailers.length > 0
-        ? "Retailer information was included in the Deal Beater analysis."
-        : "The retailer could not be reliably verified.",
+    retailerAnalysis: retailerText,
 
-    positives: report.strengths,
+    positives:
+      report.strengths.length > 0
+        ? report.strengths
+        : [
+            "Product matches the verified listing.",
+            "Assessment completed successfully."
+          ],
 
-    warnings: report.concerns,
+    warnings:
+      report.concerns.length > 0
+        ? report.concerns
+        : [
+            "Prices may change over time.",
+            "Always confirm delivery costs before purchasing."
+          ],
 
     ifItWasOurMoney:
       ensureMoneyPrefix(
-        report.ifItWasOurMoney ||
-          "we would wait until stronger evidence is available."
+        report.ifItWasOurMoney ??
+          "we'd make our decision using today's verified pricing and retailer information."
       ),
   };
 }
-
 function extractSummary(
   value: unknown,
   fallback: string

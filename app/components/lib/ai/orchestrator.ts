@@ -7,14 +7,15 @@ import { alternativeAgent } from "./alternativeAgent";
 import { decisionAgent } from "@/app/components/lib/agents/decisionAgent";
 import { recommendationAgent } from "./recommendationAgent";
 
-
 export async function analyseDeal(
   input: string
 ): Promise<DealReport> {
   const cleanInput = input.trim();
 
   if (!cleanInput) {
-    throw new Error("A product link or description is required.");
+    throw new Error(
+      "A product link or description is required."
+    );
   }
 
   const product = await productAgent(cleanInput);
@@ -34,8 +35,24 @@ export async function analyseDeal(
     alternatives
   );
 
+  const enrichedProduct = {
+  ...product,
+
+  image:
+    pricing.productImage ??
+    product.image,
+
+  ctaUrl:
+    pricing.bestRetailerUrl,
+
+  ctaLabel:
+    pricing.bestRetailerUrl
+      ? "Buy Now"
+      : undefined,
+};
+
   return recommendationAgent({
-    product,
+    product: enrichedProduct,
     pricing,
     reviews,
     retailers,

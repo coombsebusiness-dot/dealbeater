@@ -26,12 +26,14 @@ export interface DealReport {
 
   scoreBreakdown: ScoreBreakdown;
 
-  product: {
+ product: {
   name: string;
   brand: string;
   model: string;
   imageUrl?: string;
-};
+  ctaUrl?: string;
+  ctaLabel?: string;
+}
 
   reviews: ReviewData;
 pricing: PriceData;
@@ -47,4 +49,6 @@ pricing: PriceData;
   betterAlternatives: AlternativeData[];
 
   retailers: RetailerData[];
+
+  topOffers: PriceData["topOffers"];
 }
