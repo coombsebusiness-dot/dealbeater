@@ -315,10 +315,10 @@ return (
               </div>
 
               <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="font-black text-white">
-                    {offer.retailer}
-                  </p>
+                <div className="flex min-w-0 items-center gap-2">
+                 <p className="truncate font-black text-white">
+  {offer.retailer}
+</p>
 
                   {index === 0 && (
                     <span className="rounded-full bg-[#20c95a]/15 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-[#68f18e]">
