@@ -37,6 +37,18 @@ type EbaySearchResponse = {
   itemSummaries?: EbayItemSummary[];
 };
 
+type EbayLegacyItemResponse = {
+  itemId?: string;
+  title?: string;
+  price?: EbayAmount;
+  image?: EbayImage;
+  itemWebUrl?: string;
+  itemAffiliateWebUrl?: string;
+  condition?: string;
+  seller?: EbaySeller;
+  buyingOptions?: string[];
+};
+
 export type EbayOffer = {
   source: "ebay";
   itemId: string;
@@ -55,36 +67,99 @@ export type EbayOffer = {
   itemUrl: string;
 };
 
-function parseMoney(value?: string): number | null {
+export type EbayResolvedItem = {
+  itemId: string | null;
+  legacyItemId: string;
+  title: string;
+  price: number | null;
+  currency: string;
+  condition: string | null;
+  imageUrl: string | null;
+  itemUrl: string | null;
+};
+
+function parseMoney(
+  value?: string
+): number | null {
   if (!value) {
     return null;
   }
 
   const parsed = Number.parseFloat(value);
 
-  return Number.isFinite(parsed) ? parsed : null;
+  return Number.isFinite(parsed)
+    ? parsed
+    : null;
 }
 
-function getShippingPrice(item: EbayItemSummary): number {
+function getShippingPrice(
+  item: EbayItemSummary
+): number {
   const shippingValue =
-    item.shippingOptions?.[0]?.shippingCost?.value;
+    item.shippingOptions?.[0]
+      ?.shippingCost?.value;
 
   return parseMoney(shippingValue) ?? 0;
 }
 
-function normaliseItem(item: EbayItemSummary): EbayOffer | null {
-  const price = parseMoney(item.price?.value);
+function getEbayEndUserContext(): string {
+  const campaignId =
+    process.env.EBAY_CAMPAIGN_ID?.trim();
+
+  if (!campaignId) {
+    throw new Error(
+      "EBAY_CAMPAIGN_ID is missing from the environment."
+    );
+  }
+
+  return [
+    `affiliateCampaignId=${campaignId}`,
+    "affiliateReferenceId=dealbeater",
+    "contextualLocation=country%3DGB",
+  ].join(",");
+}
+
+function getEbayRequestHeaders(
+  token: string
+): HeadersInit {
+  return {
+    Authorization: `Bearer ${token}`,
+    "X-EBAY-C-MARKETPLACE-ID": "EBAY_GB",
+    "X-EBAY-C-ENDUSERCTX":
+      getEbayEndUserContext(),
+    Accept: "application/json",
+  };
+}
+
+function normaliseItem(
+  item: EbayItemSummary
+): EbayOffer | null {
+  const price =
+    parseMoney(item.price?.value);
+
+  const itemUrl =
+    item.itemAffiliateWebUrl ??
+    item.itemWebUrl;
 
   if (
     !item.itemId ||
     !item.title ||
     price === null ||
-    !item.itemWebUrl
+    !itemUrl
   ) {
     return null;
   }
 
-  const shippingPrice = getShippingPrice(item);
+  const shippingPrice =
+    getShippingPrice(item);
+
+  console.log("🧾 EBAY URL FIELDS:", {
+    itemId: item.itemId,
+    standardUrl: item.itemWebUrl,
+    affiliateUrl:
+      item.itemAffiliateWebUrl,
+    selectedUrl: itemUrl,
+  });
 
   return {
     source: "ebay",
@@ -93,19 +168,27 @@ function normaliseItem(item: EbayItemSummary): EbayOffer | null {
     title: item.title,
     price,
     shippingPrice,
-    totalPrice: price + shippingPrice,
-    currency: item.price?.currency ?? "GBP",
-    condition: item.condition ?? null,
-    sellerName: item.seller?.username ?? null,
+    totalPrice:
+      price + shippingPrice,
+    currency:
+      item.price?.currency ?? "GBP",
+    condition:
+      item.condition ?? null,
+    sellerName:
+      item.seller?.username ?? null,
     sellerFeedbackPercentage:
-      parseMoney(item.seller?.feedbackPercentage),
+      parseMoney(
+        item.seller
+          ?.feedbackPercentage
+      ),
     sellerFeedbackScore:
-      item.seller?.feedbackScore ?? null,
-    buyingOptions: item.buyingOptions ?? [],
-    imageUrl: item.image?.imageUrl ?? null,
-    itemUrl:
-      item.itemAffiliateWebUrl ??
-      item.itemWebUrl,
+      item.seller
+        ?.feedbackScore ?? null,
+    buyingOptions:
+      item.buyingOptions ?? [],
+    imageUrl:
+      item.image?.imageUrl ?? null,
+    itemUrl,
   };
 }
 
@@ -119,39 +202,35 @@ export async function searchEbay(
     return [];
   }
 
-  
-
   const safeLimit = Math.min(
     Math.max(limit, 1),
     200
   );
 
-  const token = await getEbayAccessToken();
+  const token =
+    await getEbayAccessToken();
 
-  const params = new URLSearchParams({
-    q: trimmedQuery,
-    limit: String(safeLimit),
-    filter:
-      "buyingOptions:{FIXED_PRICE},conditions:{NEW}",
-  });
+  const params =
+    new URLSearchParams({
+      q: trimmedQuery,
+      limit: String(safeLimit),
+      filter:
+        "buyingOptions:{FIXED_PRICE},conditions:{NEW}",
+    });
 
   const response = await fetch(
     `https://api.ebay.com/buy/browse/v1/item_summary/search?${params.toString()}`,
     {
       method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "X-EBAY-C-MARKETPLACE-ID": "EBAY_GB",
-        "X-EBAY-C-ENDUSERCTX":
-          "contextualLocation=country%3DGB",
-        Accept: "application/json",
-      },
+      headers:
+        getEbayRequestHeaders(token),
       cache: "no-store",
     }
   );
 
   if (!response.ok) {
-    const errorText = await response.text();
+    const errorText =
+      await response.text();
 
     throw new Error(
       `eBay Browse search failed: ${response.status} ${response.statusText} - ${errorText}`
@@ -164,65 +243,46 @@ export async function searchEbay(
   return (data.itemSummaries ?? [])
     .map(normaliseItem)
     .filter(
-      (offer): offer is EbayOffer =>
+      (
+        offer
+      ): offer is EbayOffer =>
         offer !== null
     );
 }
-type EbayLegacyItemResponse = {
-  itemId?: string;
-  title?: string;
-  price?: EbayAmount;
-  image?: EbayImage;
-  itemWebUrl?: string;
-  itemAffiliateWebUrl?: string;
-  condition?: string;
-  seller?: EbaySeller;
-  buyingOptions?: string[];
-};
-
-export type EbayResolvedItem = {
-  itemId: string | null;
-  legacyItemId: string;
-  title: string;
-  price: number | null;
-  currency: string;
-  condition: string | null;
-  imageUrl: string | null;
-  itemUrl: string | null;
-};
 
 export async function getEbayItemByLegacyId(
   legacyItemId: string
 ): Promise<EbayResolvedItem> {
-  const trimmedId = legacyItemId.trim();
+  const trimmedId =
+    legacyItemId.trim();
 
   if (!/^\d{9,15}$/.test(trimmedId)) {
-    throw new Error("The eBay item number is invalid.");
+    throw new Error(
+      "The eBay item number is invalid."
+    );
   }
 
-  const token = await getEbayAccessToken();
+  const token =
+    await getEbayAccessToken();
 
-  const params = new URLSearchParams({
-    legacy_item_id: trimmedId,
-  });
+  const params =
+    new URLSearchParams({
+      legacy_item_id: trimmedId,
+    });
 
   const response = await fetch(
     `https://api.ebay.com/buy/browse/v1/item/get_item_by_legacy_id?${params.toString()}`,
     {
       method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "X-EBAY-C-MARKETPLACE-ID": "EBAY_GB",
-        "X-EBAY-C-ENDUSERCTX":
-          "contextualLocation=country%3DGB",
-        Accept: "application/json",
-      },
+      headers:
+        getEbayRequestHeaders(token),
       cache: "no-store",
     }
   );
 
   if (!response.ok) {
-    const errorText = await response.text();
+    const errorText =
+      await response.text();
 
     throw new Error(
       `eBay listing lookup failed: ${response.status} ${response.statusText} - ${errorText}`
@@ -232,6 +292,21 @@ export async function getEbayItemByLegacyId(
   const item =
     (await response.json()) as EbayLegacyItemResponse;
 
+  console.log(
+    "🧾 EBAY LEGACY URL FIELDS:",
+    {
+      legacyItemId: trimmedId,
+      standardUrl:
+        item.itemWebUrl,
+      affiliateUrl:
+        item.itemAffiliateWebUrl,
+      selectedUrl:
+        item.itemAffiliateWebUrl ??
+        item.itemWebUrl ??
+        null,
+    }
+  );
+
   if (!item.title) {
     throw new Error(
       "eBay returned the listing, but its product title was unavailable."
@@ -239,13 +314,24 @@ export async function getEbayItemByLegacyId(
   }
 
   return {
-    itemId: item.itemId ?? null,
-    legacyItemId: trimmedId,
-    title: item.title,
-    price: parseMoney(item.price?.value),
-    currency: item.price?.currency ?? "GBP",
-    condition: item.condition ?? null,
-    imageUrl: item.image?.imageUrl ?? null,
+    itemId:
+      item.itemId ?? null,
+    legacyItemId:
+      trimmedId,
+    title:
+      item.title,
+    price:
+      parseMoney(
+        item.price?.value
+      ),
+    currency:
+      item.price?.currency ??
+      "GBP",
+    condition:
+      item.condition ?? null,
+    imageUrl:
+      item.image?.imageUrl ??
+      null,
     itemUrl:
       item.itemAffiliateWebUrl ??
       item.itemWebUrl ??

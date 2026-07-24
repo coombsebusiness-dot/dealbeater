@@ -1,54 +1,69 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import Script from "next/script";
 import { GoogleAnalytics } from "@next/third-parties/google";
+import "./globals.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
+const siteUrl = "https://dealbeater.co.uk";
+const siteName = "Deal Beater";
+const defaultTitle =
+  "Deal Beater | Compare UK Prices and Find Better Deals";
+const defaultDescription =
+  "Compare prices from trusted UK retailers and find better deals before you buy. Deal Beater checks products, prices and retailers to help you shop smarter.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://dealbeater.co.uk"),
+  metadataBase: new URL(siteUrl),
 
   title: {
-    default: "Deal Beater | Check Before You Buy",
-    template: "%s | Deal Beater",
+    default: defaultTitle,
+    template: `%s | ${siteName}`,
   },
 
-  description:
-    "Deal Beater helps UK consumers make smarter buying decisions. Compare products, quotes and services before you spend your money.",
+  description: defaultDescription,
 
-  keywords: [
-    "Deal Beater",
-    "Best deals UK",
-    "Price comparison",
-    "Buying advice",
-    "Consumer savings",
-    "Deals",
-    "Product reviews",
-    "Smart shopping",
-  ],
+  applicationName: siteName,
 
   authors: [
     {
       name: "Frame Tech UK Ltd",
+      url: siteUrl,
     },
   ],
 
   creator: "Frame Tech UK Ltd",
+  publisher: "Frame Tech UK Ltd",
 
-  applicationName: "Deal Beater",
+  category: "shopping",
+
+  classification:
+    "UK price comparison, product comparison and shopping service",
+
+  keywords: [
+    "Deal Beater",
+    "price comparison UK",
+    "compare prices UK",
+    "best deals UK",
+    "product price comparison",
+    "UK shopping deals",
+    "compare retailers",
+    "online deals UK",
+    "cheap products UK",
+    "smart shopping",
+  ],
 
   alternates: {
-    canonical: "https://dealbeater.co.uk",
+    canonical: "/",
   },
 
   icons: {
@@ -68,6 +83,7 @@ export const metadata: Metadata = {
         type: "image/png",
       },
     ],
+
     apple: [
       {
         url: "/apple-icon.png",
@@ -75,20 +91,21 @@ export const metadata: Metadata = {
         type: "image/png",
       },
     ],
+
+    shortcut: "/icon.png",
   },
 
   openGraph: {
-    title: "Deal Beater | Check Before You Buy",
-    description:
-      "Helping UK consumers make smarter buying decisions before they spend.",
-    url: "https://dealbeater.co.uk",
-    siteName: "Deal Beater",
+    title: defaultTitle,
+    description: defaultDescription,
+    url: "/",
+    siteName,
     images: [
       {
         url: "/opengraph-image.png",
         width: 1200,
         height: 630,
-        alt: "Deal Beater — smarter decisions and better deals",
+        alt: "Deal Beater price comparison and UK deals",
       },
     ],
     locale: "en_GB",
@@ -97,16 +114,36 @@ export const metadata: Metadata = {
 
   twitter: {
     card: "summary_large_image",
-    title: "Deal Beater | Check Before You Buy",
-    description:
-      "Helping UK consumers make smarter buying decisions before they spend.",
+    title: defaultTitle,
+    description: defaultDescription,
     images: ["/twitter-image.png"],
   },
 
   robots: {
     index: true,
     follow: true,
+    nocache: false,
+
+    googleBot: {
+      index: true,
+      follow: true,
+      noimageindex: false,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
   },
+
+  other: {
+    "format-detection": "telephone=no",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#111827",
+  colorScheme: "dark",
 };
 
 export default function RootLayout({
@@ -116,16 +153,11 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="en-GB"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {children}
-
-        {/* eBay Partner Network Smart Links */}
-      
-
-       
 
         <GoogleAnalytics gaId="G-B2CL1EN8PB" />
       </body>

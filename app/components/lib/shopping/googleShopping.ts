@@ -1,5 +1,7 @@
 import { compareExactProductVariant } from "./exactProductMatcher";
 import { findEbayAffiliateListing } from "@/app/components/lib/ebay";
+import { getAffiliateLink } from "@/app/components/lib/affiliates/engine";
+import { getMerchantByUrl } from "@/app/components/lib/affiliates/registry";
 
 export interface ShoppingOffer {
   title: string;
@@ -11,6 +13,7 @@ export interface ShoppingOffer {
   delivery: string | null;
   thumbnail: string | null;
   immersiveToken: string | null;
+  description?: string | null;
 }
 
 interface SerpApiShoppingResult {
@@ -341,7 +344,7 @@ console.log("LINK:", result.link);
 // This avoids using an extra SerpAPI credit for every raw result.
 const offersToEnrich = sortedOffers.slice(0, 5);
 
-const enrichedOffers = await Promise.all(
+const enrichedResults = await Promise.all(
   offersToEnrich.map(async (offer) => {
     const directOffer = await enrichOfferWithDirectLink(
       offer,
@@ -349,8 +352,21 @@ const enrichedOffers = await Promise.all(
       cleanQuery
     );
 
-    return enrichEbayAffiliateLink(directOffer);
+    if (!directOffer) {
+      return null;
+    }
+
+    const ebayOffer = await enrichEbayAffiliateLink(directOffer);
+
+    console.log("🟠 BEFORE:", directOffer.link);
+    console.log("🟢 AFTER :", ebayOffer.link);
+
+    return ebayOffer;
   })
+);
+
+const enrichedOffers = enrichedResults.filter(
+  (offer): offer is ShoppingOffer => offer !== null
 );
 
 const remainingOffers = sortedOffers.slice(5);
@@ -358,17 +374,54 @@ const remainingOffers = sortedOffers.slice(5);
 return [...enrichedOffers, ...remainingOffers].sort(
   (a, b) => a.price - b.price
 );
+async function applyAffiliateLink(
+    
+  offer: ShoppingOffer
+): Promise<ShoppingOffer> {
+  if (!offer.link) {
+    console.warn(
+      "⚠️ Cannot create affiliate link because offer has no link:",
+      offer.title
+    );
+console.log("🚨🚨🚨 APPLY AFFILIATE LINK CALLED 🚨🚨🚨");
+    return offer;
+  }
+
+  const originalUrl = offer.link;
+
+ console.log("🔗 Applying affiliate link to:", {
+  retailer: offer.retailer,
+  originalUrl,
+});
+
+return await applyAffiliateLink({
+  ...offer,
+  link: originalUrl,
+});
+  };
+}
 
 async function enrichOfferWithDirectLink(
   offer: ShoppingOffer,
   apiKey: string,
   originalQuery: string
-): Promise<ShoppingOffer> {
+): Promise<ShoppingOffer | null> {
   if (!offer.immersiveToken) {
-    console.log(
-      `⚠️ No immersive token for: ${offer.title}`
-    );
+    console.log(`⚠️ No immersive token for: ${offer.title}`);
 
+    const originalMatch =compareExactProductVariant(
+  originalQuery,
+  `${offer.title} ${offer.description ?? ""}`
+)
+
+    if (!originalMatch.accepted) {
+      console.log(
+        `❌ Removing unrelated original offer: ${offer.title}`
+      );
+
+      return null;
+    }
+console.log("➡️ About to apply affiliate link");
     return offer;
   }
 
@@ -394,7 +447,12 @@ async function enrichOfferWithDirectLink(
         response.status
       );
 
-      return offer;
+      const originalMatch = compareExactProductVariant(
+  originalQuery,
+  `${offer.title} ${offer.description ?? ""}`
+)
+
+      return originalMatch.accepted ? offer : null;
     }
 
     const data =
@@ -406,7 +464,12 @@ async function enrichOfferWithDirectLink(
         data.error
       );
 
-      return offer;
+      const originalMatch = compareExactProductVariant(
+  originalQuery,
+  `${offer.title} ${offer.description ?? ""}`
+)
+
+      return originalMatch.accepted ? offer : null;
     }
 
     const stores =
@@ -421,14 +484,21 @@ async function enrichOfferWithDirectLink(
         `⚠️ No direct retailer stores found for: ${offer.title}`
       );
 
-      return offer;
+      const originalMatch = compareExactProductVariant(
+  originalQuery,
+  `${offer.title} ${offer.description ?? ""}`
+)
+
+      return originalMatch.accepted ? offer : null;
     }
+
+    console.log("ORIGINAL QUERY:", originalQuery);
 
     const matchingStores = stores.filter((store) => {
       const storeTitle = store.title?.trim() ?? "";
 
       if (!storeTitle) {
-        return true;
+        return false;
       }
 
       const match = compareExactProductVariant(
@@ -436,68 +506,97 @@ async function enrichOfferWithDirectLink(
         storeTitle
       );
 
+      if (!match.accepted) {
+        console.log(
+          `❌ Rejected store result: ${storeTitle}`
+        );
+      }
+
       return match.accepted;
     });
 
-    const validStores =
-      matchingStores.length > 0
-        ? matchingStores
-        : stores;
-
-    const retailerMatch = validStores.find((store) =>
-      retailerNamesMatch(
-        offer.retailer,
-        store.name ?? ""
-      )
-    );
-
-    const selectedStore =
-      retailerMatch ??
-      findClosestPricedStore(
-        offer.price,
-        validStores
+    if (matchingStores.length === 0) {
+      console.log(
+        `❌ No exact product stores matched query "${originalQuery}" for ${offer.title}`
       );
 
-    if (!selectedStore?.link) {
-      return offer;
+      return null;
     }
 
+  const selectedStore = findBestRetailerStore(
+  offer,
+  matchingStores
+);
+
+    if (!selectedStore?.link) {
+      return null;
+    }
+
+    const directRetailerUrl = selectedStore.link;
+
     console.log(
-      `🔗 Direct retailer link found: ${selectedStore.name} — ${selectedStore.link}`
+      `🔗 Direct retailer link found: ${selectedStore.name} — ${directRetailerUrl}`
     );
 
-    return {
-      ...offer,
-      title:
-        selectedStore.title?.trim() ||
-        offer.title,
-      retailer:
-        selectedStore.name?.trim() ||
-        offer.retailer,
-      price:
-        typeof selectedStore.extracted_price === "number"
-          ? selectedStore.extracted_price
-          : offer.price,
-      link: selectedStore.link,
-      rating:
-        typeof selectedStore.rating === "number"
-          ? selectedStore.rating
-          : offer.rating,
-      reviewCount:
-        typeof selectedStore.reviews === "number"
-          ? selectedStore.reviews
-          : offer.reviewCount,
-      delivery:
-        selectedStore.shipping?.trim() ||
-        offer.delivery,
-    };
+    const directOffer: ShoppingOffer = {
+  ...offer,
+  title:
+    selectedStore.title?.trim() ||
+    offer.title,
+  retailer:
+    selectedStore.name?.trim() ||
+    offer.retailer,
+  price:
+    typeof selectedStore.extracted_price === "number"
+      ? selectedStore.extracted_price
+      : offer.price,
+  link: directRetailerUrl,
+  rating:
+    typeof selectedStore.rating === "number"
+      ? selectedStore.rating
+      : offer.rating,
+  reviewCount:
+    typeof selectedStore.reviews === "number"
+      ? selectedStore.reviews
+      : offer.reviewCount,
+  delivery:
+    selectedStore.shipping?.trim() ||
+    offer.delivery,
+};
+
+    const affiliateResult = await getAffiliateLink(
+      directRetailerUrl,
+      "dealbeater-shopping"
+    );
+
+    console.log("🔗 AFFILIATE ENGINE RESULT:", {
+      retailer: directOffer.retailer,
+      network: affiliateResult.network,
+      success: affiliateResult.success,
+      originalUrl: directRetailerUrl,
+      affiliateUrl: affiliateResult.affiliateUrl,
+    });
+
+   return {
+  ...directOffer,
+  link:
+    affiliateResult.success &&
+    affiliateResult.affiliateUrl
+      ? affiliateResult.affiliateUrl
+      : directRetailerUrl,
+};
   } catch (error) {
     console.error(
       `⚠️ Direct-link lookup failed for ${offer.title}:`,
       error
     );
 
-    return offer;
+    const originalMatch = compareExactProductVariant(
+  originalQuery,
+  `${offer.title} ${offer.description ?? ""}`
+)
+
+    return originalMatch.accepted ? offer : null;
   }
 }
 function retailerNamesMatch(
@@ -528,6 +627,144 @@ function normaliseRetailerName(
     .replace(/\s*store\s*$/g, "")
     .replace(/[^a-z0-9]+/g, "")
     .trim();
+}
+function isAffiliateSupportedStore(
+  store: ImmersiveStore
+): boolean {
+  if (!store.link) {
+    return false;
+  }
+
+  const merchant = getMerchantByUrl(store.link);
+
+  return Boolean(
+    merchant &&
+    merchant.enabled
+  );
+}
+
+function getAffiliateStorePriority(
+  store: ImmersiveStore
+): number {
+  if (!store.link) {
+    return 0;
+  }
+
+  const merchant = getMerchantByUrl(store.link);
+
+  if (!merchant || !merchant.enabled) {
+    return 0;
+  }
+
+  /*
+   * Higher number means greater priority.
+   *
+   * Direct AWIN merchants are preferred first,
+   * followed by Amazon and eBay.
+   */
+  switch (merchant.network) {
+    case "awin":
+      return 300;
+
+    case "amazon":
+      return 200;
+
+    case "ebay":
+      return 100;
+
+    default:
+      return 50;
+  }
+}
+
+function findBestRetailerStore(
+  originalOffer: ShoppingOffer,
+  stores: ImmersiveStore[]
+): ImmersiveStore | undefined {
+  const rankedStores = [...stores].sort(
+    (first, second) => {
+      const firstPriority =
+        getAffiliateStorePriority(first);
+
+      const secondPriority =
+        getAffiliateStorePriority(second);
+
+      if (firstPriority !== secondPriority) {
+        return secondPriority - firstPriority;
+      }
+
+      const firstRetailerMatch =
+        retailerNamesMatch(
+          originalOffer.retailer,
+          first.name ?? ""
+        )
+          ? 1
+          : 0;
+
+      const secondRetailerMatch =
+        retailerNamesMatch(
+          originalOffer.retailer,
+          second.name ?? ""
+        )
+          ? 1
+          : 0;
+
+      if (
+        firstRetailerMatch !==
+        secondRetailerMatch
+      ) {
+        return (
+          secondRetailerMatch -
+          firstRetailerMatch
+        );
+      }
+
+      const firstPriceDifference =
+        typeof first.extracted_price === "number"
+          ? Math.abs(
+              first.extracted_price -
+                originalOffer.price
+            )
+          : Number.MAX_SAFE_INTEGER;
+
+      const secondPriceDifference =
+        typeof second.extracted_price === "number"
+          ? Math.abs(
+              second.extracted_price -
+                originalOffer.price
+            )
+          : Number.MAX_SAFE_INTEGER;
+
+      return (
+        firstPriceDifference -
+        secondPriceDifference
+      );
+    }
+  );
+
+  const selectedStore = rankedStores[0];
+
+  if (selectedStore) {
+    console.log(
+      "🏪 BEST RETAILER STORE SELECTED:",
+      {
+        retailer: selectedStore.name,
+        url: selectedStore.link,
+        affiliateSupported:
+          isAffiliateSupportedStore(
+            selectedStore
+          ),
+        affiliatePriority:
+          getAffiliateStorePriority(
+            selectedStore
+          ),
+        price:
+          selectedStore.extracted_price,
+      }
+    );
+  }
+
+  return selectedStore;
 }
 
 function findClosestPricedStore(
@@ -833,7 +1070,25 @@ function isEbayOffer(offer: ShoppingOffer): boolean {
 async function enrichEbayAffiliateLink(
   offer: ShoppingOffer
 ): Promise<ShoppingOffer> {
-  if (!isEbayOffer(offer)) {
+  console.log("🟣 EBAY ENRICHMENT CALLED:", {
+    title: offer.title,
+    retailer: offer.retailer,
+    link: offer.link,
+  });
+
+  const recognisedAsEbay = isEbayOffer(offer);
+
+  console.log(
+    "🟡 RECOGNISED AS EBAY:",
+    recognisedAsEbay
+  );
+
+  if (!recognisedAsEbay) {
+    console.warn(
+      "⚠️ Offer was not recognised as eBay:",
+      offer
+    );
+
     return offer;
   }
 
@@ -842,9 +1097,10 @@ async function enrichEbayAffiliateLink(
       offer.title,
       offer.price
     );
-    console.log("EBAY API RESULT:", result);
 
-    if (!result) {
+    console.log("🟠 EBAY API RESULT:", result);
+
+    if (!result?.affiliateUrl) {
       console.warn(
         "No eBay affiliate listing found:",
         offer.title
@@ -853,7 +1109,10 @@ async function enrichEbayAffiliateLink(
       return offer;
     }
 
-    console.log("EBAY AFFILIATE URL:", result.affiliateUrl);
+    console.log(
+      "🟢 EBAY AFFILIATE URL:",
+      result.affiliateUrl
+    );
 
     return {
       ...offer,
@@ -868,4 +1127,4 @@ async function enrichEbayAffiliateLink(
     return offer;
   }
 }
-}
+

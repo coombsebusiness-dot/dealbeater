@@ -203,7 +203,19 @@ function extractBrand(text: string): string | null {
     "panasonic",
   ];
 
-  return brands.find((brand) => value.includes(brand)) ?? null;
+  let bestBrand: string | null = null;
+  let earliestIndex = Number.MAX_SAFE_INTEGER;
+
+  for (const brand of brands) {
+    const index = value.indexOf(brand);
+
+    if (index !== -1 && index < earliestIndex) {
+      earliestIndex = index;
+      bestBrand = brand;
+    }
+  }
+
+  return bestBrand;
 }
 
 function extractProduct(text: string): string | null {

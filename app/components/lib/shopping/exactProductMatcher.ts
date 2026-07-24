@@ -3,6 +3,7 @@ import {
   type ProductType,
 } from "../matching/productTypeClassifier";
 
+
 export interface ProductFingerprint {
   brand: string | null;
   family: string | null;
@@ -306,15 +307,117 @@ const CELLULAR_TERMS = [
   "wi-fi cellular",
 ];
 
+function extractModelRevision(
+  text: string
+): string | null {
+  const normalised = text
+    .toLowerCase()
+    .replace(/[_/()-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const revisionPatterns: RegExp[] = [
+    /\b(?:mk|mark)\s*(\d+)\b/i,
+    /\b(?:v|ver|version)\s*(\d+)\b/i,
+    /\bgen(?:eration)?\s*(\d+)\b/i,
+    /\b(iii|ii|iv|vi|v)\b/i,
+  ];
+
+  for (const pattern of revisionPatterns) {
+    const match = normalised.match(pattern);
+
+    if (match) {
+      return match[1].toLowerCase();
+    }
+  }
+
+  return null;
+}
+
 export function compareExactProductVariant(
   originalText: string,
   candidateText: string
 ): ProductMatchResult {
-  const original =
-    createProductFingerprint(originalText);
 
-  const candidate =
-    createProductFingerprint(candidateText);
+  const original =
+  createProductFingerprint(originalText);
+
+const candidate =
+  createProductFingerprint(candidateText);
+
+const originalRevision =
+  extractModelRevision(originalText);
+
+const candidateRevision =
+  extractModelRevision(candidateText);
+
+  const accessoryReason =
+    detectAccessoryListing(candidateText);
+
+  if (accessoryReason) {
+    console.log(
+      `🚫 Hard rejected: ${candidateText} — ${accessoryReason}`
+    );
+
+    return {
+      accepted: false,
+      confidence: 0,
+      reasons: [accessoryReason],
+      original,
+      candidate,
+    };
+  }
+
+  console.log("🟢 ORIGINAL FP");
+  console.dir(original, { depth: null });
+
+  console.log("🔵 CANDIDATE FP");
+  console.dir(candidate, { depth: null });
+
+  if (
+  originalRevision &&
+  candidateRevision !== originalRevision
+) {
+  console.log(
+    `🚫 Revision rejected: ${candidateText} — expected ${originalRevision}, found ${
+      candidateRevision ?? "none"
+    }`
+  );
+
+  return {
+    accepted: false,
+    confidence: 0,
+    reasons: [
+      `model revision mismatch: expected "${originalRevision}", found "${
+        candidateRevision ?? "none"
+      }"`,
+    ],
+    original,
+    candidate,
+  };
+}
+
+  const exactModelMatch =
+    original.modelNumbers.some(
+      (modelNumber) =>
+        modelNumber.length >= 4 &&
+        candidate.modelNumbers.includes(
+          modelNumber
+        )
+    );
+    
+
+  if (exactModelMatch) {
+    return {
+      accepted: true,
+      confidence: 100,
+      reasons: [
+        "exact manufacturer model number match",
+      ],
+      original,
+      candidate,
+    };
+  }
 
   const reasons: string[] = [];
   let earnedScore = 0;
@@ -426,25 +529,26 @@ if (
     5
   );
 
-  if (original.modelNumbers.length > 0) {
-    possibleScore += 30;
+ if (original.modelNumbers.length > 0) {
+  possibleScore += 30;
 
-    const hasMatchingModelNumber =
-      original.modelNumbers.some(
-        (modelNumber) =>
-          candidate.modelNumbers.includes(
-            modelNumber
-          )
-      );
+  const hasMatchingModelNumber =
+    original.modelNumbers.some(
+      (modelNumber) =>
+        modelNumber.length >= 4 &&
+        candidate.modelNumbers.includes(
+          modelNumber
+        )
+    );
 
-    if (!hasMatchingModelNumber) {
-      reject(
-        "manufacturer model number does not match"
-      );
-    } else {
-      earnedScore += 30;
-    }
+  if (!hasMatchingModelNumber) {
+    reject(
+      "manufacturer model number does not match"
+    );
+  } else {
+    earnedScore += 30;
   }
+}
 
   if (
     original.condition === "new" &&
@@ -512,6 +616,63 @@ if (
     original,
     candidate,
   };
+  
+}
+function detectAccessoryListing(
+  title: string
+): string | null {
+  const normalisedTitle = title
+    .toLowerCase()
+    .replace(/[_/()-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const accessoryPatterns: Array<{
+    pattern: RegExp;
+    reason: string;
+  }> = [
+    {
+      pattern:
+        /\b(?:ssd|solid state drive)\s+(?:upgrade|replacement|kit)\b/i,
+      reason: "SSD upgrade listing",
+    },
+    {
+      pattern:
+        /\b(?:ram|memory)\s+(?:upgrade|module|kit|replacement)\b/i,
+      reason: "memory upgrade listing",
+    },
+    {
+      pattern:
+        /\b(?:upgrade|replacement)\s+(?:ram|memory|ssd|storage)\b/i,
+      reason: "component upgrade listing",
+    },
+    {
+      pattern:
+        /\b(?:cpu|processor)\s+cooler\s+bundle\b/i,
+      reason: "CPU cooler bundle",
+    },
+    {
+      pattern:
+        /\b(?:motherboard|mainboard)\s+(?:ram|memory|ssd|storage)\s+upgrade\b/i,
+      reason: "motherboard accessory listing",
+    },
+    {
+      pattern:
+        /\b(?:compatible|replacement)\s+(?:battery|charger|adapter|cable|fan|heatsink)\b/i,
+      reason: "compatible accessory listing",
+    },
+    {
+      pattern:
+        /\b(?:case|cover|screen protector)\s+(?:for|compatible with)\b/i,
+      reason: "protective accessory listing",
+    },
+  ];
+
+  const match = accessoryPatterns.find(({ pattern }) =>
+    pattern.test(normalisedTitle)
+  );
+
+  return match?.reason ?? null;
 }
 
 function extractBundleType(
@@ -567,11 +728,20 @@ return {
 function extractBrand(
   value: string
 ): string | null {
-  return (
-    KNOWN_BRANDS.find((brand) =>
-      containsWholePhrase(value, brand)
-    ) ?? null
-  );
+
+  let bestBrand: string | null = null;
+  let earliestIndex = Number.MAX_SAFE_INTEGER;
+
+  for (const brand of KNOWN_BRANDS) {
+    const index = value.indexOf(brand);
+
+    if (index !== -1 && index < earliestIndex) {
+      earliestIndex = index;
+      bestBrand = brand;
+    }
+  }
+
+  return bestBrand;
 }
 
 function extractFamily(

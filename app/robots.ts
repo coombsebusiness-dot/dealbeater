@@ -1,4 +1,6 @@
-import { MetadataRoute } from "next";
+import type { MetadataRoute } from "next";
+
+const baseUrl = "https://dealbeater.co.uk";
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -6,8 +8,13 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
+        disallow: [
+          "/api/",
+          "/admin/",
+        ],
       },
     ],
-    sitemap: "https://dealbeater.co.uk/sitemap.xml",
+    sitemap: `${baseUrl}/sitemap.xml`,
+    host: baseUrl,
   };
 }

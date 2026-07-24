@@ -8,6 +8,13 @@ import { searchAmazon } from "../scrapers/amazon";
 import {
   compareExactProductVariant,
 } from "@/app/components/lib/shopping/exactProductMatcher";
+import {
+  extractProductFromUrl,
+  isProductUrl,
+} from "@/app/components/lib/extractor/extractProduct";
+import {
+  getEbayItemByLegacyId,
+} from "@/app/components/lib/ebay/browse";
 
 export interface PriceOffer {
   retailer: string;
@@ -66,22 +73,127 @@ export interface PriceData {
     | "UNKNOWN";
 }
 
+function extractEbayLegacyItemId(
+  url: string
+): string | null {
+  const match = url.match(
+    /ebay\.(?:co\.uk|com)\/itm\/(?:[^/?]+\/)?(\d{9,15})/i
+  );
+
+  return match?.[1] ?? null;
+}
+
+async function resolveOfferUrl(
+  offerUrl: string
+): Promise<string> {
+  const ebayItemId =
+    extractEbayLegacyItemId(offerUrl);
+
+  if (!ebayItemId) {
+  return addAmazonAffiliateTag(offerUrl) ?? offerUrl;
+  }
+
+  try {
+    const ebayItem =
+      await getEbayItemByLegacyId(
+        ebayItemId
+      );
+
+   console.log("🟢 EBAY URL RESOLVED:", {
+  ebayItemId,
+  originalUrl: offerUrl,
+  resolvedUrl:
+    ebayItem?.itemUrl ?? offerUrl,
+});
+
+return ebayItem?.itemUrl ?? offerUrl;
+  } catch (error) {
+    console.error(
+      "🔴 Failed to resolve eBay affiliate URL:",
+      error
+    );
+
+    return offerUrl;
+  }
+}
+
 export async function priceAgent(
   product: ProductData
 ): Promise<PriceData> {
   console.log(`Checking live prices for ${product.name}`);
 
- const [googleOffers, amazon, ebayOffers] =
+let productSearchQuery = product.name;
+
+if (isProductUrl(product.name)) {
+  try {
+    const extractedProduct =
+      await extractProductFromUrl(product.name);
+
+      const exactReferenceText = [
+  product.searchQuery,
+  product.model,
+  product.mpn,
+  product.description,
+]
+  .filter(Boolean)
+  .join(" ");
+
+    console.log("🧠 EXTRACTED PRODUCT:", {
+      title: extractedProduct.title,
+      brand: extractedProduct.brand,
+      model: extractedProduct.model,
+      searchQuery: extractedProduct.searchQuery,
+      confidence: extractedProduct.confidence,
+    });
+
+    if (
+      !extractedProduct.searchQuery ||
+      extractedProduct.confidence < 60
+    ) {
+      throw new Error(
+        "Product identification confidence was too low."
+      );
+    }
+
+    productSearchQuery =
+      extractedProduct.searchQuery;
+  } catch (error) {
+    console.error(
+      "❌ Product URL extraction failed:",
+      error
+    );
+
+    throw new Error(
+      "We could not confidently identify the product from that link. Please enter the exact product name instead."
+    );
+  }
+}
+
+console.log(
+  "🔎 FINAL PRODUCT SEARCH QUERY:",
+  productSearchQuery
+);
+
+const lookupQuery =
+  product.searchQuery ||
+  [
+    product.brand,
+    product.name,
+    product.model,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+console.log(
+  "🎯 EXACT PRODUCT LOOKUP QUERY:",
+  lookupQuery
+);
+
+const [googleOffers, amazon, ebayOffers] =
   await Promise.all([
-    searchGoogleShopping(product.name),
-
-    searchAmazon(product.name, {
-      limit: 1,
-    }).catch(() => ({
-      products: [],
-    })),
-
-    searchEbay(product.name, 10).catch(() => []),
+    searchGoogleShopping(lookupQuery),
+    searchAmazon(lookupQuery),
+    searchEbay(lookupQuery),
   ]);
 
 const offers = [...googleOffers];
@@ -151,13 +263,25 @@ const allOffers = [
 ];
 const verifiedOffers = allOffers.filter(
   (offer) => {
-    const match =
-      compareExactProductVariant(
-        product.name,
-        offer.title
-      );
+   const referenceProduct = [
+  product.searchQuery,
+  product.model,
+  product.mpn,
+  product.description,
+]
+  .filter(Boolean)
+  .join(" ");
+
+const match =
+  compareExactProductVariant(
+    referenceProduct,
+    offer.title
+  );
+
+console.log("🎯 VARIANT REFERENCE:");
+console.log(referenceProduct);
 console.log("================================");
-console.log("QUERY:", product.name);
+console.log("QUERY:", referenceProduct);
 console.log("TITLE:", offer.title);
 console.log("ACCEPTED:", match.accepted);
 console.log("CONFIDENCE:", match.confidence);
@@ -182,38 +306,8 @@ console.log("================================");
   }
 );
 
-  const topOffers = verifiedOffers
-  .filter(
-    (offer) =>
-      Number.isFinite(offer.price) &&
-      offer.price > 0
-  )
-  .sort((a, b) => a.price - b.price)
-.filter(
-  (offer, index, offers) =>
-    index ===
-    offers.findIndex(
-      (candidate) =>
-        candidate.retailer.trim().toLowerCase() ===
-        offer.retailer.trim().toLowerCase()
-    )
-)
-  .slice(0, 3)
-  .map((offer) => ({
-  retailer: offer.retailer,
-  title: offer.title,
-  price: offer.price,
-
-  url: addAmazonAffiliateTag(
-    offer.link
-  ),
-
-  image:
-    offer.thumbnail ?? undefined,
-}));
-
- const cheapestOffer =
- verifiedOffers.length > 0
+const cheapestOffer =
+  verifiedOffers.length > 0
     ? verifiedOffers.reduce((lowest, offer) =>
         offer.price < lowest.price
           ? offer
@@ -221,7 +315,44 @@ console.log("================================");
       )
     : null;
 
- 
+const topOffers = await Promise.all(
+  verifiedOffers
+    .filter(
+      (offer) =>
+        Number.isFinite(offer.price) &&
+        offer.price > 0 &&
+        Boolean(offer.link)
+    )
+    .sort((a, b) => a.price - b.price)
+    .filter(
+      (offer, index, offers) =>
+        index ===
+        offers.findIndex(
+          (candidate) =>
+            candidate.retailer
+              .trim()
+              .toLowerCase() ===
+            offer.retailer
+              .trim()
+              .toLowerCase()
+        )
+    )
+    .slice(0, 3)
+    .map(async (offer) => ({
+      retailer: offer.retailer,
+      title: offer.title,
+      price: offer.price,
+
+      url: offer.link
+        ? await resolveOfferUrl(offer.link)
+        : undefined,
+
+      image:
+        offer.thumbnail ?? undefined,
+    }))
+);
+
+
 const imageOffer =
   verifiedOffers.find((offer) => offer.thumbnail) ??
   cheapestOffer;
@@ -406,9 +537,11 @@ else {
 
 
 bestRetailerUrl:
-  addAmazonAffiliateTag(
-    cheapestOffer?.link
-  ),
+  cheapestOffer?.link
+    ? await resolveOfferUrl(
+        cheapestOffer.link
+      )
+    : undefined,
 
 productImage:
   imageOffer?.thumbnail ?? undefined,

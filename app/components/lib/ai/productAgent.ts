@@ -1,6 +1,8 @@
 import { scrapeCurrys } from "../scrapers/currys";
 import type { ProductInfo } from "../scrapers/types";
-import { searchAmazon } from "../scrapers/amazon";
+import { searchAmazon } from "../scrapers/amazon";import {
+  extractProductFromUrl,
+} from "@/app/components/lib/extractor/extractProduct";
 
 export type ProductData = ProductInfo & {
   confidence: number;
@@ -14,6 +16,14 @@ export type ProductData = ProductInfo & {
 
   ctaUrl?: string;
   ctaLabel?: string;
+
+    brand?: string;
+  model?: string;
+
+  searchQuery?: string;
+mpn?: string;
+sku?: string;
+description?: string;
 };
 
 export async function productAgent(
@@ -186,13 +196,84 @@ return {
   }
 
   console.log(
-    "🔄 Non-Currys URL. Using URL parser."
+  "🔄 Non-Currys URL. Using product extractor."
+);
+
+try {
+  const extracted = await extractProductFromUrl(
+    url.toString()
   );
 
+  console.log("🧠 EXTRACTED PRODUCT:", extracted);
+
+  return {
+  name:
+    extracted.title ||
+    extracted.searchQuery ||
+    "Product awaiting identification",
+
+  brand:
+    extracted.brand ??
+    "Not identified",
+
+  model:
+    extracted.model ??
+    extracted.mpn ??
+    extracted.sku ??
+    "Not identified",
+
+  category: identifyCategory(
+    extracted.searchQuery ||
+    extracted.title ||
+    ""
+  ),
+
+  price: extracted.price,
+
+  specs: {},
+
+  confidence: extracted.confidence,
+
+  retailer:
+    identifyRetailer(hostname) ??
+    extracted.hostname,
+
+  colour: extractColour(
+    extracted.searchQuery ||
+    extracted.title ||
+    ""
+  ),
+
+  variant: extractVariant(
+    extracted.searchQuery ||
+    extracted.title ||
+    ""
+  ),
+
+  imageUrl:
+    extracted.image ?? undefined,
+
+  ctaUrl: extracted.sourceUrl,
+
+  ctaLabel: "View Product",
+
+  searchQuery: extracted.searchQuery,
+mpn: extracted.mpn ?? undefined,
+sku: extracted.sku ?? undefined,
+description: extracted.description ?? undefined,
+};
+} catch (error) {
+  console.warn(
+    "⚠️ Product extraction failed. Falling back to URL parser."
+  );
+
+  console.error(error);
+
   return productFromUrl(
-  url,
-  identifyRetailer(hostname)
-);
+    url,
+    identifyRetailer(hostname)
+  );
+
 }
 
 function productFromUrl(
@@ -514,4 +595,5 @@ function extractVariant(
   }
 
   return undefined;
+}
 }

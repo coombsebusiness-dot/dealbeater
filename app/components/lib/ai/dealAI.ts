@@ -345,6 +345,23 @@ const cheapestOffer =
           first.price - second.price
       )[0]
     : undefined;
+
+console.log(
+  "🔵 PRODUCT CTA URL:",
+  report.product.ctaUrl
+);
+
+console.log(
+  "🟠 CHEAPEST OFFER URL:",
+  cheapestOffer?.url
+);
+
+console.log(
+  "🟢 FINAL RETAILER URL:",
+  cheapestOffer?.url ||
+    report.product.ctaUrl
+);
+    
  return {
   productName:
     report.product.name ||
