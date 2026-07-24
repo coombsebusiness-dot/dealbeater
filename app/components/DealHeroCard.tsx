@@ -230,7 +230,7 @@ return (
 <div className="mt-4 space-y-2 text-sm text-white/80">
   <div>💚 Price checked today</div>
   <div>💚 Trusted retailer</div>
-  <div>💚 AI verified by Deal Beater</div>
+  <div>💚 AI verified by Blinlx</div>
 </div>
           </div>
 

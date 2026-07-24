@@ -8,10 +8,10 @@ const nextConfig: NextConfig = {
         has: [
           {
             type: "host",
-            value: "www.dealbeater.co.uk",
+            value: "www.blinlx.com",
           },
         ],
-        destination: "https://dealbeater.co.uk/:path*",
+        destination: "https://blinlx.com/:path*",
         permanent: true,
       },
     ];

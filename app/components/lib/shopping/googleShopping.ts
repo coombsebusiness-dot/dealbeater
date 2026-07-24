@@ -7,11 +7,18 @@ export interface ShoppingOffer {
   title: string;
   retailer: string;
   price: number;
-  link: string | null;
+
+  imageUrl: string | null;
+
+  googleProductUrl: string | null;
+  retailerUrl: string | null;
+  affiliateUrl: string | null;
+  finalUrl: string | null;
+
   rating: number | null;
   reviewCount: number | null;
   delivery: string | null;
-  thumbnail: string | null;
+
   immersiveToken: string | null;
   description?: string | null;
 }
@@ -290,30 +297,49 @@ console.log("================================");
 console.log("TITLE:", result.title);
 console.log("PRODUCT LINK:", result.product_link);
 console.log("LINK:", result.link);
-     return {
+    const googleProductUrl =
+  result.product_link ??
+  result.link ??
+  null;
+
+return {
   title,
+
   retailer:
     result.source?.trim() ||
     "Unknown retailer",
+
   price,
-  link:
-    result.product_link ??
-    result.link ??
+
+  imageUrl:
+    result.thumbnail?.trim() ||
     null,
+
+  googleProductUrl,
+
+  retailerUrl: null,
+  affiliateUrl: null,
+
+  // Temporary fallback until retailer enrichment succeeds.
+  finalUrl: googleProductUrl,
+
   rating:
     typeof result.rating === "number"
       ? result.rating
       : null,
+
   reviewCount:
     typeof result.reviews === "number"
       ? result.reviews
       : null,
+
   delivery:
-    result.delivery?.trim() || null,
-  thumbnail:
-    result.thumbnail?.trim() || null,
+    result.delivery?.trim() ||
+    null,
+
   immersiveToken:
-    result.immersive_product_page_token ?? null,
+    result.immersive_product_page_token ??
+    null,
 };
     })
     .filter(
@@ -358,8 +384,15 @@ const enrichedResults = await Promise.all(
 
     const ebayOffer = await enrichEbayAffiliateLink(directOffer);
 
-    console.log("🟠 BEFORE:", directOffer.link);
-    console.log("🟢 AFTER :", ebayOffer.link);
+   console.log(
+  "🟠 BEFORE:",
+  directOffer.finalUrl
+);
+
+console.log(
+  "🟢 AFTER :",
+  ebayOffer.finalUrl
+);
 
     return ebayOffer;
   })
@@ -374,31 +407,7 @@ const remainingOffers = sortedOffers.slice(5);
 return [...enrichedOffers, ...remainingOffers].sort(
   (a, b) => a.price - b.price
 );
-async function applyAffiliateLink(
-    
-  offer: ShoppingOffer
-): Promise<ShoppingOffer> {
-  if (!offer.link) {
-    console.warn(
-      "⚠️ Cannot create affiliate link because offer has no link:",
-      offer.title
-    );
-console.log("🚨🚨🚨 APPLY AFFILIATE LINK CALLED 🚨🚨🚨");
-    return offer;
-  }
 
-  const originalUrl = offer.link;
-
- console.log("🔗 Applying affiliate link to:", {
-  retailer: offer.retailer,
-  originalUrl,
-});
-
-return await applyAffiliateLink({
-  ...offer,
-  link: originalUrl,
-});
-  };
 }
 
 async function enrichOfferWithDirectLink(
@@ -538,27 +547,38 @@ console.log("➡️ About to apply affiliate link");
       `🔗 Direct retailer link found: ${selectedStore.name} — ${directRetailerUrl}`
     );
 
-    const directOffer: ShoppingOffer = {
+const directOffer: ShoppingOffer = {
   ...offer,
+
   title:
     selectedStore.title?.trim() ||
     offer.title,
+
   retailer:
     selectedStore.name?.trim() ||
     offer.retailer,
+
   price:
     typeof selectedStore.extracted_price === "number"
       ? selectedStore.extracted_price
       : offer.price,
-  link: directRetailerUrl,
+
+  retailerUrl: directRetailerUrl,
+
+  // Use the retailer URL unless the affiliate engine
+  // successfully replaces it below.
+  finalUrl: directRetailerUrl,
+
   rating:
     typeof selectedStore.rating === "number"
       ? selectedStore.rating
       : offer.rating,
+
   reviewCount:
     typeof selectedStore.reviews === "number"
       ? selectedStore.reviews
       : offer.reviewCount,
+
   delivery:
     selectedStore.shipping?.trim() ||
     offer.delivery,
@@ -566,7 +586,7 @@ console.log("➡️ About to apply affiliate link");
 
     const affiliateResult = await getAffiliateLink(
       directRetailerUrl,
-      "dealbeater-shopping"
+      "blinlx-shopping"
     );
 
     console.log("🔗 AFFILIATE ENGINE RESULT:", {
@@ -577,13 +597,20 @@ console.log("➡️ About to apply affiliate link");
       affiliateUrl: affiliateResult.affiliateUrl,
     });
 
-   return {
+  const affiliateUrl =
+  affiliateResult.success &&
+  affiliateResult.affiliateUrl
+    ? affiliateResult.affiliateUrl
+    : null;
+
+return {
   ...directOffer,
-  link:
-    affiliateResult.success &&
-    affiliateResult.affiliateUrl
-      ? affiliateResult.affiliateUrl
-      : directRetailerUrl,
+
+  affiliateUrl,
+
+  finalUrl:
+    affiliateUrl ??
+    directRetailerUrl,
 };
   } catch (error) {
     console.error(
@@ -1057,14 +1084,33 @@ function extractPrice(
     ? parsedPrice
     : null;
 }
-function isEbayOffer(offer: ShoppingOffer): boolean {
-  const retailer = offer.retailer?.toLowerCase() ?? "";
-  const link = offer.link?.toLowerCase() ?? "";
+function isEbayOffer(
+  offer: ShoppingOffer
+): boolean {
+  const retailer =
+    offer.retailer.toLowerCase();
+
+  const possibleUrls = [
+    offer.finalUrl,
+    offer.affiliateUrl,
+    offer.retailerUrl,
+    offer.googleProductUrl,
+  ]
+    .filter(
+      (value): value is string =>
+        typeof value === "string"
+    )
+    .map((value) =>
+      value.toLowerCase()
+    );
 
   return (
     retailer.includes("ebay") ||
-    link.includes("ebay.co.uk") ||
-    link.includes("ebay.com")
+    possibleUrls.some(
+      (url) =>
+        url.includes("ebay.co.uk") ||
+        url.includes("ebay.com")
+    )
   );
 }
 async function enrichEbayAffiliateLink(
@@ -1073,7 +1119,7 @@ async function enrichEbayAffiliateLink(
   console.log("🟣 EBAY ENRICHMENT CALLED:", {
     title: offer.title,
     retailer: offer.retailer,
-    link: offer.link,
+    finalUrl: offer.finalUrl,
   });
 
   const recognisedAsEbay = isEbayOffer(offer);
@@ -1114,10 +1160,15 @@ async function enrichEbayAffiliateLink(
       result.affiliateUrl
     );
 
-    return {
-      ...offer,
-      link: result.affiliateUrl,
-    };
+   return {
+  ...offer,
+
+  affiliateUrl:
+    result.affiliateUrl,
+
+  finalUrl:
+    result.affiliateUrl,
+};
   } catch (error) {
     console.error(
       "Failed to generate eBay affiliate link:",

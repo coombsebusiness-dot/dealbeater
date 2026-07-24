@@ -16,6 +16,8 @@ export default function DealVerdictCard({
   ctaUrl,
   ctaLabel,
 }: Props) {
+
+    
   const safeScore = Math.max(0, Math.min(100, score));
   const safeConfidence = Math.max(0, Math.min(100, confidence));
 
@@ -23,7 +25,7 @@ export default function DealVerdictCard({
     <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-6 shadow-xl sm:p-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="font-semibold text-emerald-400">
-          💚 Deal Beater Report
+          💚 Blinlx Report
         </p>
 
         <span className="rounded-full border border-zinc-700 bg-zinc-800 px-3 py-1 text-xs font-medium text-zinc-300">

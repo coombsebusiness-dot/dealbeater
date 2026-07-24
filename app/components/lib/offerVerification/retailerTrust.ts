@@ -235,7 +235,7 @@ export function evaluateRetailerTrust(
       isMarketplace: false,
       requiresSellerVerification: true,
       reasons: [
-        "Retailer is not yet in the Deal Beater trust directory",
+        "Retailer is not yet in the Blinlx trust directory",
         "Warranty and returns have not been verified",
         "Manual or live verification is required",
       ],

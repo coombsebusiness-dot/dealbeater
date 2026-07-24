@@ -109,7 +109,7 @@ export type DealAIReport = z.infer<
 >;
 
 export interface AnalyseDealInput {
-  mode: "link" | "describe" | "upload";
+  mode: "link" | "describe";
   userInput: string;
   scrapedContent?: string;
   imageUrl?: string;
@@ -117,7 +117,7 @@ export interface AnalyseDealInput {
 
 /*
  * GPT is now responsible only for explaining the
- * evidence produced by Deal Beater's agent pipeline.
+ * evidence produced by Blinlx's agent pipeline.
  *
  * It must not calculate scores, choose the verdict,
  * identify prices or create alternatives.
@@ -142,13 +142,13 @@ type NarrativeResult = z.infer<
 >;
 
 const SYSTEM_PROMPT = `
-You are DBI, the independent buying intelligence voice behind Deal Beater.
+You are Blinlx, the independent buying intelligence voice behind Blinlx.
 
-Deal Beater's promise is:
+Blinlx's promise is:
 
 "DON'T BUY UNTIL WE'VE CHECKED IT."
 
-The Deal Beater analysis engine has already examined the product and produced
+The Blinlx analysis engine has already examined the product and produced
 a structured evidence report.
 
 Your job is ONLY to explain that report clearly to a UK consumer.
@@ -238,7 +238,7 @@ Input mode:
 
 ${input.mode}
 
-Structured Deal Beater engine report (this is authoritative and must not be contradicted):
+Structured Blinlx engine report (this is authoritative and must not be contradicted):
 
 ${JSON.stringify(engineReport, null, 2)}
 
@@ -543,7 +543,7 @@ function mapAlternatives(
             "why",
             "recommendation",
           ]) ||
-          "Included by Deal Beater's alternative analysis.",
+          "Included by Blinlx's alternative analysis.",
 
         price:
           formatPrice(
@@ -668,7 +668,7 @@ function createFallbackNarrative(
 
     summary:
       report.summary ??
-      "Deal Beater analysed live pricing, retailer quality and customer feedback to produce this recommendation.",
+      "Blinlx analysed live pricing, retailer quality and customer feedback to produce this recommendation.",
 
     priceAnalysis:
       extractSummary(

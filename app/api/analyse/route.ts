@@ -17,7 +17,7 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 interface AnalyseRequestBody {
-  mode?: "link" | "describe" | "upload";
+  mode?: "link" | "describe";
   input?: string;
   userInput?: string;
   scrapedContent?: string;
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     const mode = body.mode ?? "describe";
     const userInput = body.userInput ?? body.input ?? "";
 
-    if (!["link", "describe", "upload"].includes(mode)) {
+    if (!["link", "describe"].includes(mode)) {
       return NextResponse.json(
         {
           success: false,

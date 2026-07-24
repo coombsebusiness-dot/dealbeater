@@ -58,5 +58,6 @@ export async function analyseDeal(
     retailers,
     alternatives,
     decision,
+    
   });
 }

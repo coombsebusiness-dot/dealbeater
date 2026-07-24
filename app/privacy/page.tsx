@@ -4,14 +4,14 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Privacy Policy",
   description:
-    "Read the Deal Beater Privacy Policy to understand what personal information we collect, why we use it and your UK data protection rights.",
+    "Read the Blinlx Privacy Policy to understand what personal information we collect, why we use it and your UK data protection rights.",
   alternates: {
     canonical: "/privacy",
   },
   openGraph: {
-    title: "Privacy Policy | Deal Beater",
+    title: "Privacy Policy | Blinlx",
     description:
-      "Learn how Deal Beater collects, uses and protects personal information.",
+      "Learn how Blinlx collects, uses and protects personal information.",
     url: "/privacy",
     type: "website",
   },
@@ -26,9 +26,9 @@ export default function PrivacyPage() {
     <main className="min-h-screen bg-[#101b26] text-white">
       <header className="border-b border-white/10">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 lg:px-10">
-          <Link href="/" aria-label="Deal Beater homepage">
+          <Link href="/" aria-label="Blinlx homepage">
             <div className="text-3xl font-extrabold tracking-tight">
-              Deal<span className="text-[#2ee866]">Beater</span>
+              Blin<span className="text-[#2ee866]">lx</span>
             </div>
 
             <p className="mt-1 text-[10px] font-semibold tracking-[0.16em] text-white/65">
@@ -95,7 +95,7 @@ export default function PrivacyPage() {
           </h1>
 
           <p className="mx-auto mt-7 max-w-3xl text-lg leading-8 text-white/68">
-            This policy explains how Deal Beater collects, uses, stores and
+            This policy explains how Blinlx collects, uses, stores and
             protects personal information when you use our website or contact
             us.
           </p>
@@ -145,7 +145,7 @@ export default function PrivacyPage() {
           <article className="min-w-0 rounded-3xl border border-white/10 bg-white/[0.025] px-6 py-10 sm:px-10 lg:px-14">
             <PolicySection id="who-we-are" title="1. Who we are">
               <p>
-                Deal Beater is a UK product and price-comparison service
+                Blinlx is a UK product and price-comparison service
                 operated by{" "}
                 <strong className="text-white">Frame Tech UK Ltd</strong>.
               </p>
@@ -153,12 +153,12 @@ export default function PrivacyPage() {
               <p>
                 For the purposes of UK data protection law, Frame Tech UK Ltd
                 is the controller of personal information processed through
-                Deal Beater unless stated otherwise.
+                Blinlx unless stated otherwise.
               </p>
 
               <p>
                 You can contact us at{" "}
-                <EmailLink>hello@dealbeater.co.uk</EmailLink>.
+                <EmailLink>help@blinlx.com</EmailLink>.
               </p>
             </PolicySection>
 
@@ -168,7 +168,7 @@ export default function PrivacyPage() {
             >
               <p>
                 The information we collect depends on how you interact with
-                Deal Beater. It may include:
+                Blinlx. It may include:
               </p>
 
               <PolicyList
@@ -176,7 +176,6 @@ export default function PrivacyPage() {
                   "Contact information, such as your name and email address, when you contact us.",
                   "The contents of messages, feedback, support requests and other correspondence you send to us.",
                   "Product names, descriptions, links, search terms and other information entered into the Deal Checker.",
-                  "Information contained in a quote, document or image you choose to upload for analysis.",
                   "Technical information such as browser type, device type, operating system, approximate location derived from an IP address, referring page and access times.",
                   "Usage information about how visitors navigate and interact with the website.",
                   "Affiliate and referral information, such as whether a visitor followed a retailer link.",
@@ -184,11 +183,7 @@ export default function PrivacyPage() {
                 ]}
               />
 
-              <Notice>
-                Please remove unnecessary personal or sensitive information
-                before uploading a quote or document. Do not submit information
-                about another person unless you have the right to do so.
-              </Notice>
+             
             </PolicySection>
 
             <PolicySection
@@ -199,12 +194,12 @@ export default function PrivacyPage() {
 
               <PolicyList
                 items={[
-                  "Provide, operate and improve Deal Beater.",
+                  "Provide, operate and improve Blinlx.",
                   "Analyse a product, link, description or quote submitted through the Deal Checker.",
                   "Identify relevant products and compare matching retailer offers.",
                   "Respond to enquiries, support requests and feedback.",
                   "Investigate incorrect results, misuse, security incidents and technical problems.",
-                  "Measure website performance and understand how visitors use Deal Beater.",
+                  "Measure website performance and understand how visitors use Blinlx.",
                   "Maintain records required for legal, accounting or business purposes.",
                   "Protect our rights, users, systems and services.",
                   "Comply with legal and regulatory obligations.",
@@ -229,7 +224,7 @@ export default function PrivacyPage() {
               <PolicyList
                 items={[
                   "Contract: where processing is necessary to provide a service you request.",
-                  "Legitimate interests: where processing is necessary to operate, secure, understand and improve Deal Beater, provided those interests are not overridden by your rights.",
+                  "Legitimate interests: where processing is necessary to operate, secure, understand and improve Blinlx, provided those interests are not overridden by your rights.",
                   "Consent: where you have made a clear choice, including for optional analytics or marketing cookies where consent is required.",
                   "Legal obligation: where processing is necessary to comply with a law or regulatory requirement.",
                 ]}
@@ -248,7 +243,7 @@ export default function PrivacyPage() {
             >
               <p>
                 We may share limited information with organisations that help
-                us operate Deal Beater, including:
+                us operate Blinlx, including:
               </p>
 
               <PolicyList
@@ -301,8 +296,8 @@ export default function PrivacyPage() {
               title="7. Affiliate links and retailer websites"
             >
               <p>
-                Some retailer links on Deal Beater are affiliate links. If you
-                follow one of these links and make a purchase, Deal Beater may
+                Some retailer links on Blinlx are affiliate links. If you
+                follow one of these links and make a purchase, Blinlx may
                 receive a commission from the retailer or affiliate network.
                 This does not normally increase the price you pay.
               </p>
@@ -325,7 +320,7 @@ export default function PrivacyPage() {
             <PolicySection id="cookies" title="8. Cookies">
               <p>
                 Cookies and similar technologies are small pieces of
-                information stored on or accessed from your device. Deal Beater
+                information stored on or accessed from your device. Blinlx
                 may use:
               </p>
 
@@ -333,7 +328,7 @@ export default function PrivacyPage() {
                 items={[
                   "Strictly necessary technologies required for security, core website functions and remembering privacy choices.",
                   "Analytics technologies used to measure traffic and understand website performance.",
-                  "Affiliate technologies used to record that a visitor reached a retailer through Deal Beater.",
+                  "Affiliate technologies used to record that a visitor reached a retailer through Blinlx.",
                 ]}
               />
 
@@ -433,7 +428,7 @@ export default function PrivacyPage() {
 
               <p>
                 To exercise a right, email{" "}
-                <EmailLink>hello@dealbeater.co.uk</EmailLink>.
+                <EmailLink>help@blinlx.com</EmailLink>.
               </p>
             </PolicySection>
 
@@ -442,7 +437,7 @@ export default function PrivacyPage() {
               title="13. Children’s information"
             >
               <p>
-                Deal Beater is not intended to collect personal information
+                Blinlx is not intended to collect personal information
                 from children. If you believe a child has submitted personal
                 information to us, contact us so we can investigate and take
                 appropriate action.
@@ -454,7 +449,7 @@ export default function PrivacyPage() {
               title="14. Links to other websites"
             >
               <p>
-                Deal Beater contains links to retailers and other third-party
+                Blinlx contains links to retailers and other third-party
                 websites. We are not responsible for how those organisations
                 collect or use personal information. You should read the
                 destination website’s privacy information before providing it
@@ -500,7 +495,7 @@ export default function PrivacyPage() {
 
             <PolicySection id="contact" title="17. Contact us" last>
               <div className="rounded-2xl border border-[#2ee866]/20 bg-[#2ee866]/[0.06] p-6">
-                <p className="text-lg font-black text-white">Deal Beater</p>
+                <p className="text-lg font-black text-white">Blinlx</p>
 
                 <p className="mt-3">
                   Operated by{" "}
@@ -508,16 +503,16 @@ export default function PrivacyPage() {
                 </p>
 
                 <p className="mt-3">
-                  Email: <EmailLink>hello@dealbeater.co.uk</EmailLink>
+                  Email: <EmailLink>help@blinlx.com</EmailLink>
                 </p>
 
                 <p className="mt-3">
                   Website:{" "}
                   <a
-                    href="https://dealbeater.co.uk"
+                    href="https://blinlx.com"
                     className="font-semibold text-[#2ee866] transition hover:text-[#68f18e]"
                   >
-                    dealbeater.co.uk
+                    blinlx.com
                   </a>
                 </p>
               </div>
@@ -530,9 +525,9 @@ export default function PrivacyPage() {
         <div className="mx-auto max-w-7xl px-6 py-12 lg:px-10">
           <div className="grid gap-10 md:grid-cols-2">
             <div>
-              <Link href="/" aria-label="Deal Beater homepage">
+              <Link href="/" aria-label="Blinlx homepage">
                 <h2 className="text-2xl font-black">
-                  Deal<span className="text-[#2ee866]">Beater</span>
+                  Blin<span className="text-[#2ee866]">lx</span>
                 </h2>
               </Link>
 
@@ -590,7 +585,7 @@ export default function PrivacyPage() {
           <div className="my-10 h-px bg-white/10" />
 
           <div className="flex flex-col gap-3 text-sm text-white/45 md:flex-row md:items-center md:justify-between">
-            <p>© {currentYear} Deal Beater. All rights reserved.</p>
+            <p>© {currentYear} Blinlx. All rights reserved.</p>
 
             <p>
               Operated by{" "}
@@ -665,7 +660,7 @@ function PolicyLink({
 function EmailLink({ children }: { children: React.ReactNode }) {
   return (
     <a
-      href="mailto:hello@dealbeater.co.uk"
+      href="mailto:help@blinlx.com"
       className="font-semibold text-[#2ee866] transition hover:text-[#68f18e]"
     >
       {children}

@@ -1,15 +1,24 @@
 "use client";
 import DealHeroCard from "./DealHeroCard";
-import AnalysisExperience from "./AnalysisExperience";
+
 import { useRef } from "react";
 import {
-  ChangeEvent,
   FormEvent,
   useEffect,
   useState,
 } from "react";
+import BlinlxScoreCard from "@/app/components/BlinlxScoreCard";
+import AnalysisTimeline from "@/app/components/AnalysisTimeline";
+import VerdictBanner from "@/app/components/VerdictBanner";
+import AskBlinlxCard from "@/app/components/AskBlinlxCard";
+import PriceIntelligenceCard from "./PriceIntelligenceCard";
+import RetailerTrustCard from "./RetailerTrustCard";
+import { calculateRetailerTrust } from "@/app/components/lib/retailer/trust";
+import ReviewIntelligenceCard from "./ReviewIntelligenceCard";
+import { buildReviewIntelligence } from "@/app/components/lib/reviews/intelligence";
+import ProductIntelligenceCard from "./ProductIntelligenceCard";
+import { buildProductIntelligence } from "@/app/components/lib/products/intelligence";
 
-type InputMode = "link" | "describe" | "upload";
 type DealVerdict = "BUY" | "GOOD DEAL" | "CONSIDER" | "WAIT" | "AVOID";
 
 type BetterAlternative = {
@@ -30,6 +39,19 @@ type DealAIReport = {
   saving?: string;
   checkedAt?: string;
   ctaLabel?: string;
+  currentPrice?: number | null;
+fairPrice?: number | null;
+lowestPrice?: number | null;
+
+priceStatus?:
+  | "EXCELLENT"
+  | "GOOD"
+  | "FAIR"
+  | "HIGH"
+  | "UNKNOWN";
+
+priceRecommendation?: string;
+priceConfidence?: number;
 
   topOffers: {
     retailer: string;
@@ -67,10 +89,10 @@ type DealAIReport = {
   ifItWasOurMoney: string;
 };
 
-export default function DealChecker() {
-  const [mode, setMode] = useState<InputMode>("link");
+export default function ProductAnalyzer() {
+ 
   const [input, setInput] = useState("");
-  const [file, setFile] = useState<File | null>(null);
+ 
   const [isAnalysing, setIsAnalysing] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<DealAIReport | null>(null);
@@ -109,53 +131,33 @@ export default function DealChecker() {
 
   const resetChecker = () => {
     setInput("");
-    setFile(null);
     setError("");
     setResult(null);
     setAnimatedScore(0);
   };
 
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setFile(event.target.files?.[0] ?? null);
-    setError("");
-    setResult(null);
-  };
+  
 
-  const analyseDeal = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError("");
-    setResult(null);
+ const analyseDeal = async (event: FormEvent<HTMLFormElement>) => {
+  event.preventDefault();
+  setError("");
+  setResult(null);
 
-   
+ if (!input.trim()) {
+  setError("Tell Blinlx what you'd like help buying.");
+  return;
+}
 
-    if (mode !== "upload" && !input.trim()) {
-      setError(
-        mode === "link"
-          ? "Please paste a product or service link."
-          : "Please describe what you are thinking of buying."
-      );
-      return;
-    }
+  try {
+    setIsAnalysing(true);
 
-    if (mode === "upload" && !file) {
-      setError("Please choose a screenshot, image or PDF.");
-      return;
-    }
-
-    try {
-      setIsAnalysing(true);
-
-      const response = await fetch("/api/analyse", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          mode,
-          userInput:
-            mode === "upload"
-              ? file?.name || "Uploaded product image"
-              : input.trim(),
-        }),
-      });
+    const response = await fetch("/api/analyse", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+     body: JSON.stringify({
+  userInput: input.trim(),
+}),
+    });
 
       const data = (await response.json()) as {
         success?: boolean;
@@ -180,7 +182,31 @@ export default function DealChecker() {
     }
   };
 
-  const styles = result ? getVerdictStyles(result.verdict) : null;
+  
+  const trust = result
+  ? calculateRetailerTrust(result.retailerName)
+  : null;
+
+  const reviewIntelligence = result
+  ? buildReviewIntelligence({
+      analysis: result.reviewAnalysis,
+      reviewQuality: result.scoreBreakdown.reviewQuality,
+      positives: result.positives,
+      warnings: result.warnings,
+      confidence: result.confidence,
+    })
+  : null;
+
+  const productIntelligence = result
+  ? buildProductIntelligence({
+      productName: result.productName,
+      productQuality: result.scoreBreakdown.productQuality,
+      summary: result.summary,
+      positives: result.positives,
+      warnings: result.warnings,
+      confidence: result.confidence,
+    })
+  : null;
 
   const canBuy =
   result?.verdict === "BUY" ||
@@ -206,75 +232,43 @@ const verdictLabel =
     <div className="mx-auto w-full max-w-5xl rounded-[32px] border border-white/10 bg-[#2f3d4c] p-5 shadow-2xl shadow-black/25 sm:p-8 lg:p-10">
       <div className="text-center">
         <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#52ee7e]">
-          AI buying assistant
+          Powered by Blinlx AI
         </p>
         <h2 className="mt-2 text-2xl font-bold">
-          What are you thinking of buying?
+         What can Blinlx help you buy today?
         </h2>
         <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-white/65">
-          Paste a link, describe what you need or upload a quote. We&apos;ll
-          research the options and help you make the smartest decision.
+          Paste any product link or simply ask a shopping question.
+Blinlx AI will analyse it and help you make a smarter buying decision.
         </p>
       </div>
 
-      <div className="mt-6 grid grid-cols-3 gap-2 rounded-2xl bg-[#1f2c39] p-2">
-        <ModeButton active={mode === "link"} label="Paste link" onClick={() => { setMode("link"); resetChecker(); }} />
-        <ModeButton active={mode === "describe"} label="Describe it" onClick={() => { setMode("describe"); resetChecker(); }} />
-        <ModeButton active={mode === "upload"} label="Upload" onClick={() => { setMode("upload"); resetChecker(); }} />
-      </div>
+    
 
       <form onSubmit={analyseDeal} className="mt-5">
-        {mode === "link" && (
-          <div>
-            <label htmlFor="deal-link" className="mb-2 block text-sm font-semibold text-white/80">
-              Product or service link
-            </label>
-            <input
-              id="deal-link"
-              type="url"
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              placeholder="https://www.currys.co.uk/..."
-              className="w-full rounded-2xl border border-white/15 bg-[#1d2a36] px-6 py-5 text-base text-white outline-none transition placeholder:text-white/35 focus:border-[#2ee866] focus:ring-4 focus:ring-[#2ee866]/10"
-            />
-          </div>
-        )}
+       <div>
+  <label
+    htmlFor="shopping-request"
+    className="mb-3 block text-sm font-semibold text-white/80"
+  >
+    What are you shopping for today?
+  </label>
 
-        {mode === "describe" && (
-          <div>
-            <label htmlFor="deal-description" className="mb-2 block text-sm font-semibold text-white/80">
-              Tell us what you need
-            </label>
-            <textarea
-              id="deal-description"
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              placeholder="I need a 55-inch TV for under £800, mainly for films and gaming..."
-              rows={5}
-              className="w-full resize-none rounded-2xl border border-white/15 bg-[#1d2a36] px-5 py-4 text-white outline-none transition placeholder:text-white/35 focus:border-[#2ee866]"
-            />
-          </div>
-        )}
+  <textarea
+    id="shopping-request"
+    value={input}
+    onChange={(event) => setInput(event.target.value)}
+    rows={5}
+    placeholder="Paste any product URL...
 
-        {mode === "upload" && (
-          <div>
-            <label
-              htmlFor="deal-file"
-              className="flex min-h-44 cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-white/25 bg-[#1d2a36] px-6 py-8 text-center transition hover:border-[#2ee866]/70 hover:bg-[#23323f]"
-            >
-              <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[#2ee866]/35 text-3xl text-[#2ee866]">↑</span>
-              <span className="mt-4 font-bold">{file ? file.name : "Upload a screenshot or quote"}</span>
-              <span className="mt-2 text-sm text-white/55">JPG, PNG or PDF</span>
-            </label>
-            <input
-              id="deal-file"
-              type="file"
-              accept="image/jpeg,image/png,image/webp,application/pdf"
-              onChange={handleFileChange}
-              className="hidden"
-            />
-          </div>
-        )}
+or ask...
+
+Is this MacBook worth £849?"
+    className="w-full resize-none rounded-3xl border border-white/15 bg-[#1d2a36] px-6 py-6 text-lg text-white outline-none transition placeholder:text-white/35 focus:border-[#2ee866] focus:ring-4 focus:ring-[#2ee866]/10"
+  />
+</div>
+
+     
 
         {error && (
           <div className="mt-4 rounded-xl border border-red-400/30 bg-red-400/10 px-4 py-3 text-sm text-red-200">
@@ -282,23 +276,85 @@ const verdictLabel =
           </div>
         )}
 
-        <button
-          type="submit"
-          disabled={isAnalysing}
-          className="mt-5 flex w-full items-center justify-center rounded-2xl bg-[#20c95a] px-6 py-4 text-base font-black text-white shadow-lg shadow-black/20 transition hover:bg-[#2ee866] disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {isAnalysing ? "Checking your deal..." : "Analyse My Deal"}
-        </button>
-      </form>
+      <button
+  type="submit"
+  disabled={isAnalysing}
+  className="mt-5 flex w-full items-center justify-center rounded-2xl bg-[#20c95a] px-6 py-4 text-base font-black text-white shadow-lg shadow-black/20 transition hover:bg-[#2ee866] disabled:cursor-not-allowed disabled:opacity-60"
+>
+  {isAnalysing ? "Blinlx is analysing..." : "Ask Blinlx"}
+</button>
+</form>
 
-      <div ref={resultsRef}>
-  {isAnalysing && (
-    <AnalysisExperience onComplete={() => undefined} />
-  )}
+<div ref={resultsRef} className="scroll-mt-6">
+  {isAnalysing && <AnalysisTimeline />}
 
-      {result && !isAnalysing && (
-        <div className={`mt-6 rounded-2xl border bg-[#17252f] p-5 sm:p-6 ${styles?.border ?? "border-white/10"}`}>
-       <DealHeroCard
+  {result && !isAnalysing && (
+    <div className="mt-8 space-y-6">
+    <BlinlxScoreCard
+  score={animatedScore}
+  confidence={result.confidence}
+  verdict={result.verdict}
+  headline={result.headline}
+  summary={result.summary}
+/>
+
+{trust && (
+  <RetailerTrustCard
+    retailer={result.retailerName}
+    trustScore={trust.trustScore}
+    officialRetailer={trust.officialRetailer}
+    buyerProtection={trust.buyerProtection}
+    secureCheckout={trust.secureCheckout}
+    returnDays={trust.returnDays}
+    deliveryEstimate={trust.deliveryEstimate}
+    recommendation={trust.recommendation}
+  />
+)}
+
+{reviewIntelligence && (
+  <ReviewIntelligenceCard
+    score={reviewIntelligence.score}
+    sentiment={reviewIntelligence.sentiment}
+    headline={reviewIntelligence.headline}
+    summary={reviewIntelligence.summary}
+    strengths={reviewIntelligence.strengths}
+    concerns={reviewIntelligence.concerns}
+    confidence={reviewIntelligence.confidence}
+  />
+)}
+
+{productIntelligence && (
+  <ProductIntelligenceCard
+    productName={result.productName}
+    score={productIntelligence.score}
+    confidence={productIntelligence.confidence}
+    suitability={productIntelligence.suitability}
+    headline={productIntelligence.headline}
+    summary={productIntelligence.summary}
+    bestFor={productIntelligence.bestFor}
+    limitations={productIntelligence.limitations}
+  />
+)}
+<PriceIntelligenceCard
+  currentPrice={result.currentPrice}
+  fairPrice={result.fairPrice}
+  lowestPrice={result.lowestPrice}
+  status={result.priceStatus ?? "UNKNOWN"}
+  recommendation={
+    result.priceRecommendation ??
+    "Blinlx is still gathering enough pricing data to make a reliable recommendation."
+  }
+  confidence={result.priceConfidence ?? 0}
+/>
+
+<VerdictBanner
+  verdict={result.verdict}
+  headline={result.headline}
+  recommendation={result.recommendation}
+  confidence={result.confidence}
+/>
+
+<DealHeroCard
   productName={result.productName}
   productImage={result.productImage}
   retailerName={result.retailerName}
@@ -314,65 +370,106 @@ const verdictLabel =
   headline={result.headline}
   summary={result.summary}
   recommendation={result.recommendation}
- topOffers={result.topOffers ?? []}
+  topOffers={result.topOffers ?? []}
 />
 
-          <div className="mt-5 grid gap-4 lg:grid-cols-3">
-            <AnalysisCard title="💷 Price Intelligence" text={result.priceAnalysis} />
-            <AnalysisCard title="⭐ Review Analysis" text={result.reviewAnalysis} />
-            <AnalysisCard title="🏪 Retailer Check" text={result.retailerAnalysis} />
+      <div className="grid gap-4 lg:grid-cols-3">
+        <AnalysisCard
+          title="💷 Price Intelligence"
+          text={result.priceAnalysis}
+        />
+        <AnalysisCard
+          title="⭐ Review Analysis"
+          text={result.reviewAnalysis}
+        />
+        <AnalysisCard
+          title="🏪 Retailer Check"
+          text={result.retailerAnalysis}
+        />
+      </div>
+
+      <div className="rounded-2xl bg-white/5 p-5">
+        <h4 className="font-bold">
+          🧠 How Blinlx reached this recommendation
+        </h4>
+
+        <ScoreBar
+          label="Product quality"
+          score={result.scoreBreakdown.productQuality}
+        />
+        <ScoreBar
+          label="Price value"
+          score={result.scoreBreakdown.priceValue}
+        />
+        <ScoreBar
+          label="Review quality"
+          score={result.scoreBreakdown.reviewQuality}
+        />
+        <ScoreBar
+          label="Retailer trust"
+          score={result.scoreBreakdown.retailerTrust}
+        />
+        <ScoreBar
+          label="Warranty & support"
+          score={result.scoreBreakdown.warrantySupport}
+        />
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <ResultList
+          title="What looks good"
+          items={result.positives}
+          positive
+        />
+
+        <ResultList
+          title="Things to consider"
+          items={result.warnings}
+        />
+      </div>
+
+      {result.betterAlternatives.length > 0 && (
+        <div>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-[#52ee7e]">
+            Better alternatives
+          </p>
+
+          <div className="grid gap-4 lg:grid-cols-3">
+            {result.betterAlternatives.map((alternative) => (
+              <AlternativeCard
+                key={`${alternative.name}-${alternative.price}`}
+                alternative={alternative}
+              />
+            ))}
           </div>
-
-          <div className="mt-5 rounded-2xl bg-white/5 p-5">
-            <h4 className="font-bold">🧠 How DBI reached this decision</h4>
-            <ScoreBar label="Product quality" score={result.scoreBreakdown.productQuality} />
-            <ScoreBar label="Price value" score={result.scoreBreakdown.priceValue} />
-            <ScoreBar label="Review quality" score={result.scoreBreakdown.reviewQuality} />
-            <ScoreBar label="Retailer trust" score={result.scoreBreakdown.retailerTrust} />
-            <ScoreBar label="Warranty & support" score={result.scoreBreakdown.warrantySupport} />
-          </div>
-
-          <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            <ResultList title="What looks good" items={result.positives} positive />
-            <ResultList title="Things to consider" items={result.warnings} />
-          </div>
-
-          {result.betterAlternatives.length > 0 && (
-            <div className="mt-5">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-[#52ee7e]">
-                Better alternatives
-              </p>
-              <div className="grid gap-4 lg:grid-cols-3">
-                {result.betterAlternatives.map((alternative) => (
-                  <AlternativeCard
-                    key={`${alternative.name}-${alternative.price}`}
-                    alternative={alternative}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="mt-5 rounded-2xl border border-[#2ee866]/30 bg-[#2ee866]/10 p-5">
-            <p className="text-sm font-black text-[#68f18e]">💚 If it was our money...</p>
-            <p className="mt-3 text-sm leading-6 text-white/80">
-              {stripMoneyPrefix(result.ifItWasOurMoney)}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={resetChecker}
-            className="mt-5 w-full rounded-xl border border-white/15 px-5 py-3 text-sm font-bold transition hover:border-[#2ee866]/60 hover:text-[#2ee866]"
-          >
-            Check another deal
-          </button>
-         </div>
+        </div>
       )}
+
+     <div className="rounded-2xl border border-[#2ee866]/30 bg-[#2ee866]/10 p-5">
+  <p className="text-sm font-black text-[#68f18e]">
+    💚 If it was our money...
+  </p>
+
+  <p className="mt-3 text-sm leading-6 text-white/80">
+    {stripMoneyPrefix(result.ifItWasOurMoney)}
+  </p>
+</div>
+
+<AskBlinlxCard productName={result.productName} />
+
+<button
+  type="button"
+  onClick={resetChecker}
+  className="w-full rounded-xl border border-white/15 px-5 py-3 text-sm font-bold transition hover:border-[#2ee866]/60 hover:text-[#2ee866]"
+>
+  Check another deal
+</button>
+    </div>
+  )}
 </div>
 
       <p className="mt-5 text-center text-xs leading-5 text-white/40">
-        Deal Beater may earn a commission from selected retailer links at no
+        Blinlx may earn a commission from selected retailer links at no
         extra cost to you. Recommendations are based on value, suitability and
         available information.
       </p>

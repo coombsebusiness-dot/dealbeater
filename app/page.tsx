@@ -1,30 +1,30 @@
 import Link from "next/link";
-import DealChecker from "./components/DealChecker";
+import ProductAnalyzer from "@/app/components/ProductAnalyzer";
 
 const websiteSchema = {
   "@context": "https://schema.org",
   "@type": "WebSite",
-  name: "Deal Beater",
-  url: "https://dealbeater.co.uk",
+  name: "Blinlx",
+  url: "https://blinlx.com",
   description:
-    "Deal Beater helps UK consumers compare products, prices and retailers before buying.",
+    "Blinlx helps consumers make smarter buying decisions with fast product analysis, price comparison and retailer checks.",
   inLanguage: "en-GB",
   publisher: {
     "@type": "Organization",
     name: "Frame Tech UK Ltd",
-    url: "https://dealbeater.co.uk",
+    url: "https://blinlx.com",
   },
 };
 
 const organizationSchema = {
   "@context": "https://schema.org",
   "@type": "Organization",
-  name: "Deal Beater",
+  name: "Blinlx",
   legalName: "Frame Tech UK Ltd",
-  url: "https://dealbeater.co.uk",
-  logo: "https://dealbeater.co.uk/icon-512.png",
+  url: "https://blinlx.com",
+  logo: "https://blinlx.com/icon-512.png",
   description:
-    "An independent UK shopping and price-comparison service helping consumers make smarter buying decisions.",
+    "An independent shopping intelligence platform helping consumers make smarter buying decisions.",
 };
 
 const faqSchema = {
@@ -33,80 +33,79 @@ const faqSchema = {
   mainEntity: [
     {
       "@type": "Question",
-      name: "What is Deal Beater?",
+      name: "What is Blinlx?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Deal Beater is a UK shopping comparison service that analyses products, prices and retailer offers to help consumers make more informed buying decisions.",
+        text: "Blinlx is a shopping intelligence platform that analyses products, prices and retailer offers to help consumers make more informed buying decisions.",
       },
     },
     {
       "@type": "Question",
-      name: "Is Deal Beater free to use?",
+      name: "Is Blinlx free to use?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Yes. You can use Deal Beater to check products and compare available offers without paying a fee.",
+        text: "Yes. You can use Blinlx to check products and compare available offers without paying a fee.",
       },
     },
     {
       "@type": "Question",
-      name: "How does Deal Beater compare products?",
+      name: "How does Blinlx compare products?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Deal Beater identifies the exact product and model, checks available retailer offers and filters out unrelated accessories, incorrect variants and unsuitable listings.",
+        text: "Blinlx identifies the exact product and model, checks available retailer offers and filters out unrelated accessories, incorrect variants and unsuitable listings.",
       },
     },
     {
       "@type": "Question",
-      name: "Does Deal Beater always recommend the cheapest listing?",
+      name: "Does Blinlx always recommend the cheapest listing?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Not necessarily. Price is important, but Deal Beater can also consider the retailer, product match, condition, delivery and overall value of an offer.",
+        text: "Not necessarily. Price is important, but Blinlx can also consider the retailer, product match, condition, delivery and overall value of an offer.",
       },
     },
   ],
 };
-
 const howItWorks = [
   {
     number: "01",
-    title: "Tell us what you are buying",
+    title: "Paste a product",
     description:
-      "Paste a product link, enter the product name or describe what you need.",
+      "Paste a product link from any supported retailer or simply describe what you're looking for.",
   },
   {
     number: "02",
-    title: "We check the details",
+    title: "Blinlx analyses it",
     description:
-      "Deal Beater identifies the exact model and checks matching offers from UK retailers.",
+      "Our AI checks product details, compares offers and identifies the exact item across retailers.",
   },
   {
     number: "03",
-    title: "Make a smarter decision",
+    title: "Buy with confidence",
     description:
-      "Review the available prices and buying information before spending your money.",
+      "See smarter recommendations, compare prices and make a more informed buying decision.",
   },
 ];
 
 const faqs = [
   {
-    question: "What is Deal Beater?",
+    question: "What is Blinlx?",
     answer:
-      "Deal Beater is a UK shopping comparison service designed to help you check products, compare available offers and make a more informed buying decision.",
+      "Blinlx is an AI-powered shopping intelligence platform designed to help you analyse products, compare available offers and make a more informed buying decision.",
   },
   {
-    question: "Is Deal Beater free to use?",
+    question: "Is Blinlx free to use?",
     answer:
-      "Yes. You can check products and compare available retailer offers without paying a fee.",
+      "Yes. You can analyse products and compare available retailer offers without paying a fee.",
   },
   {
-    question: "How does Deal Beater match products?",
+    question: "How does Blinlx match products?",
     answer:
-      "Our technology examines details such as the brand, model number, revision, variant and product type. It also filters out unrelated accessories and incorrect listings.",
+      "Blinlx examines details such as the brand, model number, revision, variant, condition and product type. It also filters out unrelated accessories and incorrect listings.",
   },
   {
-    question: "Do you always recommend the cheapest offer?",
+    question: "Does Blinlx always recommend the cheapest offer?",
     answer:
-      "Not always. The cheapest listing is not automatically the best deal. We also consider whether the product is an exact match and whether the retailer and overall offer appear suitable.",
+      "No. The cheapest listing is not automatically the best buying decision. Blinlx also considers whether the product is an exact match and whether the retailer, condition, delivery and overall value appear suitable.",
   },
 ];
 
@@ -138,31 +137,30 @@ export default function Home() {
 
       <header className="border-b border-white/10">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 lg:px-10">
-          <Link
-            href="/"
-            aria-label="Deal Beater homepage"
-            className="inline-block"
-          >
-            <div className="text-3xl font-extrabold tracking-tight">
-              Deal<span className="text-[#2ee866]">Beater</span>
-            </div>
+         <Link
+  href="/"
+  aria-label="Blinlx homepage"
+  className="inline-block"
+>
+  <div className="text-3xl font-black tracking-[-0.04em]">
+    BLINLX
+  </div>
 
-            <p className="mt-1 text-[10px] font-semibold tracking-[0.16em] text-white/65">
-              DON&apos;T BUY UNTIL WE&apos;VE CHECKED IT.
-            </p>
-          </Link>
+  <p className="mt-1 text-[10px] font-semibold tracking-[0.16em] text-white/65">
+    BUY SMARTER IN THE BLINK OF AN EYE.
+  </p>
+</Link>
 
          <nav
   aria-label="Main navigation"
   className="hidden items-center gap-9 text-sm font-semibold md:flex"
 >
-  <a
-    href="#deal-checker"
-    className="transition hover:text-[#2ee866]"
-  >
-    Check a Deal
-  </a>
-
+ <a
+  href="#product-analyzer"
+  className="transition hover:text-[#2ee866]"
+>
+  Analyse a Product
+</a>
   <a
     href="#how-it-works"
     className="transition hover:text-[#2ee866]"
@@ -199,7 +197,7 @@ export default function Home() {
       </header>
 
       <section
-        id="deal-checker"
+  id="product-analyzer"
         aria-labelledby="homepage-heading"
         className="relative overflow-hidden px-6 pb-16 pt-10 sm:pb-20 sm:pt-12 lg:px-10 lg:pb-24 lg:pt-14"
       >
@@ -208,35 +206,35 @@ export default function Home() {
         <div className="relative mx-auto max-w-6xl">
           <div className="text-center">
             <div className="inline-flex rounded-full border border-[#2ee866]/30 bg-[#2ee866]/10 px-4 py-2 text-sm font-semibold text-[#68f18e]">
-              Smart UK product and price comparison
-            </div>
+  ⚡ AI Shopping Intelligence
+</div>
 
             <h1
-              id="homepage-heading"
-              className="mx-auto mt-7 max-w-5xl text-5xl font-black leading-[0.94] tracking-[-0.04em] sm:text-6xl lg:text-8xl"
-            >
-              Don&apos;t buy until
-              <br />
-              we&apos;ve{" "}
-              <span className="text-[#2ee866]">checked it.</span>
-            </h1>
+  id="homepage-heading"
+  className="mx-auto mt-7 max-w-5xl text-5xl font-black leading-[0.94] tracking-[-0.04em] sm:text-6xl lg:text-8xl"
+>
+  Buy smarter
+  <br />
+  in the{" "}
+  <span className="text-[#2ee866]">blink of an eye.</span>
+</h1>
 
             <p className="mx-auto mt-7 max-w-3xl text-base leading-7 text-white/70 sm:text-lg">
-              Check products and compare prices from UK retailers before you
-              buy. Paste a product link or tell Deal Beater what you need, and
-              we&apos;ll help you find a better deal.
-            </p>
+  Paste any product link or tell Blinlx what you are looking for.
+  We analyse prices, retailers, product details and overall value to help
+  you make a smarter buying decision in seconds.
+</p>
           </div>
 
           <div className="mt-8 sm:mt-10">
-            <DealChecker />
+            <ProductAnalyzer  />
           </div>
 
-          <div className="mx-auto mt-8 grid max-w-3xl grid-cols-1 gap-3 text-sm text-white/60 sm:grid-cols-3">
-            <TrustItem title="Independent analysis" />
-            <TrustItem title="Exact product matching" />
-            <TrustItem title="Free to check" />
-          </div>
+         <div className="mx-auto mt-8 grid max-w-3xl grid-cols-1 gap-3 text-sm text-white/60 sm:grid-cols-3">
+  <TrustItem title="AI-powered analysis" />
+  <TrustItem title="Independent recommendations" />
+  <TrustItem title="Exact product matching" />
+</div>
         </div>
       </section>
 
@@ -249,18 +247,18 @@ export default function Home() {
             Our promise
           </p>
 
-          <h2
-            id="promise-heading"
-            className="mt-4 text-3xl font-black sm:text-4xl"
-          >
-            Advice we would trust with our own money.
-          </h2>
+         <h2
+  id="promise-heading"
+  className="mt-4 text-3xl font-black sm:text-4xl"
+>
+  Every recommendation starts with one question.
+</h2>
 
-          <p className="mx-auto mt-5 max-w-3xl text-base leading-7 text-white/68">
-            We will never recommend a product simply because it earns us more.
-            Every recommendation is built around one question: if it were our
-            money, what would we honestly do?
-          </p>
+         <p className="mx-auto mt-5 max-w-3xl text-base leading-7 text-white/68">
+  If this were our money, what would we honestly do? Blinlx is built to put
+  the buying decision first, not commissions, promoted listings or retailer
+  pressure.
+</p>
         </div>
       </section>
 
@@ -271,21 +269,22 @@ export default function Home() {
       >
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto max-w-3xl text-center">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#52ee7e]">
-              How Deal Beater works
-            </p>
+           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#52ee7e]">
+  How Blinlx works
+</p>
 
-            <h2
-              id="how-it-works-heading"
-              className="mt-4 text-3xl font-black sm:text-5xl"
-            >
-              A better way to check before you buy.
-            </h2>
+<h2
+  id="how-it-works-heading"
+  className="mt-4 text-3xl font-black sm:text-5xl"
+>
+  AI-powered shopping intelligence in seconds.
+</h2>
 
-            <p className="mt-5 text-base leading-7 text-white/65 sm:text-lg">
-              Deal Beater helps remove the confusion from online shopping by
-              checking that offers match the product you actually want.
-            </p>
+<p className="mt-5 text-base leading-7 text-white/65 sm:text-lg">
+  Paste a product link or tell Blinlx what you're looking for. Our AI analyses
+  product details, compares retailers and helps you decide whether it's the
+  right time and place to buy.
+</p>
           </div>
 
           <div className="mt-12 grid gap-6 md:grid-cols-3">
@@ -314,36 +313,35 @@ export default function Home() {
         className="border-y border-white/10 bg-black/10 px-6 py-20 lg:px-10 lg:py-24"
       >
         <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-2 lg:items-center">
-          <div>
+          
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#52ee7e]">
               More than the lowest price
             </p>
 
-            <h2
-              id="comparison-heading"
-              className="mt-4 text-3xl font-black leading-tight sm:text-5xl"
-            >
-              The cheapest listing is not always the best deal.
-            </h2>
-          </div>
+           <h2
+  id="comparison-heading"
+  className="mt-4 text-3xl font-black leading-tight sm:text-5xl"
+>
+  Price is only part of the buying decision.
+</h2>
 
           <div className="space-y-5 text-base leading-7 text-white/68">
-            <p>
-              Online marketplaces can contain accessories, upgrades, bundles
-              and older product revisions that look similar to the item you
-              searched for.
-            </p>
+          <div className="space-y-5 text-base leading-7 text-white/68">
+  <p>
+    Similar-looking listings can hide different models, revisions,
+    conditions, bundles and accessories.
+  </p>
 
-            <p>
-              Deal Beater checks product names, model numbers and variants to
-              find genuine matching offers. This helps you compare like for
-              like instead of being misled by an unrelated low price.
-            </p>
+  <p>
+    Blinlx analyses the product itself, checks whether each offer is a genuine
+    match and helps you compare like for like.
+  </p>
 
-            <p>
-              We are building Deal Beater for UK consumers who want clearer
-              product comparisons and greater confidence before buying online.
-            </p>
+  <p>
+    The goal is not simply to show the lowest number. It is to help you
+    understand which offer represents the best overall buying decision.
+  </p>
+</div>
           </div>
         </div>
       </section>
@@ -385,21 +383,21 @@ export default function Home() {
 
       <section className="border-t border-white/10 px-6 py-16 lg:px-10">
         <div className="mx-auto max-w-5xl rounded-3xl border border-[#2ee866]/20 bg-[#2ee866]/[0.06] px-6 py-12 text-center sm:px-10">
-          <h2 className="text-3xl font-black sm:text-4xl">
-            Check your next purchase before you buy.
-          </h2>
+         <h2 className="text-3xl font-black sm:text-4xl">
+  Ready to buy smarter?
+</h2>
 
-          <p className="mx-auto mt-4 max-w-2xl leading-7 text-white/68">
-            Enter the product you are considering and let Deal Beater check the
-            available offers.
-          </p>
+<p className="mx-auto mt-4 max-w-2xl leading-7 text-white/68">
+  Analyse your next purchase with Blinlx AI and make a more confident buying
+  decision in seconds.
+</p>
 
-          <a
-            href="#deal-checker"
-            className="mt-7 inline-flex rounded-xl bg-[#2ee866] px-7 py-4 font-black text-[#07140b] transition hover:brightness-110"
-          >
-            Check a Deal
-          </a>
+<a
+  href="#product-analyzer"
+  className="mt-7 inline-flex rounded-xl bg-[#2ee866] px-7 py-4 font-black text-[#07140b] transition hover:brightness-110"
+>
+  Analyse a Product
+</a>
         </div>
       </section>
 
@@ -409,11 +407,11 @@ export default function Home() {
             <div>
               <Link
                 href="/"
-                aria-label="Deal Beater homepage"
+                aria-label="Blinlx homepage"
                 className="inline-block"
               >
                 <h2 className="text-2xl font-black">
-                  Deal<span className="text-[#2ee866]">Beater</span>
+                  Bli<span className="text-[#2ee866]">nlx</span>
                 </h2>
               </Link>
 
@@ -423,7 +421,7 @@ export default function Home() {
               </p>
 
               <div className="mt-6 inline-flex rounded-full border border-[#2ee866]/30 bg-[#2ee866]/10 px-4 py-2 text-sm font-medium text-[#2ee866]">
-                🚀 Deal Beater is currently in beta
+                🚀 Blinlx is currently in beta
               </div>
             </div>
 
@@ -475,7 +473,7 @@ export default function Home() {
           <div className="my-10 h-px bg-white/10" />
 
           <div className="flex flex-col gap-3 text-sm text-white/45 md:flex-row md:items-center md:justify-between">
-            <p>© {currentYear} Deal Beater. All rights reserved.</p>
+            <p>© {currentYear} Blinlx. All rights reserved.</p>
 
             <p>
               Operated by{" "}

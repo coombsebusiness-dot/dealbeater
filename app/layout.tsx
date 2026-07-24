@@ -15,15 +15,16 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
-const siteUrl = "https://dealbeater.co.uk";
-const siteName = "Deal Beater";
-const defaultTitle =
-  "Deal Beater | Compare UK Prices and Find Better Deals";
-const defaultDescription =
-  "Compare prices from trusted UK retailers and find better deals before you buy. Deal Beater checks products, prices and retailers to help you shop smarter.";
+const siteUrl = "https://blinlx.com";
+const siteName = "Blinlx";
 
+const defaultTitle =
+  "Blinlx | Buy Smarter in the Blink of an Eye";
+
+const defaultDescription =
+  "Blinlx helps you make smarter buying decisions with AI-powered price analysis, price history, retailer comparisons and buying advice. Know before you buy.";
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL("https://blinlx.com"),
 
   title: {
     default: defaultTitle,
@@ -46,21 +47,21 @@ export const metadata: Metadata = {
 
   category: "shopping",
 
-  classification:
-    "UK price comparison, product comparison and shopping service",
+ classification:
+  "AI shopping intelligence platform",
 
-  keywords: [
-    "Deal Beater",
-    "price comparison UK",
-    "compare prices UK",
-    "best deals UK",
-    "product price comparison",
-    "UK shopping deals",
-    "compare retailers",
-    "online deals UK",
-    "cheap products UK",
-    "smart shopping",
-  ],
+keywords: [
+  "Blinlx",
+  "AI shopping assistant",
+  "price comparison",
+  "shopping intelligence",
+  "price history",
+  "buy smarter",
+  "best price",
+  "price tracker",
+  "buying advice",
+  "online shopping",
+],
 
   alternates: {
     canonical: "/",
@@ -105,7 +106,7 @@ export const metadata: Metadata = {
         url: "/opengraph-image.png",
         width: 1200,
         height: 630,
-        alt: "Deal Beater price comparison and UK deals",
+        alt: "Blinlx AI shopping intelligence",
       },
     ],
     locale: "en_GB",

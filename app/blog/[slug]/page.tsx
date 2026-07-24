@@ -34,7 +34,7 @@ export async function generateMetadata({
       canonical: `/blog/${post.slug}`,
     },
     openGraph: {
-      title: `${post.title} | Deal Beater`,
+      title: `${post.title} | Blinlx`,
       description: post.description,
       url: `/blog/${post.slug}`,
       type: "article",
@@ -69,17 +69,17 @@ export default async function BlogPostPage({
     dateModified: post.updatedAt ?? post.publishedAt,
     author: {
       "@type": "Organization",
-      name: "Deal Beater",
-      url: "https://dealbeater.co.uk",
+      name: "Blinlx",
+      url: "https://blinlx.com",
     },
     publisher: {
       "@type": "Organization",
-      name: "Deal Beater",
-      url: "https://dealbeater.co.uk",
+      name: "Blinlx",
+      url: "https://blinlx.com",
     },
     mainEntityOfPage: {
       "@type": "WebPage",
-      "@id": `https://dealbeater.co.uk/blog/${post.slug}`,
+      "@id": `https://blinlx.com/blog/${post.slug}`,
     },
   };
 
@@ -95,9 +95,9 @@ export default async function BlogPostPage({
       <header className="border-b border-white/10">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 lg:px-10">
           <Link href="/">
-            <div className="text-3xl font-extrabold tracking-tight">
-              Deal<span className="text-[#2ee866]">Beater</span>
-            </div>
+           <div className="text-3xl font-extrabold tracking-tight">
+  Blin<span className="text-[#2ee866]">lx</span>
+</div>
           </Link>
 
           <nav className="flex items-center gap-6 text-sm font-semibold">
@@ -137,7 +137,7 @@ export default async function BlogPostPage({
               <span aria-hidden="true">•</span>
               <span>{post.readingTime}</span>
               <span aria-hidden="true">•</span>
-              <span>Deal Beater Editorial</span>
+              <span>Blinlx Editorial</span>
             </div>
           </div>
         </header>

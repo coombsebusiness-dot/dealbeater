@@ -2,6 +2,12 @@ import {
   classifyProductType,
   type ProductType,
 } from "../matching/productTypeClassifier";
+import {
+  createProductFingerprintV2,
+} from "../matching/productFingerprint";
+import {
+  validateProduct,
+} from "../matching/productValidator";
 
 
 export interface ProductFingerprint {
@@ -345,6 +351,40 @@ export function compareExactProductVariant(
 const candidate =
   createProductFingerprint(candidateText);
 
+  const originalV2 =
+  createProductFingerprintV2(
+    originalText
+  );
+
+const candidateV2 =
+  createProductFingerprintV2(
+    candidateText
+  );
+  const validationV2 =
+  validateProduct(
+    originalV2,
+    candidateV2
+  );
+
+console.log("🧪 VALIDATION V2");
+console.dir(
+  validationV2,
+  { depth: null }
+);
+
+console.log("🟢 ORIGINAL FP V2");
+console.dir(
+  originalV2,
+  { depth: null }
+);
+
+console.log("🔵 CANDIDATE FP V2");
+console.dir(
+  candidateV2,
+  { depth: null }
+);
+
+
 const originalRevision =
   extractModelRevision(originalText);
 
@@ -396,6 +436,21 @@ const candidateRevision =
     candidate,
   };
 }
+console.log(
+  `🧪 V2 MATCH: ${
+    validationV2.accepted
+      ? "ACCEPTED"
+      : "REJECTED"
+  } — ${validationV2.confidence}%`
+);
+
+return {
+  accepted: validationV2.accepted,
+  confidence: validationV2.confidence,
+  reasons: validationV2.reasons,
+  original,
+  candidate,
+};
 
   const exactModelMatch =
     original.modelNumbers.some(

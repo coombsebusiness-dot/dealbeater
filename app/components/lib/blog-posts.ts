@@ -82,7 +82,7 @@ export const blogPosts: BlogPost[] = [
         ],
       },
       {
-        heading: "The Deal Beater verdict",
+        heading: "The Blinlx verdict",
         paragraphs: [
           "The best air fryer is not necessarily the biggest or most expensive. It is the one that matches your household size, available space and normal cooking habits.",
           "Before buying, compare the exact model across several reputable retailers and confirm the final price, delivery cost and warranty details.",
@@ -170,7 +170,7 @@ export const blogPosts: BlogPost[] = [
         ],
       },
       {
-        heading: "The Deal Beater verdict",
+        heading: "The Blinlx verdict",
         paragraphs: [
           "Expensive wireless headphones can be worthwhile when you value excellent noise cancellation, comfort, microphone performance and long-term software support.",
           "For casual listening, a carefully chosen mid-range pair may provide most of the experience for much less money.",

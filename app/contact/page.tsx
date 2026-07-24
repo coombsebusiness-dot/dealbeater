@@ -4,14 +4,14 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Contact Us",
   description:
-    "Contact Deal Beater with questions, feedback, retailer enquiries, partnership opportunities or support requests.",
+    "Contact Blinlx with questions, feedback, retailer enquiries, partnership opportunities or support requests.",
   alternates: {
     canonical: "/contact",
   },
   openGraph: {
-    title: "Contact Deal Beater",
+    title: "Contact Blinlx",
     description:
-      "Get in touch with Deal Beater for support, feedback, partnerships and general enquiries.",
+      "Get in touch with Blinlx for support, feedback, partnerships and general enquiries.",
     url: "/contact",
     type: "website",
   },
@@ -21,20 +21,20 @@ const contactOptions = [
   {
     title: "General enquiries",
     description:
-      "Questions about Deal Beater, how it works or anything else you would like to ask.",
-    email: "hello@dealbeater.co.uk",
+      "Questions about Blinlx, how it works or anything else you would like to ask.",
+    email: "help@blinlx.com",
   },
   {
     title: "Feedback and product suggestions",
     description:
-      "Tell us what you think, report an incorrect result or suggest a feature that would make Deal Beater better.",
-    email: "hello@dealbeater.co.uk",
+      "Tell us what you think, report an incorrect result or suggest a feature that would make Blinlx better.",
+     email: "help@blinlx.com",
   },
   {
     title: "Retailer and partnership enquiries",
     description:
       "Retailers, affiliate networks and potential partners can contact us to discuss working together.",
-    email: "hello@dealbeater.co.uk",
+    email: "help@blinlx.com",
   },
 ];
 
@@ -45,9 +45,9 @@ export default function ContactPage() {
     <main className="min-h-screen bg-[#101b26] text-white">
       <header className="border-b border-white/10">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 lg:px-10">
-          <Link href="/" aria-label="Deal Beater homepage">
+          <Link href="/" aria-label="Blinlx homepage">
             <div className="text-3xl font-extrabold tracking-tight">
-              Deal<span className="text-[#2ee866]">Beater</span>
+             Blin<span className="text-[#2ee866]">lx</span>
             </div>
 
             <p className="mt-1 text-[10px] font-semibold tracking-[0.16em] text-white/65">
@@ -106,7 +106,7 @@ export default function ContactPage() {
 
         <div className="relative mx-auto max-w-5xl text-center">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#52ee7e]">
-            Contact Deal Beater
+            Contact Blinlx
           </p>
 
           <h1 className="mx-auto mt-5 max-w-4xl text-5xl font-black leading-[0.96] tracking-[-0.04em] sm:text-6xl lg:text-7xl">
@@ -116,7 +116,7 @@ export default function ContactPage() {
 
           <p className="mx-auto mt-7 max-w-3xl text-lg leading-8 text-white/68">
             Whether you have a question, found an incorrect result or want to
-            discuss working with Deal Beater, send us a message and we&apos;ll
+            discuss working with Blinlx, send us a message and we&apos;ll
             get back to you as soon as we can.
           </p>
         </div>
@@ -173,10 +173,10 @@ export default function ContactPage() {
             </p>
 
             <a
-              href="mailto:hello@dealbeater.co.uk"
+             href="mailto:help@blinlx.com"
               className="mt-8 inline-flex rounded-xl bg-[#2ee866] px-7 py-4 font-black text-[#07140b] transition hover:brightness-110"
             >
-              Email hello@dealbeater.co.uk
+              Email help@blinlx.com
             </a>
           </div>
 
@@ -191,27 +191,27 @@ export default function ContactPage() {
 
             <div className="mt-6 space-y-4 leading-7 text-white/68">
               <p>
-                Deal Beater is operated by{" "}
+                Blinlx is operated by{" "}
                 <strong className="text-white">Frame Tech UK Ltd</strong>.
               </p>
 
               <p>
                 Website:{" "}
                 <a
-                  href="https://dealbeater.co.uk"
+                  href="https://blinlx.com"
                   className="font-semibold text-[#2ee866] transition hover:text-[#68f18e]"
                 >
-                  dealbeater.co.uk
+                  blinlx.com
                 </a>
               </p>
 
               <p>
                 Email:{" "}
                 <a
-                  href="mailto:hello@dealbeater.co.uk"
+                  href="mailto:help@blinlx.com"
                   className="font-semibold text-[#2ee866] transition hover:text-[#68f18e]"
                 >
-                  hello@dealbeater.co.uk
+                  help@blinlx.com
                 </a>
               </p>
             </div>
@@ -243,9 +243,9 @@ export default function ContactPage() {
         <div className="mx-auto max-w-7xl px-6 py-12 lg:px-10">
           <div className="grid gap-10 md:grid-cols-2">
             <div>
-              <Link href="/" aria-label="Deal Beater homepage">
+              <Link href="/" aria-label="Blinlx homepage">
                 <h2 className="text-2xl font-black">
-                  Deal<span className="text-[#2ee866]">Beater</span>
+                  Blin<span className="text-[#2ee866]">lx</span>
                 </h2>
               </Link>
 
@@ -296,7 +296,7 @@ export default function ContactPage() {
           <div className="my-10 h-px bg-white/10" />
 
           <div className="flex flex-col gap-3 text-sm text-white/45 md:flex-row md:items-center md:justify-between">
-            <p>© {currentYear} Deal Beater. All rights reserved.</p>
+            <p>© {currentYear} Blinlx. All rights reserved.</p>
 
             <p>
               Operated by{" "}

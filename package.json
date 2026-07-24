@@ -1,12 +1,13 @@
 {
-  "name": "dealbeater",
+  "name": "blinlx",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+   "test:products": "tsx product-intelligence/__tests__/runner.ts"
   },
   "dependencies": {
     "@next/third-parties": "^16.2.11",
@@ -26,6 +27,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
     "tailwindcss": "^4",
+    "tsx": "^4.23.1",
     "typescript": "^5"
   }
 }

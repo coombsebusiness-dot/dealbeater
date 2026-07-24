@@ -48,7 +48,7 @@ interface JsonLdOffer {
 
 const DEFAULT_HEADERS = {
   "User-Agent":
-    "Mozilla/5.0 (compatible; DealBeater/1.0; +https://dealbeater.co.uk)",
+    "Mozilla/5.0 (compatible; BlinlxBot/1.0; +https://blinlx.com)",
   Accept:
     "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
   "Accept-Language": "en-GB,en;q=0.9",
@@ -112,7 +112,7 @@ export async function extractProductFromUrl(
 
   if (!title) {
     throw new Error(
-      "DBI could not identify the product title from this page."
+      "Blinlx could not identify the product title from this page."
     );
   }
 
@@ -332,7 +332,7 @@ function extractJsonLdProducts(
       collectJsonLdProducts(parsed, products);
     } catch {
       console.warn(
-        "⚠️ DBI skipped malformed JSON-LD data."
+        "⚠️ Blinlx skipped malformed JSON-LD data."
       );
     }
   }

@@ -4,14 +4,14 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "About Us",
   description:
-    "Learn why Deal Beater was created and how we help UK consumers compare products, check prices and make smarter buying decisions.",
+    "Learn why Blinlx was created and how we help UK consumers compare products, check prices and make smarter buying decisions.",
   alternates: {
     canonical: "/about",
   },
   openGraph: {
-    title: "About Deal Beater",
+    title: "About Blinlx",
     description:
-      "Deal Beater helps UK consumers check products, compare offers and make smarter buying decisions before spending their money.",
+      "Blinlx helps UK consumers check products, compare offers and make smarter buying decisions before spending their money.",
     url: "/about",
     type: "website",
   },
@@ -22,9 +22,9 @@ export default function AboutPage() {
     <main className="min-h-screen bg-[#101b26] text-white">
       <header className="border-b border-white/10">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 lg:px-10">
-          <Link href="/" aria-label="Deal Beater homepage">
+          <Link href="/" aria-label="Blinlx homepage">
             <div className="text-3xl font-extrabold tracking-tight">
-              Deal<span className="text-[#2ee866]">Beater</span>
+              Blin<span className="text-[#2ee866]">lx</span>
             </div>
 
             <p className="mt-1 text-[10px] font-semibold tracking-[0.16em] text-white/65">
@@ -83,7 +83,7 @@ export default function AboutPage() {
 
         <div className="relative mx-auto max-w-5xl text-center">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#52ee7e]">
-            About Deal Beater
+            About Blinlx
           </p>
 
           <h1 className="mx-auto mt-5 max-w-4xl text-5xl font-black leading-[0.96] tracking-[-0.04em] sm:text-6xl lg:text-7xl">
@@ -92,7 +92,7 @@ export default function AboutPage() {
           </h1>
 
           <p className="mx-auto mt-7 max-w-3xl text-lg leading-8 text-white/68">
-            Deal Beater was created to make online shopping clearer, more
+            Blinlx was created to make online shopping clearer, more
             honest and less confusing for UK consumers.
           </p>
         </div>
@@ -125,7 +125,7 @@ export default function AboutPage() {
             </p>
 
             <p>
-              Deal Beater is being built to cut through that noise. Our aim is
+              Blinlx is being built to cut through that noise. Our aim is
               to help people identify the correct product, compare genuine
               matching offers and understand whether a deal is really worth
               their money.
@@ -159,7 +159,7 @@ export default function AboutPage() {
 
             <ValueCard
               title="Built for real people"
-              text="Deal Beater is designed to make shopping simpler for everyday consumers, not to overwhelm them with technical language."
+              text="Blinlxis designed to make shopping simpler for everyday consumers, not to overwhelm them with technical language."
             />
           </div>
         </div>
@@ -177,7 +177,7 @@ export default function AboutPage() {
 
           <p className="mx-auto mt-6 max-w-3xl text-lg leading-8 text-white/68">
             If this were our money, would we buy it? That principle sits at the
-            heart of Deal Beater. We want every result to help people feel more
+            heart of Blinlx. We want every result to help people feel more
             confident before they spend.
           </p>
         </div>
@@ -190,7 +190,7 @@ export default function AboutPage() {
           </h2>
 
           <p className="mx-auto mt-4 max-w-2xl leading-7 text-white/68">
-            Use Deal Beater to check a product, compare available offers and
+            Use Blinlx to check a product, compare available offers and
             make a more informed decision.
           </p>
 
@@ -207,9 +207,9 @@ export default function AboutPage() {
         <div className="mx-auto max-w-7xl px-6 py-12 lg:px-10">
           <div className="grid gap-10 md:grid-cols-2">
             <div>
-              <Link href="/" aria-label="Deal Beater homepage">
+              <Link href="/" aria-label="Blinlx homepage">
                 <h2 className="text-2xl font-black">
-                  Deal<span className="text-[#2ee866]">Beater</span>
+                  Blin<span className="text-[#2ee866]">lx</span>
                 </h2>
               </Link>
 
@@ -260,7 +260,7 @@ export default function AboutPage() {
           <div className="my-10 h-px bg-white/10" />
 
           <div className="flex flex-col gap-3 text-sm text-white/45 md:flex-row md:items-center md:justify-between">
-            <p>© {new Date().getFullYear()} Deal Beater. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} Blinlx. All rights reserved.</p>
 
             <p>
               Operated by{" "}

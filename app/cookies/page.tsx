@@ -4,14 +4,14 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Cookie Policy",
   description:
-    "Read the Deal Beater Cookie Policy to understand how cookies, analytics and affiliate tracking technologies are used on our website.",
+    "Read the Blinlx Cookie Policy to understand how cookies, analytics and affiliate tracking technologies are used on our website.",
   alternates: {
     canonical: "/cookies",
   },
   openGraph: {
-    title: "Cookie Policy | Deal Beater",
+    title: "Cookie Policy | Blinlxr",
     description:
-      "Learn how Deal Beater uses cookies, Google Analytics and affiliate tracking technologies.",
+      "Learn how Blinlx uses cookies, Google Analytics and affiliate tracking technologies.",
     url: "/cookies",
     type: "website",
   },
@@ -21,8 +21,8 @@ const lastUpdated = "24 July 2026";
 
 const cookieRows = [
   {
-    name: "dealbeater_cookie_consent",
-    provider: "Deal Beater",
+    name: "blinlx_cookie_consent",
+    provider: "Blinlx",
     purpose:
       "Stores your cookie and analytics preference so we can remember your choice.",
     duration: "Up to 12 months",
@@ -53,9 +53,9 @@ export default function CookiePage() {
     <main className="min-h-screen bg-[#101b26] text-white">
       <header className="border-b border-white/10">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 lg:px-10">
-          <Link href="/" aria-label="Deal Beater homepage">
+          <Link href="/" aria-label="Blinlx homepage">
             <div className="text-3xl font-extrabold tracking-tight">
-              Deal<span className="text-[#2ee866]">Beater</span>
+              Blin<span className="text-[#2ee866]">lx</span>
             </div>
 
             <p className="mt-1 text-[10px] font-semibold tracking-[0.16em] text-white/65">
@@ -122,7 +122,7 @@ export default function CookiePage() {
           </h1>
 
           <p className="mx-auto mt-7 max-w-3xl text-lg leading-8 text-white/68">
-            This policy explains how Deal Beater uses cookies and similar
+            This policy explains how Blinlx uses cookies and similar
             technologies, what they do and how you can control them.
           </p>
 
@@ -208,16 +208,16 @@ export default function CookiePage() {
 
             <CookieSection
               id="how-we-use"
-              title="2. How Deal Beater uses cookies"
+              title="2. How Blinlx uses cookies"
             >
-              <p>Deal Beater may use cookies and similar technologies to:</p>
+              <p>Blinlx may use cookies and similar technologies to:</p>
 
               <CookieList
                 items={[
                   "Provide essential website functionality.",
                   "Remember your cookie and privacy choices.",
                   "Protect the website against fraud, abuse and security threats.",
-                  "Understand how visitors use Deal Beater.",
+                  "Understand how visitors use Blinlx.",
                   "Measure website traffic, performance and engagement.",
                   "Diagnose technical problems and improve the user experience.",
                   "Record when a visitor follows an affiliate link to a retailer.",
@@ -249,7 +249,7 @@ export default function CookiePage() {
               </h3>
 
               <p>
-                These help us understand how people use Deal Beater, including
+                These help us understand how people use Blinlx, including
                 which pages are visited, how visitors arrived and whether
                 technical problems occur.
               </p>
@@ -266,7 +266,7 @@ export default function CookiePage() {
               <p>
                 Retailers or affiliate networks may use referral identifiers,
                 cookies or similar technologies after you follow a product
-                link. These allow them to identify that Deal Beater referred
+                link. These allow them to identify that Blinlx referred
                 the visit and determine whether a qualifying purchase occurred.
               </p>
             </CookieSection>
@@ -277,7 +277,7 @@ export default function CookiePage() {
             >
               <p>
                 The table below describes the main cookies expected to be used
-                through Deal Beater&apos;s current website setup.
+                through Blinlx&apos;s current website setup.
               </p>
 
               <div className="overflow-x-auto rounded-2xl border border-white/10">
@@ -335,7 +335,7 @@ export default function CookiePage() {
 
             <CookieSection id="analytics" title="5. Google Analytics">
               <p>
-                Deal Beater uses Google Analytics to understand how visitors
+                Blinlx uses Google Analytics to understand how visitors
                 interact with the website and to improve its performance.
               </p>
 
@@ -370,10 +370,10 @@ export default function CookiePage() {
               title="6. Affiliate and retailer tracking"
             >
               <p>
-                Some links on Deal Beater are affiliate links. When you click
+                Some links on Blinlx are affiliate links. When you click
                 one, the destination retailer or affiliate network may use a
                 referral identifier, cookie or similar technology to record
-                that the visit came from Deal Beater.
+                that the visit came from Blinlx.
               </p>
 
               <p>
@@ -384,7 +384,7 @@ export default function CookiePage() {
               </p>
 
               <p>
-                Once you leave Deal Beater, the destination website&apos;s own
+                Once you leave Blinlx, the destination website&apos;s own
                 cookie policy and privacy terms apply.
               </p>
 
@@ -405,7 +405,7 @@ export default function CookiePage() {
               title="7. Consent and changing your preferences"
             >
               <p>
-                When required, Deal Beater will ask for your permission before
+                When required, Blinlx will ask for your permission before
                 enabling optional analytics or other non-essential
                 technologies.
               </p>
@@ -418,7 +418,7 @@ export default function CookiePage() {
 
               <p>
                 Rejecting optional cookies should not prevent you from using
-                the main Deal Beater product-checking service, although some
+                the main Blinlx product-checking service, although some
                 non-essential measurement features may no longer operate.
               </p>
 
@@ -449,7 +449,7 @@ export default function CookiePage() {
               </p>
 
               <p>
-                Browser controls are separate from Deal Beater&apos;s own
+                Browser controls are separate from Blinlx&apos;s own
                 consent controls. Deleting cookies may also remove your saved
                 cookie preference, meaning the website may ask you to choose
                 again.
@@ -461,7 +461,7 @@ export default function CookiePage() {
               title="9. Third-party websites"
             >
               <p>
-                Deal Beater links to retailers, marketplaces and other
+                Blinlx links to retailers, marketplaces and other
                 third-party websites. We do not control the cookies or similar
                 technologies used on those websites.
               </p>
@@ -491,7 +491,7 @@ export default function CookiePage() {
 
             <CookieSection id="contact" title="11. Contact us" last>
               <div className="rounded-2xl border border-[#2ee866]/20 bg-[#2ee866]/[0.06] p-6">
-                <p className="text-lg font-black text-white">Deal Beater</p>
+                <p className="text-lg font-black text-white">Blinlx</p>
 
                 <p className="mt-3">
                   Operated by{" "}
@@ -501,10 +501,10 @@ export default function CookiePage() {
                 <p className="mt-3">
                   Email:{" "}
                   <a
-                    href="mailto:hello@dealbeater.co.uk"
+                    href="mailto:help@blinlx.com"
                     className="font-semibold text-[#2ee866] transition hover:text-[#68f18e]"
                   >
-                    hello@dealbeater.co.uk
+                    help@blinlx.com
                   </a>
                 </p>
 
@@ -528,10 +528,14 @@ export default function CookiePage() {
         <div className="mx-auto max-w-7xl px-6 py-12 lg:px-10">
           <div className="grid gap-10 md:grid-cols-2">
             <div>
-              <Link href="/" aria-label="Deal Beater homepage">
-                <h2 className="text-2xl font-black">
-                  Deal<span className="text-[#2ee866]">Beater</span>
-                </h2>
+              <Link href="/" aria-label="Blinlx homepage">
+               <h2 className="text-2xl font-black">
+  BLINLX
+</h2>
+
+<p className="mt-1 text-xs tracking-[0.18em] text-white/50">
+  BUY SMARTER IN THE BLINK OF AN EYE.
+</p>
               </Link>
 
               <p className="mt-4 max-w-md leading-7 text-white/65">
@@ -588,7 +592,7 @@ export default function CookiePage() {
           <div className="my-10 h-px bg-white/10" />
 
           <div className="flex flex-col gap-3 text-sm text-white/45 md:flex-row md:items-center md:justify-between">
-            <p>© {currentYear} Deal Beater. All rights reserved.</p>
+            <p>© {currentYear} Blinlx. All rights reserved.</p>
 
             <p>
               Operated by{" "}

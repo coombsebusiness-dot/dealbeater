@@ -24,7 +24,6 @@ export interface PriceOffer {
   image?: string;
 }
 
-
 export interface PriceData {
   currentPrice: number | null;
 
@@ -176,6 +175,7 @@ console.log(
 
 const lookupQuery =
   product.searchQuery ||
+  productSearchQuery ||
   [
     product.brand,
     product.name,
@@ -205,37 +205,51 @@ const enhancedOffers = offers.map((offer) => {
     .trim()
     .toLowerCase();
 
-  if (!retailer.includes("amazon")) {
+  if (
+    !retailer.includes("amazon") ||
+    !amazonBest
+  ) {
     return offer;
   }
 
-  if (!amazonBest) {
-    return offer;
-  }
+  const amazonUrl =
+    amazonBest.canonicalUrl ?? null;
 
   return {
     ...offer,
 
-    title: amazonBest.title,
+    title:
+      amazonBest.title ||
+      offer.title,
 
     price:
       amazonBest.price ??
       offer.price,
 
-    link:
-      amazonBest.canonicalUrl,
+    imageUrl:
+      amazonBest.image ??
+      offer.imageUrl,
 
-    thumbnail:
-      amazonBest.image,
+    retailerUrl:
+      amazonUrl ??
+      offer.retailerUrl,
+
+    affiliateUrl: null,
+
+    finalUrl:
+      amazonUrl ??
+      offer.finalUrl,
 
     rating:
-      amazonBest.rating,
+      amazonBest.rating ??
+      offer.rating,
 
     reviewCount:
-      amazonBest.reviewCount,
+      amazonBest.reviewCount ??
+      offer.reviewCount,
 
     delivery:
-      amazonBest.availability
+      amazonBest.availability?.length
         ? amazonBest.availability.join(" • ")
         : offer.delivery,
   };
@@ -250,15 +264,29 @@ const allOffers = [
 
     price: offer.totalPrice,
 
-    link: offer.itemUrl,
+    imageUrl:
+      offer.imageUrl ?? null,
 
-    thumbnail: offer.imageUrl,
+    googleProductUrl: null,
+
+    retailerUrl:
+      offer.itemUrl ?? null,
+
+    affiliateUrl:
+      offer.itemUrl ?? null,
+
+    finalUrl:
+      offer.itemUrl ?? null,
 
     rating: null,
 
     reviewCount: null,
 
     delivery: null,
+
+    immersiveToken: null,
+
+    description: null,
   })),
 ];
 const verifiedOffers = allOffers.filter(
@@ -321,7 +349,7 @@ const topOffers = await Promise.all(
       (offer) =>
         Number.isFinite(offer.price) &&
         offer.price > 0 &&
-        Boolean(offer.link)
+        Boolean(offer.finalUrl)
     )
     .sort((a, b) => a.price - b.price)
     .filter(
@@ -338,27 +366,31 @@ const topOffers = await Promise.all(
         )
     )
     .slice(0, 3)
-    .map(async (offer) => ({
-      retailer: offer.retailer,
-      title: offer.title,
-      price: offer.price,
+.map(async (offer): Promise<PriceOffer> => ({
+  retailer: offer.retailer,
+  title: offer.title,
+  price: offer.price,
 
-      url: offer.link
-        ? await resolveOfferUrl(offer.link)
-        : undefined,
+  url: offer.finalUrl
+    ? await resolveOfferUrl(
+        offer.finalUrl
+      )
+    : undefined,
 
-      image:
-        offer.thumbnail ?? undefined,
-    }))
+  image:
+    offer.imageUrl ??
+    undefined,
+}))
 );
 
 
 const imageOffer =
-  verifiedOffers.find((offer) => offer.thumbnail) ??
+  verifiedOffers.find(
+    (offer) => Boolean(offer.imageUrl)
+  ) ??
   cheapestOffer;
-  
 
- if (allOffers.length === 0){
+ if (verifiedOffers.length === 0) {
 return {
   currentPrice: null,
 
@@ -522,34 +554,36 @@ else {
 
  return {
   currentPrice,
+
   marketAverage,
+
   lowestPrice,
+
   highestPrice,
+
   topOffers,
 
   priceSpread,
 
   savings,
 
- bestRetailer:
-  cheapestOffer?.retailer,
+  bestRetailer:
+    cheapestOffer?.retailer,
 
+  bestRetailerUrl:
+    cheapestOffer?.finalUrl
+      ? await resolveOfferUrl(
+          cheapestOffer.finalUrl
+        )
+      : undefined,
 
+  productImage:
+    imageOffer?.imageUrl ??
+    undefined,
 
-bestRetailerUrl:
-  cheapestOffer?.link
-    ? await resolveOfferUrl(
-        cheapestOffer.link
-      )
-    : undefined,
-
-productImage:
-  imageOffer?.thumbnail ?? undefined,
   marketConfidence,
 
   priceScore,
-
-  
 
   pricePosition,
 
@@ -561,15 +595,14 @@ productImage:
     savings >= 100
       ? "Excellent"
       : savings >= 50
-      ? "Good"
-      : savings >= 20
-      ? "Fair"
-      : "Poor",
+        ? "Good"
+        : savings >= 20
+          ? "Fair"
+          : "Poor",
 
   recommendation:
     currentPrice <= marketAverage
       ? "BUY_NOW"
       : "WAIT",
 };
-
 }

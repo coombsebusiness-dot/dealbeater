@@ -1,0 +1,17 @@
+export const ACCESSORY_TERMS = [
+  "case",
+  "cover",
+  "screen protector",
+  "charger",
+  "charging cable",
+  "adapter",
+  "stand",
+  "mount",
+  "replacement",
+  "battery",
+  "strap",
+  "bag",
+  "remote",
+  "keyboard",
+  "mouse",
+] as const;

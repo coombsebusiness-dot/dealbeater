@@ -260,7 +260,7 @@ export default function AnalysisExperience({
         </p>
 
         <p className="mt-1 text-xs font-semibold uppercase tracking-[0.14em] text-white/40">
-          Deal Beater Intelligence
+         BlinlxIntelligence
         </p>
 
         <div className="mt-4 min-h-[76px]">
@@ -295,7 +295,7 @@ export default function AnalysisExperience({
 
               <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-white/60">
                 {isComplete
-                  ? "Your personalised Deal Beater report is ready."
+                  ? "Your personalised Blinlx report is ready."
                   : currentStep.detail}
               </p>
             </motion.div>
@@ -475,7 +475,7 @@ export default function AnalysisExperience({
             className="relative mt-5 rounded-xl border border-[#2ee866]/30 bg-[#2ee866]/10 px-4 py-4 text-center"
           >
             <p className="text-sm font-black text-[#68f18e]">
-              ✓ Your Deal Beater report is ready
+              ✓ Your Blinlx report is ready
             </p>
 
             <p className="mt-1 text-xs text-white/50">

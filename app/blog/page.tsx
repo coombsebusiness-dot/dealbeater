@@ -5,14 +5,14 @@ import { blogPosts } from "@/app/components/lib/blog-posts";
 export const metadata: Metadata = {
   title: "Buying Guides and Product Advice",
   description:
-    "Read practical Deal Beater buying guides, product comparisons and advice designed to help UK shoppers avoid bad deals.",
+    "Read practical Blinlx buying guides, product comparisons and advice designed to help UK shoppers avoid bad deals.",
   alternates: {
     canonical: "/blog",
   },
   openGraph: {
-    title: "Buying Guides and Product Advice | Deal Beater",
+    title: "Buying Guides and Product Advice | Blinlx",
     description:
-      "Practical product guides and shopping advice from Deal Beater.",
+      "Practical product guides and shopping advice from Blinlx.",
     url: "/blog",
     type: "website",
   },
@@ -25,9 +25,9 @@ export default function BlogPage() {
     <main className="min-h-screen bg-[#101b26] text-white">
       <header className="border-b border-white/10">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 lg:px-10">
-          <Link href="/" aria-label="Deal Beater homepage">
+          <Link href="/" aria-label="Blinlx homepage">
             <div className="text-3xl font-extrabold tracking-tight">
-              Deal<span className="text-[#2ee866]">Beater</span>
+              Blin<span className="text-[#2ee866]">lx</span>
             </div>
 
             <p className="mt-1 text-[10px] font-semibold tracking-[0.16em] text-white/65">
@@ -64,7 +64,7 @@ export default function BlogPage() {
           </p>
 
           <h1 className="mt-5 text-5xl font-black tracking-[-0.04em] sm:text-6xl lg:text-7xl">
-            Deal Beater <span className="text-[#2ee866]">Guides</span>
+            Blinlx <span className="text-[#2ee866]">Guides</span>
           </h1>
 
           <p className="mx-auto mt-7 max-w-3xl text-lg leading-8 text-white/68">
@@ -143,7 +143,7 @@ export default function BlogPage() {
             </h2>
 
             <p className="mx-auto mt-4 max-w-2xl leading-8 text-white/65">
-              Enter the product or paste its link into Deal Beater and let us
+              Enter the product or paste its link into Blinlx and let us
               help you check the offer before you buy.
             </p>
 
@@ -163,7 +163,7 @@ export default function BlogPage() {
             <div>
               <Link href="/">
                 <h2 className="text-2xl font-black">
-                  Deal<span className="text-[#2ee866]">Beater</span>
+                  Blin<span className="text-[#2ee866]">lx</span>
                 </h2>
               </Link>
 
@@ -211,7 +211,7 @@ export default function BlogPage() {
           <div className="my-10 h-px bg-white/10" />
 
           <p className="text-sm text-white/45">
-            © {currentYear} Deal Beater. All rights reserved.
+            © {currentYear} Blinlx. All rights reserved.
           </p>
         </div>
       </footer>

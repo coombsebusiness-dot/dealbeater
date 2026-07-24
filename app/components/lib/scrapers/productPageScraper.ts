@@ -333,7 +333,7 @@ async function fetchWithSafeRedirects(
         "Accept-Language": "en-GB,en;q=0.9",
         "Cache-Control": "no-cache",
         "User-Agent":
-          "Mozilla/5.0 (compatible; DealBeaterBot/1.0; +https://dealbeater.co.uk)",
+          "Mozilla/5.0 (compatible; Blinlx/1.0; +https://blinlx.com)",
       },
     });
 

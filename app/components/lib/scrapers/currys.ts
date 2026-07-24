@@ -55,7 +55,7 @@ export async function scrapeCurrys(url: string): Promise<ProductInfo> {
 
   if (!name) {
     throw new Error(
-      "Deal Beater could not identify the product on this Currys page."
+      "Blinlx could not identify the product on this Currys page."
     );
   }
 

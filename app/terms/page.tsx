@@ -4,14 +4,14 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Terms of Use",
   description:
-    "Read the Deal Beater Terms of Use, including important information about product comparisons, retailer offers, affiliate links and permitted website use.",
+    "Read the Blinlx Terms of Use, including important information about product comparisons, retailer offers, affiliate links and permitted website use.",
   alternates: {
     canonical: "/terms",
   },
   openGraph: {
-    title: "Terms of Use | Deal Beater",
+    title: "Terms of Use | Blinlx",
     description:
-      "The terms that apply when you access or use the Deal Beater website and product comparison service.",
+      "The terms that apply when you access or use the Blinlx website and product comparison service.",
     url: "/terms",
     type: "website",
   },
@@ -26,9 +26,9 @@ export default function TermsPage() {
     <main className="min-h-screen bg-[#101b26] text-white">
       <header className="border-b border-white/10">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 lg:px-10">
-          <Link href="/" aria-label="Deal Beater homepage">
+          <Link href="/" aria-label="Blinlx homepage">
             <div className="text-3xl font-extrabold tracking-tight">
-              Deal<span className="text-[#2ee866]">Beater</span>
+              Blin<span className="text-[#2ee866]">lx</span>
             </div>
 
             <p className="mt-1 text-[10px] font-semibold tracking-[0.16em] text-white/65">
@@ -87,7 +87,7 @@ export default function TermsPage() {
 
         <div className="relative mx-auto max-w-5xl text-center">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#52ee7e]">
-            Using Deal Beater
+            Using Blinlx
           </p>
 
           <h1 className="mt-5 text-5xl font-black tracking-[-0.04em] sm:text-6xl lg:text-7xl">
@@ -96,7 +96,7 @@ export default function TermsPage() {
 
           <p className="mx-auto mt-7 max-w-3xl text-lg leading-8 text-white/68">
             These terms explain the rules that apply when you access or use
-            Deal Beater and the information provided through our service.
+            Blinlx and the information provided through our service.
           </p>
 
           <p className="mt-5 text-sm text-white/45">
@@ -127,7 +127,6 @@ export default function TermsPage() {
                 <TermsLink href="#affiliate-links">
                   Affiliate links
                 </TermsLink>
-                <TermsLink href="#uploads">Your submissions</TermsLink>
                 <TermsLink href="#acceptable-use">Acceptable use</TermsLink>
                 <TermsLink href="#intellectual-property">
                   Intellectual property
@@ -151,24 +150,24 @@ export default function TermsPage() {
           <article className="min-w-0 rounded-3xl border border-white/10 bg-white/[0.025] px-6 py-10 sm:px-10 lg:px-14">
             <TermsSection id="about" title="1. About these terms">
               <p>
-                These Terms of Use apply when you visit or use the Deal Beater
+                These Terms of Use apply when you visit or use the Blinlx
                 website, Deal Checker and related services.
               </p>
 
               <p>
-                Deal Beater is operated by{" "}
+                Blinlx is operated by{" "}
                 <strong className="text-white">Frame Tech UK Ltd</strong>.
               </p>
 
               <p>
-                By using Deal Beater, you agree to follow these terms. Please do
+                By using Blinlx, you agree to follow these terms. Please do
                 not use the service if you do not agree with them.
               </p>
             </TermsSection>
 
-            <TermsSection id="service" title="2. What Deal Beater provides">
+            <TermsSection id="service" title="2. What Blinlx provides">
               <p>
-                Deal Beater is a product-checking and price-comparison service
+                Blinlx is a product-checking and price-comparison service
                 designed to help UK consumers make more informed buying
                 decisions.
               </p>
@@ -179,7 +178,6 @@ export default function TermsPage() {
                 items={[
                   "Enter a product name, description or model number.",
                   "Paste a retailer or product link.",
-                  "Upload a quote, image or document for analysis.",
                   "Compare offers from retailers and online marketplaces.",
                   "Review product-matching information and buying guidance.",
                   "Follow links to third-party retailer websites.",
@@ -187,17 +185,17 @@ export default function TermsPage() {
               />
 
               <p>
-                Deal Beater is continually being developed. Features may be
+                Blinlx is continually being developed. Features may be
                 added, changed, tested or removed over time.
               </p>
             </TermsSection>
 
             <TermsSection
               id="not-retailer"
-              title="3. Deal Beater is not the retailer"
+              title="3. Blinlx is not the retailer"
             >
               <p>
-                Deal Beater does not normally sell, supply, deliver or fulfil
+                Blinlx does not normally sell, supply, deliver or fulfil
                 the products displayed through the service.
               </p>
 
@@ -228,7 +226,7 @@ export default function TermsPage() {
               <p>
                 Prices, stock levels, delivery charges, discount codes,
                 specifications, seller details, ratings and promotional offers
-                may change after Deal Beater has collected or displayed them.
+                may change after Blinlx has collected or displayed them.
               </p>
 
               <p>
@@ -248,7 +246,7 @@ export default function TermsPage() {
               title="5. Comparisons, scores and recommendations"
             >
               <p>
-                Deal Beater may use automated systems, product data and
+                Blinlx may use automated systems, product data and
                 matching rules to identify products, reject unsuitable listings
                 and rank retailer offers.
               </p>
@@ -285,7 +283,7 @@ export default function TermsPage() {
               title="6. Affiliate links and commissions"
             >
               <p>
-                Some links on Deal Beater are affiliate links. This means we
+                Some links on Blinlx are affiliate links. This means we
                 may receive a commission if you follow a link and complete a
                 qualifying purchase.
               </p>
@@ -319,7 +317,7 @@ export default function TermsPage() {
             >
               <p>
                 You are responsible for the information, links, images,
-                documents and other material you submit to Deal Beater.
+                documents and other material you submit to Blinlx.
               </p>
 
               <p>You must not submit content that:</p>
@@ -355,7 +353,7 @@ export default function TermsPage() {
 
               <TermsList
                 items={[
-                  "Use Deal Beater for unlawful, fraudulent or misleading activity.",
+                  "Use Blinlx for unlawful, fraudulent or misleading activity.",
                   "Attempt to gain unauthorised access to the service, its systems or user data.",
                   "Probe, scan, attack or deliberately overload the website or its infrastructure.",
                   "Introduce viruses, malware, automated attacks or harmful code.",
@@ -363,7 +361,7 @@ export default function TermsPage() {
                   "Copy or republish substantial parts of the service without permission.",
                   "Attempt to reverse engineer, bypass or manipulate product-matching, ranking or affiliate systems.",
                   "Impersonate another person, retailer or organisation.",
-                  "Use the service in a way that interferes with another visitor’s use of Deal Beater.",
+                  "Use the service in a way that interferes with another visitor’s use of Blinlx.",
                 ]}
               />
             </TermsSection>
@@ -373,14 +371,14 @@ export default function TermsPage() {
               title="9. Intellectual property"
             >
               <p>
-                Unless stated otherwise, Deal Beater and Frame Tech UK Ltd own
+                Unless stated otherwise, Blinlx and Frame Tech UK Ltd own
                 or license the website design, branding, software, written
                 content, databases, matching systems and other original
                 material made available through the service.
               </p>
 
               <p>
-                You may use Deal Beater for your own personal, non-commercial
+                You may use Blinlx for your own personal, non-commercial
                 shopping purposes.
               </p>
 
@@ -392,7 +390,7 @@ export default function TermsPage() {
 
               <p>
                 Retailer names, product names, logos and trade marks belong to
-                their respective owners. Their appearance on Deal Beater does
+                their respective owners. Their appearance on Blinlx does
                 not imply ownership or endorsement unless expressly stated.
               </p>
             </TermsSection>
@@ -402,7 +400,7 @@ export default function TermsPage() {
               title="10. Retailers and third-party websites"
             >
               <p>
-                Deal Beater contains links to websites and services operated by
+                Blinlx contains links to websites and services operated by
                 third parties.
               </p>
 
@@ -413,7 +411,7 @@ export default function TermsPage() {
               </p>
 
               <p>
-                A link does not automatically mean that Deal Beater endorses
+                A link does not automatically mean that Blinlx endorses
                 every product, statement or service available on the
                 destination website.
               </p>
@@ -424,7 +422,7 @@ export default function TermsPage() {
               title="11. Availability and changes to the service"
             >
               <p>
-                We aim to keep Deal Beater available and functioning properly,
+                We aim to keep Blinlx available and functioning properly,
                 but we do not promise that the service will always be
                 uninterrupted or error-free.
               </p>
@@ -453,7 +451,7 @@ export default function TermsPage() {
               </p>
 
               <p>
-                Subject to that, Deal Beater is responsible for losses that are
+                Subject to that, Blinlx is responsible for losses that are
                 a foreseeable result of our failure to use reasonable care and
                 skill or our breach of these terms.
               </p>
@@ -469,12 +467,12 @@ export default function TermsPage() {
                   "Incorrect, incomplete or misleading information supplied by a retailer, data provider or user.",
                   "Your failure to verify the final product and transaction details before purchasing.",
                   "Events outside our reasonable control.",
-                  "Use of Deal Beater for business or commercial purposes where the service was provided for personal consumer use.",
+                  "Use of Blinlx for business or commercial purposes where the service was provided for personal consumer use.",
                 ]}
               />
 
               <p>
-                Deal Beater does not provide financial, legal, medical,
+                Blinlx does not provide financial, legal, medical,
                 investment or other regulated professional advice.
               </p>
             </TermsSection>
@@ -505,7 +503,7 @@ export default function TermsPage() {
               title="14. Restricting or ending access"
             >
               <p>
-                We may restrict, suspend or end access to Deal Beater where we
+                We may restrict, suspend or end access to Blinlx where we
                 reasonably believe a user has:
               </p>
 
@@ -526,7 +524,7 @@ export default function TermsPage() {
 
             <TermsSection id="changes" title="15. Changes to these terms">
               <p>
-                We may update these terms when Deal Beater changes, when our
+                We may update these terms when Blinlx changes, when our
                 legal obligations change or when clarification is needed.
               </p>
 
@@ -575,7 +573,7 @@ export default function TermsPage() {
 
             <TermsSection id="contact" title="18. Contact us" last>
               <div className="rounded-2xl border border-[#2ee866]/20 bg-[#2ee866]/[0.06] p-6">
-                <p className="text-lg font-black text-white">Deal Beater</p>
+                <p className="text-lg font-black text-white">Blinlx</p>
 
                 <p className="mt-3">
                   Operated by{" "}
@@ -585,20 +583,20 @@ export default function TermsPage() {
                 <p className="mt-3">
                   Email:{" "}
                   <a
-                    href="mailto:hello@dealbeater.co.uk"
+                    href="mailto:help@blinlx.com"
                     className="font-semibold text-[#2ee866] transition hover:text-[#68f18e]"
                   >
-                    hello@dealbeater.co.uk
+                    help@blinlx.com
                   </a>
                 </p>
 
                 <p className="mt-3">
                   Website:{" "}
                   <a
-                    href="https://dealbeater.co.uk"
+                    href="https://blinlx.xom"
                     className="font-semibold text-[#2ee866] transition hover:text-[#68f18e]"
                   >
-                    dealbeater.co.uk
+                    blinlx.com
                   </a>
                 </p>
               </div>
@@ -611,9 +609,9 @@ export default function TermsPage() {
         <div className="mx-auto max-w-7xl px-6 py-12 lg:px-10">
           <div className="grid gap-10 md:grid-cols-2">
             <div>
-              <Link href="/" aria-label="Deal Beater homepage">
+              <Link href="/" aria-label="Blinlx homepage">
                 <h2 className="text-2xl font-black">
-                  Deal<span className="text-[#2ee866]">Beater</span>
+                  Blin<span className="text-[#2ee866]">lx</span>
                 </h2>
               </Link>
 
@@ -671,7 +669,7 @@ export default function TermsPage() {
           <div className="my-10 h-px bg-white/10" />
 
           <div className="flex flex-col gap-3 text-sm text-white/45 md:flex-row md:items-center md:justify-between">
-            <p>© {currentYear} Deal Beater. All rights reserved.</p>
+            <p>© {currentYear} Blinlx. All rights reserved.</p>
 
             <p>
               Operated by{" "}
