@@ -15,13 +15,25 @@ export interface ExpectedFingerprint {
   sku?: string | null;
 };
 
-  specs?: {
-    memory?: string | null;
-    storage?: string | null;
-    colour?: string | null;
-    screenSize?: string | null;
-    connectivity?: string[];
-  };
+ specs?: {
+  storage?: string | null;
+  memory?: string | null;
+  colour?: string | null;
+
+  screenSize?: string | null;
+  resolution?: string | null;
+  refreshRate?: string | null;
+  panelType?: string | null;
+  aspectRatio?: string | null;
+
+  ddrGeneration?: string | null;
+  memorySpeed?: string | null;
+  moduleCount?: number | null;
+  memoryFormFactor?: string | null;
+  latency?: string | null;
+
+  connectivity?: string[];
+};
 
   condition?: ProductCondition;
 

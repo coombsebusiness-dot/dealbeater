@@ -16,7 +16,7 @@ export const KNOWN_BRANDS = [
   "Dell",
   "HP",
   "Lenovo",
-  "Asus",
+   "ASUS",
   "Acer",
   "MSI",
   "Razer",
@@ -53,4 +53,9 @@ export const KNOWN_BRANDS = [
 "Sapphire",
 "Gigabyte",
 "ASRock",
+"G.Skill",
+"SK Hynix",
+"Micron",
+"BenQ",
+"AOC",
 ] as const;

@@ -6,9 +6,26 @@ export function detectProductType(
 ): ProductType {
   const value = title.toLowerCase();
 
-  // Complete consumer products must be checked before
-  // component categories such as memory and storage.
+  // Motherboards often mention DDR4/DDR5,
+  // so identify them before memory.
+  if (/\b(motherboard|mainboard)\b/.test(value)) {
+    return "motherboard";
+  }
 
+  // Strong evidence that the listing itself is RAM.
+  const isMemoryProduct =
+    /\b(laptop memory|laptop ram|desktop memory|desktop ram|server memory|memory module|ram module|memory kit|ram kit|sodimm|so-dimm|rdimm)\b/.test(
+      value
+    ) ||
+    /\b\d+\s*x\s*\d+\s*gb\s+ddr[3-5]\b/.test(
+      value
+    );
+
+  if (isMemoryProduct) {
+    return "memory";
+  }
+
+  // Complete products come next.
   if (
     /\b(macbook|laptop|notebook|chromebook|vivobook|thinkpad|surface laptop|xps)\b/.test(
       value
@@ -69,39 +86,38 @@ export function detectProductType(
     return "console";
   }
 
+// Watches
 if (
-  /\b(apple watch|galaxy watch|pixel watch|smartwatch|fitness watch)\b/.test(
-    value
-  )
+  /\b(apple watch|galaxy watch|pixel watch|smartwatch|fitness watch)\b/.test(value)
 ) {
   return "watch";
-  }
+}
 
-  if (
-    /\b(headphones|earphones|earbuds|airpods|headset)\b/.test(
-      value
-    )
-  ) {
-    return "headphones";
-  }
+// Motherboards BEFORE memory because they often mention DDR4/DDR5
+if (/\b(motherboard|mainboard)\b/.test(value)) {
+  return "motherboard";
+}
 
-  // Components come after complete products.
+// Memory BEFORE laptop because RAM often says "Laptop Memory"
+if (
+  /\b(?:RAM|MEMORY|DIMM|SODIMM|SO-DIMM|RDIMM|MEMORY KIT|RAM KIT)\b/i.test(title)
+) {
+  return "memory";
+}
 
-  if (
-    /\b(rtx\s?\d{4}|gtx\s?\d{3,4}|radeon rx|graphics card|\bgpu\b)\b/.test(
-      value
-    )
-  ) {
-    return "gpu";
-  }
+// Graphics cards
+if (
+  /\b(rtx\s?\d{4}|gtx\s?\d{3,4}|radeon rx|graphics card|\bgpu\b)\b/.test(value)
+) {
+  return "gpu";
+}
 
-  if (
-    /\b(ryzen\s?\d|intel core|core i[3579]|processor|\bcpu\b)\b/.test(
-      value
-    )
-  ) {
-    return "cpu";
-  }
+// CPUs
+if (
+  /\b(ryzen\s?\d|intel core|core i[3579]|processor|\bcpu\b)\b/.test(value)
+) {
+  return "cpu";
+}
 
   if (/\b(motherboard|mainboard)\b/.test(value)) {
     return "motherboard";
@@ -115,13 +131,11 @@ if (
     return "storage";
   }
 
-  if (
-    /\b(ddr[345]|ram kit|memory kit|\bram\b)\b/.test(
-      value
-    )
-  ) {
-    return "memory";
-  }
+if (
+  /\b(?:RAM|MEMORY|DIMM|SODIMM|SO-DIMM|RDIMM|MEMORY KIT|RAM KIT)\b/i.test(title)
+) {
+  return "memory";
+}
 
   if (
     ACCESSORY_TERMS.some(term =>
@@ -130,6 +144,13 @@ if (
   ) {
     return "accessory";
   }
+  if (
+  /\b(headphones|headphone|earphones|earphone|earbuds|earbud|airpods|headset|galaxy buds)\b/.test(
+    value
+  )
+) {
+  return "headphones";
+}
 
   return "unknown";
 }

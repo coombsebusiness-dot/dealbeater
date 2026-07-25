@@ -1,6 +1,7 @@
 import type {
   ProductFingerprint,
   ProductModelFingerprint,
+  ProductSpecsFingerprint,
 } from "./types";
 
 import { normaliseTitle } from "./utils";
@@ -15,9 +16,8 @@ import { detectProductType } from "./generic/productType";
 import { extractCapacities } from "./generic/capacity";
 import { extractSku } from "./generic/sku";
 import { extractScreenSize } from "./generic/screenSize";
-import {
-  parseCategoryModel,
-} from "./categories/model";
+
+import { parseCategoryModel } from "./categories/model";
 
 function createEmptyModel(): ProductModelFingerprint {
   return {
@@ -44,45 +44,64 @@ export function createProductFingerprintV3(
     productType
   );
 
- const categoryModel =
-  parseCategoryModel(
+ 
+
+const categoryModel = parseCategoryModel(
+  originalTitle,
+  productType
+);
+
+const specs: ProductSpecsFingerprint = {
+  storage: capacities.storage,
+  memory: capacities.memory,
+
+  colour: extractColour(originalTitle),
+
+  screenSize: extractScreenSize(
     originalTitle,
     productType
-  );
+  ),
+
+  resolution: null,
+  refreshRate: null,
+  panelType: null,
+  aspectRatio: null,
+
+  ddrGeneration: null,
+  memorySpeed: null,
+  moduleCount: null,
+  memoryFormFactor: null,
+  latency: null,
+
+  connectivity: extractConnectivity(originalTitle),
+
+  ...categoryModel.specs,
+};
 
 const model: ProductModelFingerprint = {
   ...createEmptyModel(),
-  ...categoryModel,
+  ...categoryModel.model,
+
   sku:
     extractSku(
-      originalTitle,
+      normalisedTitle,
       productType
     ) ??
-    categoryModel.sku ??
+    categoryModel.model?.sku ??
     null,
 };
-
   return {
     originalTitle,
     normalisedTitle,
 
     brand: findBrand(originalTitle),
     family: null,
+
     productType,
 
     model,
 
-    specs: {
-      memory: capacities.memory,
-      storage: capacities.storage,
-      colour: extractColour(originalTitle),
-      screenSize: extractScreenSize(
-        originalTitle,
-        productType
-      ),
-      connectivity:
-        extractConnectivity(originalTitle),
-    },
+    specs,
 
     condition:
       detectCondition(normalisedTitle),

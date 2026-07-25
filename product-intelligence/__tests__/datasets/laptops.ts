@@ -35,7 +35,7 @@ export const laptopTests: ProductTestCase[] = [
     input:
       "ASUS Vivobook 16 M1607KA-MB148W 16GB 512GB SSD",
     expected: {
-      brand: "Asus",
+      brand: "ASUS",
       productType: "laptop",
       model: {
         sku: "M1607KA-MB148W",

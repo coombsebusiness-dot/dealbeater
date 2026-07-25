@@ -16,9 +16,14 @@ interface ScreenSizeCandidate {
 }
 
 function normaliseScreenSize(
-  inches: number
+  inches: number,
+  productType: ProductType
 ): string {
-  return `${Number(inches)}"`;
+  const value = Number(inches);
+
+  return productType === "monitor"
+    ? `${value}-inch`
+    : `${value}"`;
 }
 
 function extractCandidates(
@@ -63,7 +68,7 @@ function isPlausibleScreenSize(
       return inches >= 9 && inches <= 22;
 
     case "monitor":
-      return inches >= 15 && inches <= 70;
+  return inches >= 10 && inches <= 70;
 
     case "tv":
       return inches >= 20 && inches <= 120;
@@ -91,6 +96,9 @@ export function extractScreenSize(
     .sort((a, b) => a.index - b.index)[0];
 
   return candidate
-    ? normaliseScreenSize(candidate.inches)
-    : null;
+  ? normaliseScreenSize(
+      candidate.inches,
+      productType
+    )
+  : null;
 }

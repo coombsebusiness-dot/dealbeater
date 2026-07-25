@@ -6,7 +6,7 @@ export const motherboardTests: ProductTestCase[] = [
     input:
       "ASUS ROG Strix Z890-E Gaming WiFi ATX Motherboard LGA1851",
     expected: {
-      brand: "Asus",
+      brand: "ASUS",
       productType: "motherboard",
       model: {
         base: "ROG Strix Z890-E Gaming WiFi",
@@ -63,7 +63,7 @@ export const motherboardTests: ProductTestCase[] = [
     input:
       "Refurbished ASUS Prime Z790-P WiFi DDR5 LGA1700 Motherboard",
     expected: {
-      brand: "Asus",
+      brand: "ASUS",
       productType: "motherboard",
       condition: "refurbished",
       model: {

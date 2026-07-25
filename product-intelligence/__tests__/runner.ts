@@ -17,6 +17,8 @@ import { watchTests } from "./datasets/watches";
 import { headphoneTests } from "./datasets/headphones";
 import { cpuTests } from "./datasets/cpus";
 import { motherboardTests } from "./datasets/motherboards";
+import { ramTests } from "@/product-intelligence/__tests__/datasets/ram";
+import { monitorTests } from "@/product-intelligence/__tests__/datasets/monitors";
 
 interface TestFailure {
   path: string;
@@ -44,6 +46,8 @@ const testCases: ProductTestCase[] = [
   ...watchTests,
   ...headphoneTests,
   ...storageTests,
+  ...ramTests,
+...monitorTests,
 ];
 
 function isPlainObject(

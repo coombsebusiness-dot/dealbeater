@@ -35,7 +35,19 @@ export interface ProductSpecsFingerprint {
   storage: string | null;
   memory: string | null;
   colour: string | null;
+
   screenSize: string | null;
+  resolution: string | null;
+  refreshRate: string | null;
+  panelType: string | null;
+  aspectRatio: string | null;
+
+  ddrGeneration: string | null;
+  memorySpeed: string | null;
+  moduleCount: number | null;
+  memoryFormFactor: string | null;
+  latency: string | null;
+
   connectivity: string[];
 }
 

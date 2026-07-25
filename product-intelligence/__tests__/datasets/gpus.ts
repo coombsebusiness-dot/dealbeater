@@ -6,7 +6,7 @@ export const gpuTests: ProductTestCase[] = [
     input:
       "ASUS GeForce RTX 5070 Ti 16GB GDDR7 Graphics Card",
     expected: {
-      brand: "Asus",
+      brand: "ASUS",
       productType: "gpu",
       specs: {
         memory: "16GB",
