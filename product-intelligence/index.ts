@@ -15,6 +15,9 @@ import { detectProductType } from "./generic/productType";
 import { extractCapacities } from "./generic/capacity";
 import { extractSku } from "./generic/sku";
 import { extractScreenSize } from "./generic/screenSize";
+import {
+  parseCategoryModel,
+} from "./categories/model";
 
 function createEmptyModel(): ProductModelFingerprint {
   return {
@@ -41,12 +44,23 @@ export function createProductFingerprintV3(
     productType
   );
 
-  const model = createEmptyModel();
-
-  model.sku = extractSku(
+ const categoryModel =
+  parseCategoryModel(
     originalTitle,
     productType
   );
+
+const model: ProductModelFingerprint = {
+  ...createEmptyModel(),
+  ...categoryModel,
+  sku:
+    extractSku(
+      originalTitle,
+      productType
+    ) ??
+    categoryModel.sku ??
+    null,
+};
 
   return {
     originalTitle,

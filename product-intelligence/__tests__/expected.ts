@@ -9,11 +9,11 @@ export interface ExpectedFingerprint {
   productType?: ProductType;
 
   model?: {
-    base?: string | null;
-    revision?: string | null;
-    variant?: string | null;
-    sku?: string | null;
-  };
+  base?: string | null;
+  revision?: string | null;
+  variant?: string | null;
+  sku?: string | null;
+};
 
   specs?: {
     memory?: string | null;

@@ -15,6 +15,8 @@ import { gpuTests } from "./datasets/gpus";
 import { lensTests } from "./datasets/lenses";
 import { watchTests } from "./datasets/watches";
 import { headphoneTests } from "./datasets/headphones";
+import { cpuTests } from "./datasets/cpus";
+import { motherboardTests } from "./datasets/motherboards";
 
 interface TestFailure {
   path: string;
@@ -37,6 +39,8 @@ const testCases: ProductTestCase[] = [
   ...lensTests,
   ...consoleTests,
   ...gpuTests,
+  ...cpuTests,
+  ...motherboardTests,
   ...watchTests,
   ...headphoneTests,
   ...storageTests,

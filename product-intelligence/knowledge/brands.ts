@@ -51,4 +51,6 @@ export const KNOWN_BRANDS = [
   "Sigma",
 "Sony",
 "Sapphire",
+"Gigabyte",
+"ASRock",
 ] as const;

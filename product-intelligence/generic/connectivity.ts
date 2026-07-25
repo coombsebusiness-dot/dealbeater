@@ -1,29 +1,49 @@
-import { CONNECTIVITY_TERMS } from "../knowledge/connectivity";
+import {
+  CONNECTIVITY_DEFINITIONS,
+} from "../knowledge/connectivity";
+
 import { escapeRegExp } from "../utils";
+
+interface ConnectivityMatch {
+  value: string;
+  index: number;
+}
 
 export function extractConnectivity(
   title: string
 ): string[] {
-  const matches: Array<{
-    value: string;
-    index: number;
-  }> = [];
+  const matches: ConnectivityMatch[] = [];
 
-  for (const term of CONNECTIVITY_TERMS) {
-    const pattern = new RegExp(
-      `\\b${escapeRegExp(term)}\\b`,
-      "i"
-    );
+  for (const definition of CONNECTIVITY_DEFINITIONS) {
+    let earliestIndex: number | null = null;
 
-    const match = pattern.exec(title);
+    for (const alias of definition.aliases) {
+      const pattern = new RegExp(
+        `\\b${escapeRegExp(alias)}\\b`,
+        "i"
+      );
 
-    if (!match) {
+      const match = pattern.exec(title);
+
+      if (!match) {
+        continue;
+      }
+
+      if (
+        earliestIndex === null ||
+        match.index < earliestIndex
+      ) {
+        earliestIndex = match.index;
+      }
+    }
+
+    if (earliestIndex === null) {
       continue;
     }
 
     matches.push({
-      value: term,
-      index: match.index,
+      value: definition.value,
+      index: earliestIndex,
     });
   }
 

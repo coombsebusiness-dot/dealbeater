@@ -160,7 +160,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         {children}
 
-        <GoogleAnalytics gaId="G-B2CL1EN8PB" />
+        <GoogleAnalytics gaId="G-FFR1QXP2RZ" />
       </body>
     </html>
   );
