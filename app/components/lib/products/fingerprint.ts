@@ -222,13 +222,15 @@ function findBrand(title: string): string | null {
 function detectProductType(title: string): ProductType {
   const value = title.toLowerCase();
 
-  if (
-    /\b(macbook|laptop|notebook|chromebook|vivobook|thinkpad|surface laptop)\b/.test(
-      value
-    )
-  ) {
-    return "laptop";
-  }
+// Complete laptop products must be detected before CPUs and GPUs,
+// because laptop titles often contain Ryzen, Intel Core, RTX, etc.
+if (
+  /\b(macbook|laptop|notebook|chromebook|vivobook|zenbook|rog\s+strix|rog\s+zephyrus|thinkpad|thinkbook|legion|ideapad|yoga|latitude|inspiron|xps|spectre|envy|pavilion|omen|elitebook|aspire|swift|nitro|predator(?:\s+helios)?|surface\s+laptop|galaxy\s+book\d*)\b/i.test(
+    value
+  )
+) {
+  return "laptop";
+}
 
   if (
     /\b(iphone|smartphone|mobile phone|galaxy s\d|pixel \d|phone)\b/.test(

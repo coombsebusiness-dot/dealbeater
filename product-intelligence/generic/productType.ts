@@ -25,14 +25,18 @@ export function detectProductType(
     return "memory";
   }
 
-  // Complete products come next.
-  if (
-    /\b(macbook|laptop|notebook|chromebook|vivobook|thinkpad|surface laptop|xps)\b/.test(
-      value
-    )
-  ) {
-    return "laptop";
+// Detect complete laptops before standalone CPUs and GPUs.
+// Laptop listings often contain Ryzen, Intel Core and RTX terms.
+ if (/\b(monitor|display)\b/.test(value)) {
+    return "monitor";
   }
+if (
+  /\b(macbook|laptop|notebook|chromebook|vivobook|zenbook|rog\s+strix|rog\s+zephyrus|tuf\s+gaming|thinkpad|thinkbook|legion|ideapad|yoga|latitude|inspiron|xps|precision|spectre|envy|pavilion|omen|elitebook|probook|aspire|swift|nitro|predator(?:\s+helios)?|surface\s+laptop|surface\s+book|galaxy\s+book\d*|msi\s+(?:stealth|raider|katana|cyborg|prestige)|razer\s+blade|lg\s+gram|matebook|magicbook|aorus|erazer|alienware)\b/i.test(
+    value
+  )
+) {
+  return "laptop";
+}
 
   if (
     /\b(iphone|smartphone|mobile phone|galaxy s\d+|galaxy z|pixel \d|phone)\b/.test(
@@ -66,9 +70,7 @@ export function detectProductType(
     return "lens";
   }
 
-  if (/\b(monitor|display)\b/.test(value)) {
-    return "monitor";
-  }
+ 
 
   if (
     /\b(television|smart tv|oled tv|qled tv|\btv\b)\b/.test(
@@ -88,63 +90,40 @@ export function detectProductType(
 
 // Watches
 if (
-  /\b(apple watch|galaxy watch|pixel watch|smartwatch|fitness watch)\b/.test(value)
+  /\b(apple watch|galaxy watch|pixel watch|smartwatch|fitness watch)\b/.test(
+    value
+  )
 ) {
   return "watch";
 }
 
-// Motherboards BEFORE memory because they often mention DDR4/DDR5
-if (/\b(motherboard|mainboard)\b/.test(value)) {
-  return "motherboard";
-}
-
-// Memory BEFORE laptop because RAM often says "Laptop Memory"
-if (
-  /\b(?:RAM|MEMORY|DIMM|SODIMM|SO-DIMM|RDIMM|MEMORY KIT|RAM KIT)\b/i.test(title)
-) {
-  return "memory";
-}
-
 // Graphics cards
 if (
-  /\b(rtx\s?\d{4}|gtx\s?\d{3,4}|radeon rx|graphics card|\bgpu\b)\b/.test(value)
+  /\b(rtx\s?\d{4}|gtx\s?\d{3,4}|radeon rx|graphics card|\bgpu\b)\b/.test(
+    value
+  )
 ) {
   return "gpu";
 }
 
 // CPUs
 if (
-  /\b(ryzen\s?\d|intel core|core i[3579]|processor|\bcpu\b)\b/.test(value)
+  /\b(ryzen\s?\d|intel core|core i[3579]|processor|\bcpu\b)\b/.test(
+    value
+  )
 ) {
   return "cpu";
 }
 
-  if (/\b(motherboard|mainboard)\b/.test(value)) {
-    return "motherboard";
-  }
-
-  if (
-    /\b(ssd|hard drive|hdd|nvme|solid state drive)\b/.test(
-      value
-    )
-  ) {
-    return "storage";
-  }
-
 if (
-  /\b(?:RAM|MEMORY|DIMM|SODIMM|SO-DIMM|RDIMM|MEMORY KIT|RAM KIT)\b/i.test(title)
+  /\b(ssd|hard drive|hdd|nvme|solid state drive)\b/.test(
+    value
+  )
 ) {
-  return "memory";
+  return "storage";
 }
 
-  if (
-    ACCESSORY_TERMS.some(term =>
-      value.includes(term)
-    )
-  ) {
-    return "accessory";
-  }
-  if (
+if (
   /\b(headphones|headphone|earphones|earphone|earbuds|earbud|airpods|headset|galaxy buds)\b/.test(
     value
   )
@@ -152,5 +131,13 @@ if (
   return "headphones";
 }
 
-  return "unknown";
+if (
+  ACCESSORY_TERMS.some(term =>
+    value.includes(term)
+  )
+) {
+  return "accessory";
+}
+
+return "unknown";
 }

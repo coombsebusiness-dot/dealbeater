@@ -85,6 +85,10 @@ export function createProductFingerprintV3(
 maximumAperture: null,
 stabilisation: null,
 
+processor: null,
+graphics: null,
+operatingSystem: null,
+
 
     connectivity:
       extractConnectivity(originalTitle),
@@ -106,23 +110,21 @@ stabilisation: null,
   };
 
   return {
-    originalTitle,
-    normalisedTitle,
+  originalTitle,
+  normalisedTitle,
 
-    brand: findBrand(originalTitle),
-    family: null,
+  brand: findBrand(originalTitle),
+  family: categoryModel.family ?? null,
 
-    productType,
+  productType,
 
-    model,
-    specs,
+  model,
+  specs,
 
-    condition:
-      detectCondition(normalisedTitle),
+  condition: detectCondition(normalisedTitle),
 
-    bundle,
+  bundle,
 
-    tokens:
-      createTokens(normalisedTitle),
-  };
+  tokens: createTokens(normalisedTitle),
+};
 }

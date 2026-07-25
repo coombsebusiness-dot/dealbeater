@@ -9,6 +9,7 @@ import { parseMotherboardModel } from "./motherboard";
 import { parseMonitorFingerprint } from "./monitor";
 import { parseCameraFingerprint } from "./camera";
 import { parseLens } from "./lens";
+import { parseLaptopFingerprint } from "./laptop";
 
 export function parseCategoryModel(
   title: string,
@@ -35,6 +36,9 @@ export function parseCategoryModel(
 
       case "camera":
   return parseCameraFingerprint(title);
+
+  case "laptop":
+  return parseLaptopFingerprint(title);
 
     default:
       return {};

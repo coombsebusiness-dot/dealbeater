@@ -56,6 +56,10 @@ mount: string | null;
 megapixels: string | null;
 videoResolution: string | null;
 
+processor: string | null;
+graphics: string | null;
+operatingSystem: string | null;
+
   connectivity: string[];
 }
 

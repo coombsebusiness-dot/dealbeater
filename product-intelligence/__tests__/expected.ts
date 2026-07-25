@@ -41,6 +41,10 @@ export interface ExpectedFingerprint {
 maximumAperture?: string | null;
 stabilisation?: string | null;
 
+processor?: string | null;
+graphics?: string | null;
+operatingSystem?: string | null;
+
   connectivity?: string[];
 };
 

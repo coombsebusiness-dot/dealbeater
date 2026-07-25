@@ -5,7 +5,7 @@ import type {
   ProductTestCase,
 } from "./expected";
 
-import { laptopTests } from "./datasets/laptops";
+
 import { phoneTests } from "./datasets/phones";
 import { cameraTests } from "./datasets/cameras";
 import { storageTests } from "./datasets/storage";
@@ -19,6 +19,7 @@ import { cpuTests } from "./datasets/cpus";
 import { motherboardTests } from "./datasets/motherboards";
 import { ramTests } from "@/product-intelligence/__tests__/datasets/ram";
 import { monitorTests } from "@/product-intelligence/__tests__/datasets/monitors";
+import { laptopTests } from "./datasets/laptops";
 
 interface TestFailure {
   path: string;
