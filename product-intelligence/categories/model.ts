@@ -7,6 +7,8 @@ import { parseRamFingerprint } from "./ram";
 import { parseCpuModel } from "./cpu";
 import { parseMotherboardModel } from "./motherboard";
 import { parseMonitorFingerprint } from "./monitor";
+import { parseCameraFingerprint } from "./camera";
+import { parseLens } from "./lens";
 
 export function parseCategoryModel(
   title: string,
@@ -27,6 +29,12 @@ export function parseCategoryModel(
 
     case "memory":
       return parseRamFingerprint(title);
+
+       case "lens":
+    return parseLens(title);
+
+      case "camera":
+  return parseCameraFingerprint(title);
 
     default:
       return {};

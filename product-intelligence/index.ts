@@ -44,52 +44,67 @@ export function createProductFingerprintV3(
     productType
   );
 
- 
-
-const categoryModel = parseCategoryModel(
-  originalTitle,
-  productType
-);
-
-const specs: ProductSpecsFingerprint = {
-  storage: capacities.storage,
-  memory: capacities.memory,
-
-  colour: extractColour(originalTitle),
-
-  screenSize: extractScreenSize(
+  const categoryModel = parseCategoryModel(
     originalTitle,
     productType
-  ),
+  );
 
-  resolution: null,
-  refreshRate: null,
-  panelType: null,
-  aspectRatio: null,
+  const genericBundle =
+    extractBundle(originalTitle);
 
-  ddrGeneration: null,
-  memorySpeed: null,
-  moduleCount: null,
-  memoryFormFactor: null,
-  latency: null,
+  const bundle =
+    categoryModel.bundle ?? genericBundle;
 
-  connectivity: extractConnectivity(originalTitle),
+  const specs: ProductSpecsFingerprint = {
+    storage: capacities.storage,
+    memory: capacities.memory,
 
-  ...categoryModel.specs,
-};
+    colour: extractColour(originalTitle),
 
-const model: ProductModelFingerprint = {
-  ...createEmptyModel(),
-  ...categoryModel.model,
-
-  sku:
-    extractSku(
-      normalisedTitle,
+    screenSize: extractScreenSize(
+      originalTitle,
       productType
-    ) ??
-    categoryModel.model?.sku ??
-    null,
-};
+    ),
+
+    resolution: null,
+    refreshRate: null,
+    panelType: null,
+    aspectRatio: null,
+
+    ddrGeneration: null,
+    memorySpeed: null,
+    moduleCount: null,
+    memoryFormFactor: null,
+    latency: null,
+
+    sensorSize: null,
+    mount: null,
+    megapixels: null,
+    videoResolution: null,
+    focalLength: null,
+maximumAperture: null,
+stabilisation: null,
+
+
+    connectivity:
+      extractConnectivity(originalTitle),
+
+    ...categoryModel.specs,
+  };
+
+  const model: ProductModelFingerprint = {
+    ...createEmptyModel(),
+    ...categoryModel.model,
+
+    sku:
+      extractSku(
+        normalisedTitle,
+        productType
+      ) ??
+      categoryModel.model?.sku ??
+      null,
+  };
+
   return {
     originalTitle,
     normalisedTitle,
@@ -100,18 +115,14 @@ const model: ProductModelFingerprint = {
     productType,
 
     model,
-
     specs,
 
     condition:
       detectCondition(normalisedTitle),
 
-    bundle:
-      extractBundle(normalisedTitle),
+    bundle,
 
     tokens:
       createTokens(normalisedTitle),
   };
 }
-
-export * from "./types";

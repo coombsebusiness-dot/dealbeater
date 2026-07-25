@@ -41,12 +41,20 @@ export interface ProductSpecsFingerprint {
   refreshRate: string | null;
   panelType: string | null;
   aspectRatio: string | null;
+  focalLength: string | null;
+  maximumAperture: string | null;
+  stabilisation: string | null;
 
   ddrGeneration: string | null;
   memorySpeed: string | null;
   moduleCount: number | null;
   memoryFormFactor: string | null;
   latency: string | null;
+
+  sensorSize: string | null;
+mount: string | null;
+megapixels: string | null;
+videoResolution: string | null;
 
   connectivity: string[];
 }
@@ -82,7 +90,7 @@ export interface FingerprintPatch {
   specs?: Partial<ProductSpecsFingerprint>;
 
   condition?: ProductCondition;
-  bundle?: Partial<ProductBundleFingerprint>;
+  bundle?: ProductBundleFingerprint;
 
   tokens?: string[];
 }
