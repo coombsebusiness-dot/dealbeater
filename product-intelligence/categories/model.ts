@@ -10,6 +10,7 @@ import { parseMonitorFingerprint } from "./monitor";
 import { parseCameraFingerprint } from "./camera";
 import { parseLens } from "./lens";
 import { parseLaptopFingerprint } from "./laptop";
+import { parsePhoneFingerprint } from "./phone";
 
 export function parseCategoryModel(
   title: string,
@@ -39,6 +40,9 @@ export function parseCategoryModel(
 
   case "laptop":
   return parseLaptopFingerprint(title);
+
+  case "phone":
+  return parsePhoneFingerprint(title);
 
     default:
       return {};

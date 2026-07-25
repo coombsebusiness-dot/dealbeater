@@ -113,7 +113,9 @@ operatingSystem: null,
   originalTitle,
   normalisedTitle,
 
-  brand: findBrand(originalTitle),
+  brand:
+  categoryModel.brand ??
+  findBrand(originalTitle),
   family: categoryModel.family ?? null,
 
   productType,

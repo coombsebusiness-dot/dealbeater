@@ -37,14 +37,52 @@ if (
 ) {
   return "laptop";
 }
+// Watches
+if (
+  /\b(apple watch|galaxy watch|pixel watch|smartwatch|fitness watch)\b/.test(
+    value
+  )
+) {
+  return "watch";
+}
 
-  if (
-    /\b(iphone|smartphone|mobile phone|galaxy s\d+|galaxy z|pixel \d|phone)\b/.test(
-      value
-    )
-  ) {
-    return "phone";
-  }
+ // Phones
+if (
+  /\biphone(?:\s+se|\s+\d+)?\b/.test(value) ||
+  /\bsmartphone\b/.test(value) ||
+  /\bmobile phone\b/.test(value) ||
+
+  // Samsung
+  /\bgalaxy\s+s\d+\b/.test(value) ||
+  /\bgalaxy\s+a\d+\b/.test(value) ||
+  /\bgalaxy\s+z\s*(?:fold|flip)\s*\d*\b/.test(
+    value
+  ) ||
+
+  // Google
+  /\bgoogle\s+pixel\b/.test(value) ||
+  /\bpixel\s+(?:fold|\d+[a-z]?)\b/.test(value) ||
+
+  // OnePlus
+  /\boneplus(?:\s+nord)?\s+\d+[a-z]?\b/.test(
+    value
+  ) ||
+
+  // Xiaomi, Redmi and Poco
+  /\bxiaomi\s+\d+[a-z]?\b/.test(value) ||
+  /\bredmi\s+(?:note\s+)?\d+\b/.test(value) ||
+  /\bpoco\s+[a-z]\d+\b/.test(value) ||
+
+  // Other phone manufacturers
+  /\bnothing\s+phone\b/.test(value) ||
+  /\bmotorola\s+(?:razr|edge)\b/.test(value) ||
+  /\bsony\s+xperia\b/.test(value) ||
+  /\bxperia\s+\d+\b/.test(value) ||
+  /\bhonor\s+magic\d*\b/.test(value) ||
+  /\boppo\s+find\s+x\d+\b/.test(value)
+) {
+  return "phone";
+}
 
   if (
     /\b(ipad|tablet|galaxy tab|surface pro)\b/.test(
@@ -88,14 +126,7 @@ if (
     return "console";
   }
 
-// Watches
-if (
-  /\b(apple watch|galaxy watch|pixel watch|smartwatch|fitness watch)\b/.test(
-    value
-  )
-) {
-  return "watch";
-}
+
 
 // Graphics cards
 if (
