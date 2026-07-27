@@ -18,6 +18,10 @@ function getOpenAIClient() {
     apiKey,
   });
 }
+const ScoreMetricSchema = z.object({
+  name: z.string(),
+  score: z.number().min(0).max(100),
+});
 
 const BetterAlternativeSchema = z.object({
   name: z.string(),
@@ -29,11 +33,11 @@ const BetterAlternativeSchema = z.object({
 });
 
 const ScoreBreakdownSchema = z.object({
-  productQuality: z.number().min(0).max(100),
-  priceValue: z.number().min(0).max(100),
-  reviewQuality: z.number().min(0).max(100),
-  retailerTrust: z.number().min(0).max(100),
-  warrantySupport: z.number().min(0).max(100),
+  price: z.number().min(0).max(100),
+  reviews: z.number().min(0).max(100),
+  retailer: z.number().min(0).max(100),
+  warranty: z.number().min(0).max(100),
+  value: z.number().min(0).max(100),
 });
 
 const TopOfferSchema = z.object({
@@ -44,6 +48,8 @@ const TopOfferSchema = z.object({
   image: z.string().optional(),
 });
 
+
+
 export const DealAIReportSchema = z.object({
   productName: z.string(),
   retailerName: z.string(),
@@ -53,7 +59,9 @@ export const DealAIReportSchema = z.object({
   saving: z.string(),
   checkedAt: z.string(),
   ctaLabel: z.string().optional(),
-
+currentPrice: z.number().nullable().optional(),
+fairPrice: z.number().nullable().optional(),
+lowestPrice: z.number().nullable().optional(),
   
 
   topOffers: z.array(TopOfferSchema),
@@ -68,7 +76,12 @@ export const DealAIReportSchema = z.object({
   ]),
 
   score: z.number().min(0).max(100),
-  confidence: z.number().min(0).max(100),
+confidence: z.number().min(0).max(100),
+
+
+scoreExplanation: z.string().optional(),
+
+  
 
   
 
@@ -335,8 +348,19 @@ function buildFinalReport(
     report.product.ctaLabel
   );
 
-  const topOffers =
-  report.pricing.topOffers ?? [];
+const topOffers =
+  (report.pricing.topOffers ?? []).map((offer) => ({
+    retailer: offer.retailer,
+    title: offer.retailer,
+    price: offer.price,
+    url:
+      offer.affiliateUrl ||
+      offer.finalUrl ||
+      offer.retailerUrl ||
+      offer.url ||
+      "",
+    image: offer.image,
+  }));
 
 const cheapestOffer =
   topOffers.length > 0
@@ -346,59 +370,71 @@ const cheapestOffer =
       )[0]
     : undefined;
 
-console.log(
-  "🔵 PRODUCT CTA URL:",
-  report.product.ctaUrl
-);
-
-console.log(
-  "🟠 CHEAPEST OFFER URL:",
-  cheapestOffer?.url
-);
+const finalRetailerUrl =
+  cheapestOffer?.url ||
+  report.product.ctaUrl ||
+  undefined;
 
 console.log(
   "🟢 FINAL RETAILER URL:",
-  cheapestOffer?.url ||
-    report.product.ctaUrl
+  finalRetailerUrl
 );
-    
- return {
+
+return {
   productName:
     report.product.name ||
     buildProductName(report),
 
-    
-    
+  retailerName:
+    cheapestOffer?.retailer ||
+    report.pricing.bestRetailer ||
+    findBestRetailerName(
+      report.retailers,
+      report.pricing
+    ),
 
- retailerName:
-  cheapestOffer?.retailer ||
-  report.pricing.bestRetailer ||
-  findBestRetailerName(
-    report.retailers,
-    report.pricing
-  ),
+  price:
+    cheapestOffer
+      ? formatPrice(cheapestOffer.price)
+      : findDisplayPrice(report.pricing),
 
-price:
-  cheapestOffer
-    ? formatPrice(cheapestOffer.price)
-    : findDisplayPrice(report.pricing),
+  currentPrice:
+    cheapestOffer?.price ??
+    readNumber(asRecord(report.pricing), [
+      "currentPrice",
+      "submittedPrice",
+      "price",
+    ]) ??
+    null,
 
-productImage:
-  cheapestOffer?.image ||
-  report.product.imageUrl,
+  lowestPrice:
+    readNumber(asRecord(report.pricing), [
+      "lowestPrice",
+      "bestPrice",
+    ]) ??
+    cheapestOffer?.price ??
+    null,
 
-retailerUrl:
-  cheapestOffer?.url ||
-  report.product.ctaUrl,
+  fairPrice:
+    readNumber(asRecord(report.pricing), [
+      "fairPrice",
+      "marketAverage",
+      "averagePrice",
+    ]) ??
+    null,
 
-ctaLabel:
-  cheapestOffer?.url ||
-  report.product.ctaUrl
-    ? "Buy Now"
-    : undefined,
+  productImage:
+    cheapestOffer?.image ||
+    report.product.imageUrl,
 
-topOffers,
+  retailerUrl: finalRetailerUrl,
 
+  ctaLabel:
+    finalRetailerUrl
+      ? "Buy Now"
+      : undefined,
+
+  topOffers,
  
 
   saving:
@@ -454,30 +490,26 @@ topOffers,
         : report.concerns,
 
     scoreBreakdown: {
-      /*
-       * Map the engine's existing breakdown into
-       * the fields already expected by the UI.
-       */
-      productQuality: clampScore(
-        report.scoreBreakdown.value
-      ),
+  price: clampScore(
+    report.scoreBreakdown.price
+  ),
 
-      priceValue: clampScore(
-        report.scoreBreakdown.price
-      ),
+  reviews: clampScore(
+    report.scoreBreakdown.reviews
+  ),
 
-      reviewQuality: clampScore(
-        report.scoreBreakdown.reviews
-      ),
+  retailer: clampScore(
+    report.scoreBreakdown.retailer
+  ),
 
-      retailerTrust: clampScore(
-        report.scoreBreakdown.retailer
-      ),
+  warranty: clampScore(
+    report.scoreBreakdown.warranty
+  ),
 
-      warrantySupport: clampScore(
-        report.scoreBreakdown.warranty
-      ),
-    },
+  value: clampScore(
+    report.scoreBreakdown.value
+  ),
+},
 
     betterAlternatives:
       mapAlternatives(

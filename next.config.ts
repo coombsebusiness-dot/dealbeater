@@ -1,20 +1,29 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  async redirects() {
-    return [
+  images: {
+    remotePatterns: [
       {
-        source: "/:path*",
-        has: [
-          {
-            type: "host",
-            value: "www.blinlx.com",
-          },
-        ],
-        destination: "https://blinlx.com/:path*",
-        permanent: true,
+        protocol: "https",
+        hostname: "i.ebayimg.com",
       },
-    ];
+      {
+        protocol: "https",
+        hostname: "m.media-amazon.com",
+      },
+      {
+        protocol: "https",
+        hostname: "images.currys.biz",
+      },
+      {
+        protocol: "https",
+        hostname: "media.4rgos.it",
+      },
+      {
+        protocol: "https",
+        hostname: "johnlewis.scene7.com",
+      },
+    ],
   },
 };
 

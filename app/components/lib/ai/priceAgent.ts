@@ -18,10 +18,14 @@ import {
 
 export interface PriceOffer {
   retailer: string;
-  title: string;
   price: number;
-  url?: string;
+  url: string;
   image?: string;
+  title?: string;
+
+  affiliateUrl?: string;
+  finalUrl?: string;
+  retailerUrl?: string;
 }
 
 export interface PriceData {
@@ -290,6 +294,7 @@ const allOffers = [
   })),
 ];
 const verifiedOffers = allOffers.filter(
+  
   (offer) => {
    const referenceProduct = [
   product.searchQuery,
@@ -333,6 +338,16 @@ console.log("================================");
     return true;
   }
 );
+console.log("VERIFIED OFFERS");
+
+verifiedOffers.forEach((offer) => {
+  console.log({
+    title: offer.title,
+    retailer: offer.retailer,
+    price: offer.price,
+  });
+});
+console.log("VERIFIED OFFERS");
 
 const cheapestOffer =
   verifiedOffers.length > 0
@@ -371,15 +386,13 @@ const topOffers = await Promise.all(
   title: offer.title,
   price: offer.price,
 
-  url: offer.finalUrl
-    ? await resolveOfferUrl(
-        offer.finalUrl
-      )
-    : undefined,
+url: offer.finalUrl
+  ? (await resolveOfferUrl(offer.finalUrl)) ?? offer.finalUrl
+  : "",
 
-  image:
-    offer.imageUrl ??
-    undefined,
+image:
+  offer.imageUrl ??
+  undefined,
 }))
 );
 
@@ -444,6 +457,12 @@ marketConfidence: 0,
 
   const currentPrice =
     product.price ?? marketAverage;
+    console.log("PRICE DEBUG", {
+  productPrice: product.price,
+  marketAverage,
+  currentPrice,
+  lowestPrice,
+});
 
   const savings = currentPrice - lowestPrice;
 

@@ -436,23 +436,76 @@ function extractYear(
   );
 }
 
+function capacityToGB(value: string): number {
+  const amount = Number.parseFloat(value);
+
+  if (!Number.isFinite(amount)) {
+    return 0;
+  }
+
+  return value.endsWith("tb")
+    ? amount * 1024
+    : amount;
+}
+
+function extractCapacities(
+  value: string
+): string[] {
+  return Array.from(
+    value.matchAll(
+      /\b(\d+(?:\.\d+)?)\s*(tb|gb)\b/g
+    )
+  ).map((match) =>
+    normaliseCapacity(
+      match[1],
+      match[2]
+    )
+  );
+}
+
 function extractMemory(
   value: string
 ): string | null {
   const ramAfterCapacity = value.match(
-    /\b(\d+)\s*gb\s*(?:ram|memory|unified memory)\b/
+    /\b(\d+(?:\.\d+)?)\s*gb\s*(?:ram|memory|unified memory)\b/
   );
 
   if (ramAfterCapacity?.[1]) {
-    return `${ramAfterCapacity[1]}gb`;
+    return normaliseCapacity(
+      ramAfterCapacity[1],
+      "gb"
+    );
   }
 
   const ramBeforeCapacity = value.match(
-    /\b(?:ram|memory|unified memory)\s*(?:of\s*)?(\d+)\s*gb\b/
+    /\b(?:ram|memory|unified memory)\s*(?:of\s*)?(\d+(?:\.\d+)?)\s*gb\b/
   );
 
   if (ramBeforeCapacity?.[1]) {
-    return `${ramBeforeCapacity[1]}gb`;
+    return normaliseCapacity(
+      ramBeforeCapacity[1],
+      "gb"
+    );
+  }
+
+  const capacities =
+    extractCapacities(value);
+
+  /*
+   * When two unlabelled capacities are present,
+   * the smaller value is normally RAM:
+   *
+   * 16GB 512GB -> 16GB RAM
+   * 32GB 1TB   -> 32GB RAM
+   */
+  if (capacities.length === 2) {
+    const sorted = [...capacities].sort(
+      (a, b) =>
+        capacityToGB(a) -
+        capacityToGB(b)
+    );
+
+    return sorted[0];
   }
 
   return null;
@@ -465,16 +518,20 @@ function extractStorage(
     /\b(\d+(?:\.\d+)?)\s*(tb|gb)\s*(?:ssd|storage|hdd|drive)\b/
   );
 
-  if (explicitStorage?.[1] && explicitStorage[2]) {
+  if (
+    explicitStorage?.[1] &&
+    explicitStorage[2]
+  ) {
     return normaliseCapacity(
       explicitStorage[1],
       explicitStorage[2]
     );
   }
 
-  const storageBeforeCapacity = value.match(
-    /\b(?:ssd|storage|hdd|drive)\s*(\d+(?:\.\d+)?)\s*(tb|gb)\b/
-  );
+  const storageBeforeCapacity =
+    value.match(
+      /\b(?:ssd|storage|hdd|drive)\s*(\d+(?:\.\d+)?)\s*(tb|gb)\b/
+    );
 
   if (
     storageBeforeCapacity?.[1] &&
@@ -486,30 +543,35 @@ function extractStorage(
     );
   }
 
+  const capacities =
+    extractCapacities(value);
+
+  if (capacities.length === 0) {
+    return null;
+  }
+
   /*
-   * Only use a bare capacity as storage when another
-   * capacity is clearly labelled as RAM.
+   * A single unlabelled capacity is usually storage.
+   *
+   * Examples:
+   * iPhone 256GB
+   * SSD 1TB
    */
-  const memory =
-    extractMemory(value);
+  if (capacities.length === 1) {
+    return capacities[0];
+  }
 
-  const capacities = Array.from(
-    value.matchAll(
-      /\b(\d+(?:\.\d+)?)\s*(tb|gb)\b/g
-    )
-  )
-    .map((match) =>
-      normaliseCapacity(
-        match[1],
-        match[2]
-      )
-    )
-    .filter(
-      (capacity) =>
-        capacity !== memory
-    );
+  /*
+   * When multiple capacities are present,
+   * use the largest one as storage.
+   */
+  const sorted = [...capacities].sort(
+    (a, b) =>
+      capacityToGB(a) -
+      capacityToGB(b)
+  );
 
-  return capacities[0] ?? null;
+  return sorted[sorted.length - 1];
 }
 
 function extractScreenSize(

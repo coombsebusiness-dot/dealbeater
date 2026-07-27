@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { saveProductAnalysis } from "@/app/components/lib/products/saveProductAnalysis";
+
 
 import {
   analyseDealWithAI,
@@ -142,14 +144,32 @@ export async function POST(request: NextRequest) {
       imageUrl: resolvedImageUrl,
     };
 
-    const report = await analyseDealWithAI(input);
+   const report = await analyseDealWithAI(input);
+   
 
-    return NextResponse.json({
-      success: true,
-      report,
-      pageEvidenceUsed: Boolean(scrapedContent),
-      scrapeWarning,
-    });
+let savedProduct:
+  | {
+      id: string;
+      slug: string;
+    }
+  | undefined;
+
+try {
+  savedProduct = await saveProductAnalysis(report);
+} catch (saveError) {
+  console.error(
+    "Product analysis could not be saved:",
+    saveError
+  );
+}
+
+return NextResponse.json({
+  success: true,
+  report,
+  product: savedProduct,
+  pageEvidenceUsed: Boolean(scrapedContent),
+  scrapeWarning,
+});
   } catch (error) {
     console.error("Deal analysis failed:", error);
 

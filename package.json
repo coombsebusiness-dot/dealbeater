@@ -7,10 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-   "test:products": "tsx product-intelligence/__tests__/runner.ts"
+    "test:products": "tsx product-intelligence/__tests__/runner.ts"
   },
   "dependencies": {
     "@next/third-parties": "^16.2.11",
+    "@supabase/supabase-js": "^2.110.8",
     "cheerio": "^1.2.0",
     "framer-motion": "^12.42.2",
     "next": "16.2.10",

@@ -28,25 +28,37 @@ export async function analyseDeal(
       alternativeAgent(product),
     ]);
 
-  const decision = decisionAgent(
+ console.log("ORCHESTRATOR PRICING:", {
+  pricing,
+  topOffers: pricing.topOffers,
+  bestRetailer: pricing.bestRetailer,
+  bestRetailerUrl: pricing.bestRetailerUrl,
+  productImage: pricing.productImage,
+});
+
+const decision = decisionAgent(
     pricing,
     reviews,
     retailers,
     alternatives
   );
 
-  const enrichedProduct = {
+ const enrichedProduct = {
   ...product,
 
-  image:
+  imageUrl:
     pricing.productImage ??
-    product.image,
+    product.imageUrl ??
+    product.image ??
+    undefined,
 
   ctaUrl:
-    pricing.bestRetailerUrl,
+    pricing.bestRetailerUrl ??
+    product.ctaUrl ??
+    undefined,
 
   ctaLabel:
-    pricing.bestRetailerUrl
+    pricing.bestRetailerUrl || product.ctaUrl
       ? "Buy Now"
       : undefined,
 };

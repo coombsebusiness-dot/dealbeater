@@ -44,26 +44,36 @@ export async function recommendationAgent({
     dealScore: decision.score,
 
    scoreBreakdown: {
-    price: decision.breakdown.price,
-
-    reviews: decision.breakdown.reviews,
-
-    retailer: decision.breakdown.retailer,
-
-    warranty:
-      recommendedRetailer?.warrantyYears ?? 0,
-
-    value:
-      decision.breakdown.alternatives,
+  price: decision.breakdown.price,
+  reviews: decision.breakdown.reviews,
+  retailer: decision.breakdown.retailer,
+  warranty:
+    recommendedRetailer?.warrantyYears ?? 0,
+  value:
+    decision.breakdown.alternatives,
 },
 
-   product: {
+scoreExplanation: buildScoreExplanation(
+  decision,
+  pricing,
+  reviews,
+  recommendedRetailer
+),
+
+  product: {
   name: product.name,
   brand: product.brand,
   model: product.model,
-  imageUrl: product.image,
-  ctaUrl: product.ctaUrl,
-  ctaLabel: product.ctaLabel,
+
+  imageUrl:
+    product.imageUrl ??
+    product.image,
+
+  ctaUrl:
+    product.ctaUrl,
+
+  ctaLabel:
+    product.ctaLabel,
 },
 
     reviews,
@@ -318,6 +328,64 @@ function getReviewBreakdown(
   return Math.round(
     normalisedRating * 25
   );
+}
+function buildScoreExplanation(
+  decision: DecisionData,
+  pricing: PriceData,
+  reviews: ReviewData,
+  recommendedRetailer: RetailerData | undefined
+): string {
+  const strengths: string[] = [];
+  const weaknesses: string[] = [];
+
+  if (
+    pricing.pricePosition === "BEST_PRICE" ||
+    pricing.pricePosition === "BELOW_AVERAGE"
+  ) {
+    strengths.push("strong price value");
+  } else if (
+    pricing.pricePosition === "ABOVE_AVERAGE"
+  ) {
+    weaknesses.push("a price above the wider market average");
+  }
+
+  if (reviews.averageRating >= 4.2) {
+    strengths.push("positive customer feedback");
+  } else {
+    weaknesses.push("weaker customer feedback");
+  }
+
+  if (
+    recommendedRetailer &&
+    recommendedRetailer.retailScore >= 75
+  ) {
+    strengths.push("a trustworthy retailer");
+  }
+
+  if (
+    recommendedRetailer &&
+    recommendedRetailer.warrantyYears > 0
+  ) {
+    strengths.push("available warranty support");
+  } else {
+    weaknesses.push("limited warranty evidence");
+  }
+
+  const opening =
+    strengths.length > 0
+      ? `This product scores well for ${strengths.join(
+          ", "
+        )}.`
+      : "The available evidence does not reveal a major standout strength.";
+
+  const caution =
+    weaknesses.length > 0
+      ? ` Its overall score is held back by ${weaknesses.join(
+          " and "
+        )}.`
+      : "";
+
+  return `${opening}${caution} Blinlx calculated an overall score of ${decision.score}/100 with ${decision.confidence}% confidence.`;
 }
 
 function getValueBreakdown(

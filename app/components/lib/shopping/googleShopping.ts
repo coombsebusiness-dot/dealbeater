@@ -404,6 +404,20 @@ const enrichedOffers = enrichedResults.filter(
 
 const remainingOffers = sortedOffers.slice(5);
 
+console.log("FINAL GOOGLE OFFERS");
+
+[...enrichedOffers, ...remainingOffers].forEach((offer) => {
+  console.log({
+    title: offer.title,
+    retailer: offer.retailer,
+    price: offer.price,
+    image: offer.imageUrl,
+    finalUrl: offer.finalUrl,
+    retailerUrl: offer.retailerUrl,
+    affiliateUrl: offer.affiliateUrl,
+  });
+});
+
 return [...enrichedOffers, ...remainingOffers].sort(
   (a, b) => a.price - b.price
 );
@@ -415,6 +429,9 @@ async function enrichOfferWithDirectLink(
   apiKey: string,
   originalQuery: string
 ): Promise<ShoppingOffer | null> {
+
+  console.log("🔥 ENTERED enrichOfferWithDirectLink()", offer.title);
+
   if (!offer.immersiveToken) {
     console.log(`⚠️ No immersive token for: ${offer.title}`);
 
@@ -487,6 +504,17 @@ console.log("➡️ About to apply affiliate link");
           typeof store.link === "string" &&
           isDirectRetailerUrl(store.link)
       ) ?? [];
+      console.log("================================");
+
+
+stores.forEach((store, index) => {
+  console.log(`STORE ${index + 1}`, {
+    name: store.name,
+    title: store.title,
+    link: store.link,
+  });
+});
+console.log("================================");
 
     if (stores.length === 0) {
       console.log(
@@ -502,28 +530,42 @@ console.log("➡️ About to apply affiliate link");
     }
 
     console.log("ORIGINAL QUERY:", originalQuery);
-
+console.log("================================");
+console.log("🔍 CHECKING STORE MATCHES");
+console.log("ORIGINAL QUERY:", originalQuery);
+console.log("================================");
     const matchingStores = stores.filter((store) => {
       const storeTitle = store.title?.trim() ?? "";
 
       if (!storeTitle) {
         return false;
       }
+      console.log("🏪 STORES FOUND:", stores.length);
+
+stores.forEach((store, i) => {
+  console.log(`Store ${i + 1}`, {
+    name: store.name,
+    title: store.title,
+    link: store.link,
+  });
+});
 
       const match = compareExactProductVariant(
-        originalQuery,
-        storeTitle
-      );
+  originalQuery,
+  storeTitle
+);
 
-      if (!match.accepted) {
-        console.log(
-          `❌ Rejected store result: ${storeTitle}`
-        );
-      }
+console.log({
+  title: storeTitle,
+  accepted: match.accepted,
+  reasons: match.reasons,
+});
 
-      return match.accepted;
+return match.accepted;
     });
-
+console.log("================================");
+console.log("✅ MATCHING STORES:", matchingStores.length);
+console.log("================================");
     if (matchingStores.length === 0) {
       console.log(
         `❌ No exact product stores matched query "${originalQuery}" for ${offer.title}`
@@ -536,6 +578,10 @@ console.log("➡️ About to apply affiliate link");
   offer,
   matchingStores
 );
+console.log("================================");
+console.log("⭐ SELECTED STORE");
+console.dir(selectedStore, { depth: null });
+console.log("================================");
 
     if (!selectedStore?.link) {
       return null;
@@ -602,7 +648,22 @@ const directOffer: ShoppingOffer = {
   affiliateResult.affiliateUrl
     ? affiliateResult.affiliateUrl
     : null;
+console.log("================================");
+console.log("🎉 RETURNING ENRICHED OFFER");
 
+console.dir(
+  {
+    retailer: directOffer.retailer,
+    retailerUrl: directRetailerUrl,
+    affiliateUrl,
+    finalUrl:
+      affiliateUrl ??
+      directRetailerUrl,
+  },
+  { depth: null }
+);
+
+console.log("================================");
 return {
   ...directOffer,
 
