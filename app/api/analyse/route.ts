@@ -38,9 +38,9 @@ interface AnalyseRequestBody {
 export async function POST(
   request: NextRequest
 ) {
-  console.error(
-  "🔥 ROUTE VERSION: CANONICAL-V1"
-);
+//   // console.error(
+//   // "🔥 ROUTE VERSION: CANONICAL-V1"
+// );
   /*
    * Hide noisy development logs unless debugging
    * has been explicitly enabled in .env.local.
@@ -244,83 +244,64 @@ export async function POST(
       `BLINLX ANALYSIS COMPLETE: ${analysisDuration}ms`
     );
 
-    /*
-     * Saving the generated product page must not
-     * delay the buying recommendation shown to
-     * the user.
-     */
-/*
- * Temporarily run canonical detection in the main
- * request so we can verify that matching works.
- */
-console.info(
-  "🔥 REACHED CANONICAL LOOKUP"
-);
-
-const productName =
-  report.productName ?? "";
-
-const identity =
-  extractProductIdentity(
-    productName
-  );
-
-let canonicalProduct:
-  Awaited<
-    ReturnType<
-      typeof findCanonicalProduct
-    >
-  > | null = null;
-
-try {
-  canonicalProduct =
-    await findCanonicalProduct({
-      category:
-        identity.category,
-      brand:
-        identity.brand,
-      family:
-        identity.family,
-      model: {
-        base:
-          identity.model,
-      },
-    });
-
-  console.info(
-    "🚀 CANONICAL RESULT:",
-    canonicalProduct
-  );
-
-  if (canonicalProduct.found) {
-    console.info(
-      "BLINLX CANONICAL PRODUCT MATCH:",
-      {
-        searchedProduct:
-          productName,
-        existingProductId:
-          canonicalProduct.productId,
-        existingSlug:
-          canonicalProduct.slug,
-        confidence:
-          canonicalProduct.confidence,
-        matchedFields:
-          canonicalProduct.matchedFields,
-      }
-    );
-  }
-} catch (canonicalError) {
-  console.error(
-    "Canonical product lookup failed:",
-    canonicalError
-  );
-}
-
-/*
- * Product saving remains in the background so
- * it does not delay the response unnecessarily.
+   /*
+ * Canonical matching and product saving are
+ * background tasks. Neither should delay the
+ * recommendation shown on the homepage.
  */
 after(async () => {
+  const backgroundStartedAt =
+    performance.now();
+
+  const productName =
+    report.productName ?? "";
+
+  try {
+    if (productName.trim()) {
+      const identity =
+        extractProductIdentity(
+          productName
+        );
+
+      const canonicalProduct =
+        await findCanonicalProduct({
+          category:
+            identity.category,
+          brand:
+            identity.brand,
+          family:
+            identity.family,
+          model: {
+            base:
+              identity.model,
+          },
+        });
+
+      if (canonicalProduct.found) {
+        console.info(
+          "BLINLX CANONICAL PRODUCT MATCH:",
+          {
+            searchedProduct:
+              productName,
+            existingProductId:
+              canonicalProduct.productId,
+            existingSlug:
+              canonicalProduct.slug,
+            confidence:
+              canonicalProduct.confidence,
+            matchedFields:
+              canonicalProduct.matchedFields,
+          }
+        );
+      }
+    }
+  } catch (canonicalError) {
+    console.error(
+      "Canonical product lookup failed:",
+      canonicalError
+    );
+  }
+
   const saveStartedAt =
     performance.now();
 
@@ -343,6 +324,13 @@ after(async () => {
       saveError
     );
   }
+
+  console.info(
+    `BLINLX BACKGROUND TASKS COMPLETE: ${Math.round(
+      performance.now() -
+        backgroundStartedAt
+    )}ms`
+  );
 });
 
     return NextResponse.json({

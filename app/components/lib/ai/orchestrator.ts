@@ -8,7 +8,7 @@ import { alternativeAgent } from "./alternativeAgent";
 import { recommendationAgent } from "./recommendationAgent";
 
 import { decisionAgent } from "@/app/components/lib/agents/decisionAgent";
-import { getOrCreateProductOverview } from "@/app/components/lib/agents/productOverviewCache";
+
 import { specificationsAgent } from "@/app/components/lib/agents/specificationsAgent";
 
 type ProductSpecifications = Record<
@@ -132,14 +132,30 @@ export async function analyseDeal(
     "➡️ Starting PRODUCT OVERVIEW"
   );
 
-  const productOverview =
-    await measureAgent(
-      "PRODUCT_OVERVIEW_AGENT_TIME",
-      () =>
-        getOrCreateProductOverview(
-          product
-        )
-    );
+const productOverview = {
+  shortDescription:
+    product.description?.trim() ||
+    `${product.name} is a ${
+      product.category?.toLowerCase() ||
+      "product"
+    }. Blinlx is building a fuller product overview in the background.`,
+
+  bestFor: [],
+
+  strengths: [],
+
+  considerations: [],
+
+  confidence: Math.max(
+    0,
+    Math.min(
+      100,
+      Math.round(
+        product.confidence ?? 50
+      )
+    )
+  ),
+};
 
   console.error(
     "✅ PRODUCT OVERVIEW DONE"
