@@ -120,6 +120,23 @@ return ebayItem?.itemUrl ?? offerUrl;
   }
 }
 
+async function measureTask<T>(
+  name: string,
+  task: () => Promise<T>
+): Promise<T> {
+  const startedAt = performance.now();
+
+  try {
+    return await task();
+  } finally {
+    console.info(
+      `${name}: ${Math.round(
+        performance.now() - startedAt
+      )}ms`
+    );
+  }
+}
+
 export async function priceAgent(
   product: ProductData
 ): Promise<PriceData> {
@@ -193,12 +210,25 @@ console.log(
   lookupQuery
 );
 
+console.time("LIVE_PRICE_SEARCHES");
+
 const [googleOffers, amazon, ebayOffers] =
   await Promise.all([
-    searchGoogleShopping(lookupQuery),
-    searchAmazon(lookupQuery),
-    searchEbay(lookupQuery),
+    measureTask(
+      "GOOGLE_SHOPPING_TIME",
+      () => searchGoogleShopping(lookupQuery)
+    ),
+    measureTask(
+      "AMAZON_TIME",
+      () => searchAmazon(lookupQuery)
+    ),
+    measureTask(
+      "EBAY_SEARCH_TIME",
+      () => searchEbay(lookupQuery)
+    ),
   ]);
+
+console.timeEnd("LIVE_PRICE_SEARCHES");
 
 const offers = [...googleOffers];
 
@@ -358,6 +388,8 @@ const cheapestOffer =
       )
     : null;
 
+console.time("OFFER_URL_RESOLUTION");
+
 const topOffers = await Promise.all(
   verifiedOffers
     .filter(
@@ -366,7 +398,10 @@ const topOffers = await Promise.all(
         offer.price > 0 &&
         Boolean(offer.finalUrl)
     )
-    .sort((a, b) => a.price - b.price)
+    .sort(
+      (first, second) =>
+        first.price - second.price
+    )
     .filter(
       (offer, index, offers) =>
         index ===
@@ -381,20 +416,49 @@ const topOffers = await Promise.all(
         )
     )
     .slice(0, 3)
-.map(async (offer): Promise<PriceOffer> => ({
-  retailer: offer.retailer,
-  title: offer.title,
-  price: offer.price,
+    .map(
+      async (
+        offer
+      ): Promise<PriceOffer> => {
+        const originalUrl =
+          offer.finalUrl ?? "";
 
-url: offer.finalUrl
-  ? (await resolveOfferUrl(offer.finalUrl)) ?? offer.finalUrl
-  : "",
+        const resolvedUrl =
+          originalUrl
+            ? await resolveOfferUrl(
+                originalUrl
+              )
+            : "";
 
-image:
-  offer.imageUrl ??
-  undefined,
-}))
+        return {
+          retailer: offer.retailer,
+          title: offer.title,
+          price: offer.price,
+          url:
+            resolvedUrl ||
+            originalUrl,
+          image:
+            offer.imageUrl ??
+            undefined,
+        };
+      }
+    )
 );
+
+console.timeEnd("OFFER_URL_RESOLUTION");
+
+const cheapestTopOffer =
+  topOffers.length > 0
+    ? [...topOffers].sort(
+        (first, second) =>
+          first.price - second.price
+      )[0]
+    : undefined;
+
+const bestRetailerUrl =
+  cheapestTopOffer?.url ||
+  cheapestOffer?.finalUrl ||
+  undefined;
 
 
 const imageOffer =
@@ -589,12 +653,7 @@ else {
   bestRetailer:
     cheapestOffer?.retailer,
 
-  bestRetailerUrl:
-    cheapestOffer?.finalUrl
-      ? await resolveOfferUrl(
-          cheapestOffer.finalUrl
-        )
-      : undefined,
+ bestRetailerUrl,
 
   productImage:
     imageOffer?.imageUrl ??

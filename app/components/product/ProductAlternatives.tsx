@@ -88,6 +88,56 @@ function cleanAlternatives(
     .slice(0, 4);
 }
 
+function getAlternativeInitial(
+  alternative: ProductAlternative
+) {
+  const brandInitial = alternative.brand
+    ?.trim()
+    .charAt(0);
+
+  return (
+    brandInitial ||
+    alternative.name.trim().charAt(0) ||
+    "B"
+  ).toUpperCase();
+}
+
+function AlternativePlaceholder({
+  alternative,
+}: {
+  alternative: ProductAlternative;
+}) {
+  const initial = getAlternativeInitial(alternative);
+
+  return (
+    <div className="relative flex h-full min-h-44 w-full items-center justify-center overflow-hidden">
+      <div
+        aria-hidden="true"
+        className="absolute -left-8 -top-10 h-32 w-32 rounded-full bg-emerald-400/10 blur-3xl"
+      />
+
+      <div
+        aria-hidden="true"
+        className="absolute -bottom-12 -right-8 h-32 w-32 rounded-full bg-emerald-400/[0.06] blur-3xl"
+      />
+
+      <div className="relative flex flex-col items-center text-center">
+        <div className="relative flex h-20 w-20 items-center justify-center rounded-[24px] border border-emerald-400/20 bg-emerald-400/[0.07] shadow-[0_0_35px_rgba(52,211,153,0.08)]">
+          <div className="absolute inset-2 rounded-[17px] border border-dashed border-emerald-400/15" />
+
+          <span className="relative text-3xl font-black text-emerald-300">
+            {initial}
+          </span>
+        </div>
+
+        <p className="mt-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">
+          Product alternative
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function AlternativeAction({
   alternative,
 }: {
@@ -97,8 +147,8 @@ function AlternativeAction({
 
   if (!href) {
     return (
-      <span className="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-sm font-black text-slate-500">
-        Report coming soon
+      <span className="inline-flex min-h-11 items-center justify-center rounded-xl border border-emerald-400/15 bg-emerald-400/[0.06] px-4 py-2 text-center text-xs font-black uppercase tracking-[0.08em] text-emerald-300/70">
+        Blinlx report coming soon
       </span>
     );
   }
@@ -108,7 +158,7 @@ function AlternativeAction({
     href.startsWith("https://");
 
   const className =
-    "inline-flex min-h-11 items-center justify-center rounded-xl border border-white/10 bg-white px-4 py-2 text-sm font-black text-slate-950 transition hover:-translate-y-0.5 hover:bg-slate-200";
+    "inline-flex min-h-11 items-center justify-center rounded-xl border border-emerald-400/25 bg-emerald-400/10 px-4 py-2 text-sm font-black text-emerald-300 transition duration-200 hover:-translate-y-0.5 hover:border-emerald-400/45 hover:bg-emerald-400/15 focus:outline-none focus:ring-2 focus:ring-emerald-400";
 
   if (isExternal) {
     return (
@@ -159,8 +209,9 @@ export default function ProductAlternatives({
         </h2>
 
         <p className="mt-4 max-w-3xl leading-8 text-slate-400">
-          These products may be worth considering if you want a
-          different price, feature set or overall balance.
+          These products may be worth considering if you
+          want a different price, feature set or overall
+          balance.
         </p>
       </div>
 
@@ -172,24 +223,29 @@ export default function ProductAlternatives({
           return (
             <article
               key={`${alternative.name}-${index}`}
-              className="group overflow-hidden rounded-2xl border border-white/10 bg-slate-950/30 transition hover:border-white/20 hover:bg-white/[0.045]"
+              className="group overflow-hidden rounded-2xl border border-white/10 bg-slate-950/30 transition duration-300 hover:-translate-y-0.5 hover:border-emerald-400/20 hover:bg-white/[0.045] hover:shadow-[0_20px_60px_rgba(0,0,0,0.25)]"
             >
-              <div className="grid min-h-full sm:grid-cols-[140px_minmax(0,1fr)]">
-                <div className="flex min-h-40 items-center justify-center border-b border-white/10 bg-white sm:border-b-0 sm:border-r">
+              <div className="grid min-h-full sm:grid-cols-[150px_minmax(0,1fr)]">
+                <div className="relative flex min-h-44 items-center justify-center overflow-hidden border-b border-white/10 bg-gradient-to-br from-[#101d27] via-[#0d1720] to-[#091118] sm:border-b-0 sm:border-r">
                   {alternative.image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={alternative.image}
-                      alt={alternative.name}
-                      loading="lazy"
-                      className="h-full max-h-44 w-full object-contain p-4"
-                    />
+                    <>
+                      <div
+                        aria-hidden="true"
+                        className="absolute inset-0 bg-gradient-to-b from-emerald-400/[0.04] to-transparent"
+                      />
+
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={alternative.image}
+                        alt={alternative.name}
+                        loading="lazy"
+                        className="relative h-full max-h-44 w-full object-contain p-5 transition duration-300 group-hover:scale-[1.03]"
+                      />
+                    </>
                   ) : (
-                    <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-slate-100 text-2xl font-black text-slate-400">
-                      {alternative.name
-                        .charAt(0)
-                        .toUpperCase()}
-                    </div>
+                    <AlternativePlaceholder
+                      alternative={alternative}
+                    />
                   )}
                 </div>
 
@@ -220,8 +276,8 @@ export default function ProductAlternatives({
                     </p>
                   ) : (
                     <p className="mt-4 flex-1 leading-7 text-slate-400">
-                      A possible alternative worth comparing before
-                      making your final decision.
+                      A possible alternative worth comparing
+                      before making your final decision.
                     </p>
                   )}
 
@@ -249,10 +305,10 @@ export default function ProductAlternatives({
 
       <div className="border-t border-white/10 bg-slate-950/20 px-6 py-5 sm:px-8">
         <p className="text-sm leading-6 text-slate-500">
-          Alternative recommendations are based on the product
-          information available when this report was generated.
-          Compare the exact specifications and condition before
-          buying.
+          Alternative recommendations are based on the
+          product information available when this report was
+          generated. Compare the exact specifications and
+          condition before buying.
         </p>
       </div>
     </section>

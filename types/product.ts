@@ -40,13 +40,10 @@ export interface Product {
     sku?: string;
   };
 
-  specs: {
-    storage?: string;
-    memory?: string;
-    colour?: string;
-    screenSize?: string;
-    connectivity?: string;
-  };
+specs: Record<
+  string,
+  string | number | boolean | null | undefined
+>;
 
   image?: string;
   imageAlt?: string;

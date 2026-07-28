@@ -213,6 +213,26 @@ const hardRejectionTerms = [
   "contract",
   "parts only",
   "spares or repair",
+    "case",
+  "cover",
+  "protector",
+  "tempered glass",
+  "screen guard",
+  "bumper",
+  "wallet",
+  "flip cover",
+  "folio",
+  "shockproof",
+  "rugged",
+  "armour",
+  "armor",
+  "silicone",
+  "phone holder",
+  "car mount",
+  "replacement back",
+  "protective shell",
+  "hydrogel",
+  "service",
 ];
 
 const isHardRejection =
@@ -245,17 +265,77 @@ if (basicRejectionReason) {
   );
 }
 
+const PHONE_QUERY_TERMS = [
+  "iphone",
+  "samsung galaxy",
+  "galaxy s",
+  "google pixel",
+  "smartphone",
+  "mobile phone",
+  " phone",
+];
+
+const PHONE_ACCESSORY_TERMS = [
+  "case",
+  "cover",
+  "protector",
+  "tempered glass",
+  "screen guard",
+  "bumper",
+  "wallet",
+  "flip cover",
+  "folio",
+  "shockproof",
+  "rugged",
+  "armour",
+  "armor",
+  "silicone",
+  "phone holder",
+  "car mount",
+  "replacement back",
+  "protective shell",
+  "hydrogel",
+];
+
+function looksLikePhoneQuery(text: string): boolean {
+  const normalised = text.toLowerCase();
+
+  return PHONE_QUERY_TERMS.some((term) =>
+    normalised.includes(term)
+  );
+}
+
+function looksLikePhoneAccessory(text: string): boolean {
+  const normalised = text.toLowerCase();
+
+  return PHONE_ACCESSORY_TERMS.some((term) =>
+    normalised.includes(term)
+  );
+}
+const phoneSearch = looksLikePhoneQuery(cleanQuery);
+const phoneAccessory = looksLikePhoneAccessory(title);
+
+console.log("📱 PHONE FILTER:", {
+  cleanQuery,
+  title,
+  phoneSearch,
+  phoneAccessory,
+});
+
+if (phoneSearch && phoneAccessory) {
+  console.log(
+    `🚫 Phone accessory rejected before matching: ${title}`
+  );
+
+  return null;
+}
+
 const exactMatch = compareExactProductVariant(
   cleanQuery,
   title
 );
 
-const minimumConfidence = 75;
-
-if (
-  !exactMatch.accepted &&
-  exactMatch.confidence < minimumConfidence
-) {
+if (!exactMatch.accepted) {
   console.log(
     `🚫 Variant rejected: ${title}`
   );
@@ -370,32 +450,51 @@ return {
 // This avoids using an extra SerpAPI credit for every raw result.
 const offersToEnrich = sortedOffers.slice(0, 5);
 
+const enrichmentStartedAt = performance.now();
+
 const enrichedResults = await Promise.all(
   offersToEnrich.map(async (offer) => {
-    const directOffer = await enrichOfferWithDirectLink(
-      offer,
-      apiKey,
-      cleanQuery
-    );
+    try {
+      const directOffer = await enrichOfferWithDirectLink(
+        offer,
+        apiKey,
+        cleanQuery
+      );
 
-    if (!directOffer) {
+      if (!directOffer) {
+        return null;
+      }
+
+      const ebayOffer = await enrichEbayAffiliateLink(
+        directOffer
+      );
+
+      console.info(
+        "🟠 BEFORE:",
+        directOffer.finalUrl
+      );
+
+      console.info(
+        "🟢 AFTER :",
+        ebayOffer.finalUrl
+      );
+
+      return ebayOffer;
+    } catch (error) {
+      console.error(
+        "Offer enrichment failed:",
+        error
+      );
+
       return null;
     }
-
-    const ebayOffer = await enrichEbayAffiliateLink(directOffer);
-
-   console.log(
-  "🟠 BEFORE:",
-  directOffer.finalUrl
-);
-
-console.log(
-  "🟢 AFTER :",
-  ebayOffer.finalUrl
-);
-
-    return ebayOffer;
   })
+);
+
+console.info(
+  `DIRECT_LINK_ENRICHMENT_TIME: ${Math.round(
+    performance.now() - enrichmentStartedAt
+  )}ms`
 );
 
 const enrichedOffers = enrichedResults.filter(
@@ -404,26 +503,16 @@ const enrichedOffers = enrichedResults.filter(
 
 const remainingOffers = sortedOffers.slice(5);
 
-console.log("FINAL GOOGLE OFFERS");
+const finalOffers = [
+  ...enrichedOffers,
+  ...remainingOffers,
+].sort((a, b) => a.price - b.price);
 
-[...enrichedOffers, ...remainingOffers].forEach((offer) => {
-  console.log({
-    title: offer.title,
-    retailer: offer.retailer,
-    price: offer.price,
-    image: offer.imageUrl,
-    finalUrl: offer.finalUrl,
-    retailerUrl: offer.retailerUrl,
-    affiliateUrl: offer.affiliateUrl,
-  });
-});
-
-return [...enrichedOffers, ...remainingOffers].sort(
-  (a, b) => a.price - b.price
+console.info(
+  `GOOGLE_FINAL_OFFERS_COUNT: ${finalOffers.length}`
 );
 
-}
-
+return finalOffers;
 async function enrichOfferWithDirectLink(
   offer: ShoppingOffer,
   apiKey: string,
@@ -1239,4 +1328,19 @@ async function enrichEbayAffiliateLink(
     return offer;
   }
 }
+function isInvalidBuyingOffer(offer: ShoppingOffer): boolean {
+  const url = (
+    offer.finalUrl ??
+    offer.retailerUrl ??
+    ""
+  ).toLowerCase();
 
+  return (
+    url.includes("sell.gizmo2go.com") ||
+    url.includes("/sell-your-") ||
+    url.includes("/trade-in") ||
+    url.includes("/tradein")
+  );
+}
+
+}

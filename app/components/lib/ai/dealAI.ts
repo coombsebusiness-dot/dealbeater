@@ -5,6 +5,25 @@ import { z } from "zod";
 import { analyseDeal } from "./orchestrator";
 import type { DealReport } from "../types";
 
+type ProductSpecifications = Record<
+  string,
+  string | number | boolean | null
+>;
+
+type EnrichedDealReport = DealReport & {
+  specifications?: ProductSpecifications;
+  specs?: ProductSpecifications;
+
+  product?: DealReport["product"] & {
+    brand?: string | null;
+    category?: string | null;
+    model?: string | null;
+    family?: string | null;
+    specifications?: ProductSpecifications;
+    specs?: ProductSpecifications;
+  };
+};
+
 function getOpenAIClient() {
   const apiKey = process.env.OPENAI_API_KEY;
 
@@ -48,25 +67,58 @@ const TopOfferSchema = z.object({
   image: z.string().optional(),
 });
 
-
+const ProductOverviewSchema = z.object({
+  shortDescription: z.string(),
+  bestFor: z.array(z.string()).max(6),
+  strengths: z.array(z.string()).max(6),
+  considerations: z.array(z.string()).max(6),
+  
+});
 
 export const DealAIReportSchema = z.object({
   productName: z.string(),
   retailerName: z.string(),
   price: z.string(),
+
   productImage: z.string().optional(),
   retailerUrl: z.string().optional(),
   saving: z.string(),
   checkedAt: z.string(),
   ctaLabel: z.string().optional(),
-currentPrice: z.number().nullable().optional(),
-fairPrice: z.number().nullable().optional(),
-lowestPrice: z.number().nullable().optional(),
-  
 
-  topOffers: z.array(TopOfferSchema),
+  currentPrice: z
+    .number()
+    .nullable()
+    .optional(),
 
+  fairPrice: z
+    .number()
+    .nullable()
+    .optional(),
 
+  lowestPrice: z
+    .number()
+    .nullable()
+    .optional(),
+
+  productOverview:
+    ProductOverviewSchema.optional(),
+
+    specifications: z
+  .record(
+    z.string(),
+    z.union([
+      z.string(),
+      z.number(),
+      z.boolean(),
+      z.null(),
+    ])
+  )
+  .optional(),
+
+  topOffers: z.array(
+    TopOfferSchema
+  ),
 
   marketPosition: z.enum([
     "BEST_PRICE",
@@ -75,15 +127,18 @@ lowestPrice: z.number().nullable().optional(),
     "ABOVE_AVERAGE",
   ]),
 
-  score: z.number().min(0).max(100),
-confidence: z.number().min(0).max(100),
+  score: z
+    .number()
+    .min(0)
+    .max(100),
 
+  confidence: z
+    .number()
+    .min(0)
+    .max(100),
 
-scoreExplanation: z.string().optional(),
-
-  
-
-  
+  scoreExplanation:
+    z.string().optional(),
 
   verdict: z.enum([
     "BUY",
@@ -101,20 +156,24 @@ scoreExplanation: z.string().optional(),
   reviewAnalysis: z.string(),
   retailerAnalysis: z.string(),
 
-  positives: z.array(z.string()),
-  warnings: z.array(z.string()),
+  positives: z.array(
+    z.string()
+  ),
 
-  scoreBreakdown: ScoreBreakdownSchema,
+  warnings: z.array(
+    z.string()
+  ),
+
+  scoreBreakdown:
+    ScoreBreakdownSchema,
 
   betterAlternatives: z
     .array(BetterAlternativeSchema)
     .max(3),
 
-  ifItWasOurMoney: z.string(),
+  ifItWasOurMoney:
+    z.string(),
 });
-
-
-
 export type DealAIReport = z.infer<
   typeof DealAIReportSchema
 
@@ -208,8 +267,32 @@ export async function analyseDealWithAI(
    */
 console.time("ENGINE_TIME");
 
-const engineReport =
-  await analyseDeal(cleanInput);
+const engineReport = await analyseDeal(cleanInput);
+
+console.log(
+  "ENGINE_REPORT_SPECIFICATIONS:",
+  JSON.stringify(
+    {
+      specifications:
+        (engineReport as EnrichedDealReport)
+          .specifications,
+
+      specs:
+        (engineReport as EnrichedDealReport)
+          .specs,
+
+      productSpecifications:
+        (engineReport as EnrichedDealReport)
+          .product?.specifications,
+
+      productSpecs:
+        (engineReport as EnrichedDealReport)
+          .product?.specs,
+    },
+    null,
+    2
+  )
+);
 
 console.timeEnd("ENGINE_TIME");
 
@@ -218,10 +301,21 @@ console.time("NARRATIVE_TIME");
 const narrative =
   createFallbackNarrative(engineReport);
 
-return buildFinalReport(
+console.timeEnd("NARRATIVE_TIME");
+
+console.time("FINAL_REPORT");
+
+const finalReport = buildFinalReport(
   engineReport,
   narrative
 );
+
+console.timeEnd("FINAL_REPORT");
+
+return finalReport;
+
+
+
 }
 
 async function generateNarrative(
@@ -335,9 +429,19 @@ Only mention uncertainty when the DealReport itself indicates uncertainty.
 }
 
 function buildFinalReport(
-  report: DealReport,
+  report: EnrichedDealReport,
   narrative: NarrativeResult
-): DealAIReport {
+): DealAIReport & {
+  brand?: string | null;
+  category?: string | null;
+  family?: string | null;
+  model?: string | null;
+} {
+
+console.error(
+  "BUILD_FINAL_REPORT_PRODUCT:",
+  JSON.stringify(report.product, null, 2)
+);
      console.log(
     "CTA URL:",
     report.product.ctaUrl
@@ -380,10 +484,45 @@ console.log(
   finalRetailerUrl
 );
 
+console.log(
+  "ENGINE REPORT TOP-LEVEL KEYS:",
+  Object.keys(report)
+);
+
+console.log(
+  "ENGINE REPORT PRODUCT:",
+  JSON.stringify(
+    report.product,
+    null,
+    2
+  )
+);
+console.log("REPORT BRAND:", (report as any).brand);
+console.log("REPORT CATEGORY:", (report as any).category);
+console.log("REPORT FAMILY:", (report as any).family);
+console.log("REPORT MODEL:", (report as any).model);
+const productIdentity = report.product as typeof report.product & {
+  brand?: string | null;
+  category?: string | null;
+  model?: string | null;
+  family?: string | null;
+};
 return {
   productName:
     report.product.name ||
     buildProductName(report),
+
+  brand:
+    report.product.brand ?? null,
+
+  model:
+    report.product.model ?? null,
+
+  category:
+    (report.product as any).category ?? null,
+
+  family:
+    (report.product as any).family ?? null,
 
   retailerName:
     cheapestOffer?.retailer ||
@@ -479,15 +618,15 @@ return {
     retailerAnalysis:
       narrative.retailerAnalysis,
 
-    positives:
-      narrative.positives.length > 0
-        ? narrative.positives
-        : report.strengths,
+   positives:
+  (narrative.positives?.length ?? 0) > 0
+    ? narrative.positives
+    : report.strengths ?? [],
 
-    warnings:
-      narrative.warnings.length > 0
-        ? narrative.warnings
-        : report.concerns,
+warnings:
+  (narrative.warnings?.length ?? 0) > 0
+    ? narrative.warnings
+    : report.concerns ?? [],
 
     scoreBreakdown: {
   price: clampScore(
@@ -511,16 +650,26 @@ return {
   ),
 },
 
-    betterAlternatives:
-      mapAlternatives(
-        report.betterAlternatives
-      ),
+ betterAlternatives:
+  mapAlternatives(
+    report.betterAlternatives
+  ),
 
-    ifItWasOurMoney:
-      ensureMoneyPrefix(
-        narrative.ifItWasOurMoney ||
-          report.ifItWasOurMoney
-      ),
+productOverview:
+  report.productOverview,
+
+specifications:
+  report.specifications ??
+  report.specs ??
+  report.product?.specifications ??
+  report.product?.specs ??
+  {},
+
+ifItWasOurMoney:
+  ensureMoneyPrefix(
+    narrative.ifItWasOurMoney ||
+      report.ifItWasOurMoney
+  ),
   };
 }
 
@@ -684,7 +833,10 @@ function createFallbackNarrative(
 ): NarrativeResult {
   const recommendation = mapRecommendation(report.recommendation);
 
-  const retailerCount = report.retailers.length;
+  
+
+  const retailerCount =
+  report.retailers?.length ?? 0;
 
   const retailerText =
     retailerCount > 0
@@ -715,22 +867,21 @@ function createFallbackNarrative(
       ),
 
     retailerAnalysis: retailerText,
+positives:
+  (report.strengths?.length ?? 0) > 0
+    ? report.strengths
+    : [
+        "Product matches the identified listing.",
+        "Assessment completed successfully.",
+      ],
 
-    positives:
-      report.strengths.length > 0
-        ? report.strengths
-        : [
-            "Product matches the verified listing.",
-            "Assessment completed successfully."
-          ],
-
-    warnings:
-      report.concerns.length > 0
-        ? report.concerns
-        : [
-            "Prices may change over time.",
-            "Always confirm delivery costs before purchasing."
-          ],
+warnings:
+  (report.concerns?.length ?? 0) > 0
+    ? report.concerns
+    : [
+        "Prices may change over time.",
+        "Confirm delivery costs before purchasing.",
+      ],
 
     ifItWasOurMoney:
       ensureMoneyPrefix(

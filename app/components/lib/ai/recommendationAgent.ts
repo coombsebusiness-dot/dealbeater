@@ -16,14 +16,14 @@ interface RecommendationInput {
   
 }
 
-export async function recommendationAgent({
+export function recommendationAgent({
   product,
   pricing,
   reviews,
   retailers,
   alternatives,
   decision,
-}: RecommendationInput): Promise<DealReport> {
+}: RecommendationInput): DealReport {
   const recommendation = mapDecisionToRecommendation(
     decision.verdict
   );

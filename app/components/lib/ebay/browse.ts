@@ -153,13 +153,13 @@ function normaliseItem(
   const shippingPrice =
     getShippingPrice(item);
 
-  console.log("🧾 EBAY URL FIELDS:", {
-    itemId: item.itemId,
-    standardUrl: item.itemWebUrl,
-    affiliateUrl:
-      item.itemAffiliateWebUrl,
-    selectedUrl: itemUrl,
-  });
+  // console.log("🧾 EBAY URL FIELDS:", {
+  //   itemId: item.itemId,
+  //   standardUrl: item.itemWebUrl,
+  //   affiliateUrl:
+  //     item.itemAffiliateWebUrl,
+  //   selectedUrl: itemUrl,
+  // });
 
   return {
     source: "ebay",
@@ -190,6 +190,75 @@ function normaliseItem(
       item.image?.imageUrl ?? null,
     itemUrl,
   };
+}
+const PHONE_QUERY_TERMS = [
+  "iphone",
+  "samsung galaxy",
+  "galaxy s",
+  "google pixel",
+  "smartphone",
+  "mobile phone",
+];
+
+const PHONE_ACCESSORY_TERMS = [
+  "case",
+  "cover",
+  "screen protector",
+  "tempered glass",
+  "charger",
+  "charging cable",
+  "usb cable",
+  "adapter",
+  "holder",
+  "mount",
+  "wallet",
+  "skin",
+  "bumper",
+  "replacement",
+  "replacement part",
+  "spare part",
+  "charging port",
+  "connector",
+  "connector flex",
+  "flex cable",
+  "charging flex",
+  "port flex",
+  "lcd",
+  "display assembly",
+  "replacement screen",
+  "battery replacement",
+  "back glass",
+  "housing",
+  "camera lens glass",
+  "Blacklist Supported",
+  "BLACKLIST REMOVAL / IMEI CLEANING SERVICE",
+];
+function containsPhoneAccessoryTerm(
+  value: string
+): boolean {
+  const normalised = value.toLowerCase();
+
+  return PHONE_ACCESSORY_TERMS.some(
+    (term) => normalised.includes(term)
+  );
+}
+
+function looksLikePhoneQuery(text: string): boolean {
+  const normalised = text.toLowerCase();
+
+  return PHONE_QUERY_TERMS.some((term) =>
+    normalised.includes(term)
+  );
+}
+
+function isPhoneAccessoryListing(
+  title: string
+): boolean {
+  const normalised = title.toLowerCase();
+
+  return PHONE_ACCESSORY_TERMS.some((term) =>
+    normalised.includes(term)
+  );
 }
 
 export async function searchEbay(
@@ -240,19 +309,38 @@ export async function searchEbay(
   const data =
     (await response.json()) as EbaySearchResponse;
 
-  return (data.itemSummaries ?? [])
-    .map(normaliseItem)
-    .filter(
-      (
-        offer
-      ): offer is EbayOffer =>
-        offer !== null
-    );
+ const phoneSearch =
+  looksLikePhoneQuery(trimmedQuery);
+
+return (data.itemSummaries ?? [])
+  .map(normaliseItem)
+  .filter(
+    (
+      offer
+    ): offer is EbayOffer =>
+      offer !== null
+  )
+  .filter((offer) => {
+    if (
+      phoneSearch &&
+      isPhoneAccessoryListing(
+        offer.title
+      )
+    ) {
+      console.log(
+        `🚫 eBay phone accessory rejected: ${offer.title}`
+      );
+
+      return false;
+    }
+
+    return true;
+  });
 }
 
 export async function getEbayItemByLegacyId(
   legacyItemId: string
-): Promise<EbayResolvedItem> {
+): Promise<EbayResolvedItem | null> {
   const trimmedId =
     legacyItemId.trim();
 
@@ -280,15 +368,42 @@ export async function getEbayItemByLegacyId(
     }
   );
 
-  if (!response.ok) {
-    const errorText =
-      await response.text();
+if (!response.ok) {
+  const errorBody = await response.text();
 
-    throw new Error(
-      `eBay listing lookup failed: ${response.status} ${response.statusText} - ${errorText}`
-    );
+  let ebayErrorId: number | null = null;
+
+  try {
+    const parsed = JSON.parse(errorBody) as {
+      errors?: Array<{
+        errorId?: number;
+        message?: string;
+      }>;
+    };
+
+    ebayErrorId =
+      parsed.errors?.[0]?.errorId ?? null;
+  } catch {
+    // Leave ebayErrorId as null when the body is not JSON.
   }
 
+  if (response.status === 400 && ebayErrorId === 11006) {
+    console.warn(
+      `⚠️ eBay ID ${trimmedId} is an item-group ID, not a legacy item ID. Skipping legacy lookup.`
+    );
+
+    return null;
+  }
+
+  console.error("❌ eBay listing lookup failed:", {
+    status: response.status,
+    statusText: response.statusText,
+    errorBody,
+    requestUrl: response.url,
+  });
+
+  return null;
+}
   const item =
     (await response.json()) as EbayLegacyItemResponse;
 

@@ -37,6 +37,14 @@ export interface DealReport {
     ctaLabel?: string;
   };
 
+  productOverview?: {
+    shortDescription: string;
+    bestFor: string[];
+    strengths: string[];
+    considerations: string[];
+    confidence: number;
+  };
+
   reviews: ReviewData;
 
   pricing: PriceData;
@@ -44,6 +52,11 @@ export interface DealReport {
   summary: string;
 
   ifItWasOurMoney: string;
+
+  specifications?: Record<
+  string,
+  string | number | boolean | null
+>;
 
   strengths: string[];
 

@@ -3,9 +3,11 @@ import type { ProductInfo } from "../scrapers/types";
 import { searchAmazon } from "../scrapers/amazon";import {
   extractProductFromUrl,
 } from "@/app/components/lib/extractor/extractProduct";
+import { extractProductIdentity } from "@/lib/product-intelligence/product-identity";
 
 export type ProductData = ProductInfo & {
   confidence: number;
+
   retailer?: string;
   colour?: string;
   variant?: string;
@@ -17,13 +19,22 @@ export type ProductData = ProductInfo & {
   ctaUrl?: string;
   ctaLabel?: string;
 
-    brand?: string;
+  brand?: string;
+  family?: string;
   model?: string;
 
+  year?: number;
+memory?: string;
+storage?: string;
+screenSize?: string;
+
+
+
+
   searchQuery?: string;
-mpn?: string;
-sku?: string;
-description?: string;
+  mpn?: string;
+  sku?: string;
+  description?: string;
 };
 
 export async function productAgent(
@@ -222,6 +233,8 @@ try {
     extracted.sku ??
     "Not identified",
 
+    
+
   category: identifyCategory(
     extracted.searchQuery ||
     extracted.title ||
@@ -302,30 +315,54 @@ function productFromUrl(
 
   const price = extractPrice(url.toString());
 
+  const identity = extractProductIdentity(name);
+
   console.log("========================================");
   console.log("🔎 URL PARSER");
   console.log("Slug:", slug);
   console.log("Product:", name);
+  console.log("Identity:", identity);
   console.log("Retailer:", retailer);
   console.log("Extracted price:", price);
   console.log("========================================");
 
   return {
     name,
-    brand: words[0] ?? "Not identified",
+
+    brand:
+      identity.brand ??
+      "Not identified",
+
+       family:
+      identity.family ??
+      undefined,
+
     model:
-      words.length > 1
-        ? words.slice(1, 5).join(" ")
-        : "Not identified",
-    category: identifyCategory(name),
+      identity.model ??
+      "Not identified",
+
+    category:
+      identity.category ??
+      identifyCategory(name),
+
+       year: identity.year ?? undefined,
+memory: identity.memory ?? undefined,
+storage: identity.storage ?? undefined,
+screenSize: identity.screenSize ?? undefined,
+
+
     price,
     specs: {},
-    confidence: words.length >= 2 ? 70 : 45,
+
+    confidence:
+      words.length >= 2 ? 70 : 45,
+
     retailer,
+
     colour: extractColour(name),
+
     variant: extractVariant(name),
   };
-
 }
 
 function productFromDescription(
@@ -337,32 +374,54 @@ function productFromDescription(
 
   const price = extractPrice(description);
 
+  const identity =
+    extractProductIdentity(description);
+
   console.log("========================================");
   console.log("📝 DESCRIPTION PARSER");
   console.log("Description:", description);
+  console.log("Identity:", identity);
   console.log("Extracted price:", price);
   console.log("========================================");
 
-  const product: ProductData = {
-  name: description,
-  brand: words[0] ?? "Not identified",
-  model:
-    words.length > 1
-      ? words.slice(1, 5).join(" ")
-      : "Not identified",
-  category: identifyCategory(description),
-  price,
-  specs: {},
-  confidence: words.length >= 2 ? 55 : 35,
-  colour: extractColour(description),
-  variant: extractVariant(description),
-};
+  return {
+    name: description,
 
+    brand:
+      identity.brand ??
+      "Not identified",
 
+        family:
+      identity.family ??
+      undefined,
 
-return product;
+    model:
+      identity.model ??
+      "Not identified",
+
+    category:
+      identity.category ??
+      identifyCategory(description),
+
+    price,
+    specs: {},
+
+    confidence:
+      words.length >= 2 ? 55 : 35,
+
+    colour:
+      extractColour(description),
+
+    variant:
+      extractVariant(description),
+
+      year: identity.year ?? undefined,
+memory: identity.memory ?? undefined,
+storage: identity.storage ?? undefined,
+screenSize: identity.screenSize ?? undefined,
+
+  };
 }
-
 function identifyCategory(name: string): string {
   const value = name.toLowerCase();
 

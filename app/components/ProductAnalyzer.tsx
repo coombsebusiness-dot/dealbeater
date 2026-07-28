@@ -18,6 +18,12 @@ import ReviewIntelligenceCard from "./ReviewIntelligenceCard";
 import { buildReviewIntelligence } from "@/app/components/lib/reviews/intelligence";
 import ProductIntelligenceCard from "./ProductIntelligenceCard";
 import { buildProductIntelligence } from "@/app/components/lib/products/intelligence";
+import { createProductFingerprintV2 } from "@/app/components/lib/products/fingerprint";
+import ProductOverviewCard from "./ProductOverviewCard";
+import {
+  
+  buildProductOverview,
+} from "@/app/components/lib/products/intelligence";
 
 type DealVerdict = "BUY" | "GOOD DEAL" | "CONSIDER" | "WAIT" | "AVOID";
 
@@ -32,6 +38,12 @@ type BetterAlternative = {
 
 type DealAIReport = {
   productName: string;
+
+   brand?: string | null;
+  category?: string | null;
+  family?: string | null;
+  model?: string | null;
+  
   productImage?: string;
   retailerName: string;
   retailerUrl?: string;
@@ -60,6 +72,14 @@ priceConfidence?: number;
     url?: string;
     image?: string;
   }[];
+
+  productOverview?: {
+  shortDescription: string;
+  bestFor: string[];
+  strengths: string[];
+  considerations: string[];
+  confidence?: number;
+};
 
   marketPosition:
     | "BEST_PRICE"
@@ -151,13 +171,20 @@ export default function ProductAnalyzer() {
   try {
     setIsAnalysing(true);
 
-    const response = await fetch("/api/analyse", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-     body: JSON.stringify({
-  userInput: input.trim(),
-}),
-    });
+   const trimmedInput = input.trim();
+
+const isProductLink = /^https?:\/\//i.test(trimmedInput);
+
+const response = await fetch("/api/analyse", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    mode: isProductLink ? "link" : "describe",
+    userInput: trimmedInput,
+  }),
+});
 
       const data = (await response.json()) as {
         success?: boolean;
@@ -197,7 +224,7 @@ export default function ProductAnalyzer() {
     })
   : null;
 
-  const productIntelligence = result
+const productIntelligence = result
   ? buildProductIntelligence({
       productName: result.productName,
       productQuality: result.scoreBreakdown.productQuality,
@@ -205,6 +232,16 @@ export default function ProductAnalyzer() {
       positives: result.positives,
       warnings: result.warnings,
       confidence: result.confidence,
+    })
+  : null;
+
+  const productOverview = result?.productOverview
+  ? buildProductOverview({
+      shortDescription: result.productOverview.shortDescription,
+      bestFor: result.productOverview.bestFor,
+      strengths: result.productOverview.strengths,
+      considerations: result.productOverview.considerations,
+      confidence: result.productOverview.confidence,
     })
   : null;
 
@@ -290,100 +327,99 @@ Is this MacBook worth £849?"
 
   {result && !isAnalysing && (
     <div className="mt-8 space-y-6">
-    <BlinlxScoreCard
-  score={animatedScore}
-  confidence={result.confidence}
-  verdict={result.verdict}
-  headline={result.headline}
-  summary={result.summary}
-/>
+      <DealHeroCard
+        productName={result.productName}
+        productImage={result.productImage}
+        retailerName={result.retailerName}
+        retailerUrl={result.retailerUrl}
+        ctaLabel={result.ctaLabel}
+        price={result.price}
+        saving={result.saving}
+        checkedAt={result.checkedAt}
+        marketPosition={result.marketPosition}
+        score={animatedScore}
+        confidence={result.confidence}
+        verdict={result.verdict}
+        headline={result.headline}
+        summary={result.summary}
+        recommendation={result.recommendation}
+        topOffers={result.topOffers ?? []}
+      />
 
-{trust && (
-  <RetailerTrustCard
-    retailer={result.retailerName}
-    trustScore={trust.trustScore}
-    officialRetailer={trust.officialRetailer}
-    buyerProtection={trust.buyerProtection}
-    secureCheckout={trust.secureCheckout}
-    returnDays={trust.returnDays}
-    deliveryEstimate={trust.deliveryEstimate}
-    recommendation={trust.recommendation}
-  />
-)}
-
-{reviewIntelligence && (
-  <ReviewIntelligenceCard
-    score={reviewIntelligence.score}
-    sentiment={reviewIntelligence.sentiment}
-    headline={reviewIntelligence.headline}
-    summary={reviewIntelligence.summary}
-    strengths={reviewIntelligence.strengths}
-    concerns={reviewIntelligence.concerns}
-    confidence={reviewIntelligence.confidence}
-  />
-)}
-
-{productIntelligence && (
-  <ProductIntelligenceCard
+     {productOverview && (
+  <ProductOverviewCard
     productName={result.productName}
-    score={productIntelligence.score}
-    confidence={productIntelligence.confidence}
-    suitability={productIntelligence.suitability}
-    headline={productIntelligence.headline}
-    summary={productIntelligence.summary}
-    bestFor={productIntelligence.bestFor}
-    limitations={productIntelligence.limitations}
+    description={productOverview.shortDescription}
+    bestFor={productOverview.bestFor}
+    strengths={productOverview.strengths}
+    considerations={productOverview.considerations}
+    confidence={productOverview.confidence}
   />
 )}
-<PriceIntelligenceCard
-  currentPrice={result.currentPrice}
-  fairPrice={result.fairPrice}
-  lowestPrice={result.lowestPrice}
-  status={result.priceStatus ?? "UNKNOWN"}
-  recommendation={
-    result.priceRecommendation ??
-    "Blinlx is still gathering enough pricing data to make a reliable recommendation."
-  }
-  confidence={result.priceConfidence ?? 0}
-/>
 
-<VerdictBanner
-  verdict={result.verdict}
-  headline={result.headline}
-  recommendation={result.recommendation}
-  confidence={result.confidence}
-/>
+      {trust && (
+        <RetailerTrustCard
+          retailer={result.retailerName}
+          trustScore={trust.trustScore}
+          officialRetailer={trust.officialRetailer}
+          buyerProtection={trust.buyerProtection}
+          secureCheckout={trust.secureCheckout}
+          returnDays={trust.returnDays}
+          deliveryEstimate={trust.deliveryEstimate}
+          recommendation={trust.recommendation}
+        />
+      )}
 
-<DealHeroCard
-  productName={result.productName}
-  productImage={result.productImage}
-  retailerName={result.retailerName}
-  retailerUrl={result.retailerUrl}
-  ctaLabel={result.ctaLabel}
-  price={result.price}
-  saving={result.saving}
-  checkedAt={result.checkedAt}
-  marketPosition={result.marketPosition}
-  score={animatedScore}
-  confidence={result.confidence}
-  verdict={result.verdict}
-  headline={result.headline}
-  summary={result.summary}
-  recommendation={result.recommendation}
-  topOffers={result.topOffers ?? []}
-/>
+      {/* {reviewIntelligence && (
+        <ReviewIntelligenceCard
+          score={reviewIntelligence.score}
+          sentiment={reviewIntelligence.sentiment}
+          headline={reviewIntelligence.headline}
+          summary={reviewIntelligence.summary}
+          strengths={reviewIntelligence.strengths}
+          concerns={reviewIntelligence.concerns}
+          confidence={reviewIntelligence.confidence}
+        />
+      )} */}
+
+      {/* {productIntelligence && (
+        <ProductIntelligenceCard
+          productName={result.productName}
+          score={productIntelligence.score}
+          confidence={productIntelligence.confidence}
+          suitability={productIntelligence.suitability}
+          headline={productIntelligence.headline}
+          summary={productIntelligence.summary}
+         bestFor={productIntelligence.strengths}
+          limitations={productIntelligence.limitations}
+        />
+      )} */}
+
+      <PriceIntelligenceCard
+        currentPrice={result.currentPrice}
+        fairPrice={result.fairPrice}
+        lowestPrice={result.lowestPrice}
+        status={result.priceStatus ?? "UNKNOWN"}
+        recommendation={
+          result.priceRecommendation ??
+          "Blinlx is still gathering enough pricing data to make a reliable recommendation."
+        }
+        confidence={result.priceConfidence ?? 0}
+      />
 
       <div className="grid gap-4 lg:grid-cols-3">
         <AnalysisCard
-          title="💷 Price Intelligence"
+          title="💷 Price Analysis"
           text={result.priceAnalysis}
         />
+
         <AnalysisCard
           title="⭐ Review Analysis"
           text={result.reviewAnalysis}
         />
+
         <AnalysisCard
-          title="🏪 Retailer Check"
+          title="🏪 Retailer Analysis"
           text={result.retailerAnalysis}
         />
       </div>
@@ -397,18 +433,22 @@ Is this MacBook worth £849?"
           label="Product quality"
           score={result.scoreBreakdown.productQuality}
         />
+
         <ScoreBar
           label="Price value"
           score={result.scoreBreakdown.priceValue}
         />
+
         <ScoreBar
           label="Review quality"
           score={result.scoreBreakdown.reviewQuality}
         />
+
         <ScoreBar
           label="Retailer trust"
           score={result.scoreBreakdown.retailerTrust}
         />
+
         <ScoreBar
           label="Warranty & support"
           score={result.scoreBreakdown.warrantySupport}
@@ -445,25 +485,25 @@ Is this MacBook worth £849?"
         </div>
       )}
 
-     <div className="rounded-2xl border border-[#2ee866]/30 bg-[#2ee866]/10 p-5">
-  <p className="text-sm font-black text-[#68f18e]">
-    💚 If it was our money...
-  </p>
+      <div className="rounded-2xl border border-[#2ee866]/30 bg-[#2ee866]/10 p-5">
+        <p className="text-sm font-black text-[#68f18e]">
+          💚 If it was our money...
+        </p>
 
-  <p className="mt-3 text-sm leading-6 text-white/80">
-    {stripMoneyPrefix(result.ifItWasOurMoney)}
-  </p>
-</div>
+        <p className="mt-3 text-sm leading-6 text-white/80">
+          {stripMoneyPrefix(result.ifItWasOurMoney)}
+        </p>
+      </div>
 
-<AskBlinlxCard productName={result.productName} />
+      <AskBlinlxCard productName={result.productName} />
 
-<button
-  type="button"
-  onClick={resetChecker}
-  className="w-full rounded-xl border border-white/15 px-5 py-3 text-sm font-bold transition hover:border-[#2ee866]/60 hover:text-[#2ee866]"
->
-  Check another deal
-</button>
+      <button
+        type="button"
+        onClick={resetChecker}
+        className="w-full rounded-xl border border-white/15 px-5 py-3 text-sm font-bold transition hover:border-[#2ee866]/60 hover:text-[#2ee866]"
+      >
+        Check another deal
+      </button>
     </div>
   )}
 </div>

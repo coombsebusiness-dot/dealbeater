@@ -142,9 +142,9 @@ export default function ProductDecision({
       className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8"
     >
       <div className="overflow-hidden rounded-[32px] border border-white/10 bg-[#111c27] shadow-2xl shadow-black/20">
-        <div className="grid lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="p-6 sm:p-8 lg:p-10">
-            <div className="mb-6 flex flex-wrap items-center gap-3">
+       <div>
+          <div className="p-6 sm:p-10 lg:p-14">
+            <div className="mb-6 flex flex-col items-center text-center gap-3">
               <span className="rounded-full border border-[#2ee866]/30 bg-[#2ee866]/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-[#2ee866]">
                 Blinlx Buying Decision
               </span>
@@ -154,32 +154,22 @@ export default function ProductDecision({
               </span>
             </div>
 
-            <p className="mb-2 text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">
-              Should you buy it?
-            </p>
+            <p className="mb-4 text-center text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">
+  Should you buy it?
+</p>
 
-         <div className="flex items-start justify-between gap-8">
-  <div className="flex items-end gap-4">
-    <h2
-      id="product-decision-title"
-      className="text-7xl font-black tracking-tight text-white sm:text-8xl lg:text-9xl"
-    >
-      {decision.answer}
-    </h2>
+       <div className="mt-6 flex w-full flex-col items-center justify-center text-center">
+  <h2
+    id="product-decision-title"
+    className="text-[clamp(6rem,16vw,13rem)] font-black leading-[0.82] tracking-[-0.07em] text-white"
+  >
+    {decision.answer}
+  </h2>
 
-    <span
-      aria-hidden="true"
-      className="mb-4 h-4 w-4 rounded-full bg-[#2ee866] shadow-[0_0_24px_rgba(46,232,102,0.75)]"
-    />
-  </div>
-
-  {product.image ? (
-    <img
-      src={product.image}
-      alt={product.name}
-      className="hidden h-auto w-36 object-contain drop-shadow-2xl transition-transform duration-300 hover:-translate-y-1 lg:block w-32 xl:w-36"
-    />
-  ) : null}
+ <span
+  aria-hidden="true"
+  className="mt-4 h-5 w-5 rounded-full bg-[#2ee866] shadow-[0_0_30px_rgba(46,232,102,0.85)]"
+/>
 </div>
 
             <div className="mt-8 rounded-3xl border border-[#2ee866]/20 bg-[#2ee866]/5 p-6">
@@ -236,8 +226,8 @@ export default function ProductDecision({
             </div>
           </div>
 
-          <div className="border-t border-white/10 bg-black/10 p-6 sm:p-8 lg:border-l lg:border-t-0 lg:p-10">
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+          <div className="border-t border-white/10 bg-black/10 p-6 sm:p-8 lg:p-10">
+  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <DecisionStat
                 label="★ Blinlx Score"
                 value={

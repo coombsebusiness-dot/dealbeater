@@ -6,10 +6,36 @@ import { retailerAgent } from "./retailerAgent";
 import { alternativeAgent } from "./alternativeAgent";
 import { decisionAgent } from "@/app/components/lib/agents/decisionAgent";
 import { recommendationAgent } from "./recommendationAgent";
+import { getOrCreateProductOverview } from "@/app/components/lib/agents/productOverviewCache";
+import { specificationsAgent } from "@/app/components/lib/agents/specificationsAgent";
+
+type ProductSpecifications = Record<
+  string,
+  string | number | boolean | null
+>;
+
+async function measureAgent<T>(
+  name: string,
+  task: () => Promise<T>
+): Promise<T> {
+  const startedAt = performance.now();
+
+  try {
+    return await task();
+  } finally {
+    console.info(
+      `${name}: ${Math.round(
+        performance.now() - startedAt
+      )}ms`
+    );
+  }
+}
 
 export async function analyseDeal(
   input: string
 ): Promise<DealReport> {
+  const startedAt = performance.now();
+
   const cleanInput = input.trim();
 
   if (!cleanInput) {
@@ -18,58 +44,177 @@ export async function analyseDeal(
     );
   }
 
-  const product = await productAgent(cleanInput);
+const product = await measureAgent(
+  "PRODUCT_AGENT_TIME",
+  () => productAgent(cleanInput)
+);
 
-  const [pricing, reviews, retailers, alternatives] =
-    await Promise.all([
-      priceAgent(product),
-      reviewAgent(product),
-      retailerAgent(product),
-      alternativeAgent(product),
-    ]);
+console.log("========== ORCHESTRATOR DEBUG ==========");
+console.log(JSON.stringify(product, null, 2));
+console.log("========================================");
+  
+console.log(
+  "PRODUCT_AGENT_RESULT:",
+  JSON.stringify(product, null, 2)
+);
+  const [
+    pricing,
+    reviews,
+    retailers,
+    alternatives,
+    productOverview,
+    specifications,
+  ] = await Promise.all([
+    measureAgent(
+      "PRICE_AGENT_TIME",
+      () => priceAgent(product)
+    ),
 
- console.log("ORCHESTRATOR PRICING:", {
-  pricing,
-  topOffers: pricing.topOffers,
-  bestRetailer: pricing.bestRetailer,
-  bestRetailerUrl: pricing.bestRetailerUrl,
-  productImage: pricing.productImage,
-});
+    measureAgent(
+      "REVIEW_AGENT_TIME",
+      () => reviewAgent(product)
+    ),
 
-const decision = decisionAgent(
+    measureAgent(
+      "RETAILER_AGENT_TIME",
+      () => retailerAgent(product)
+    ),
+
+    measureAgent(
+      "ALTERNATIVE_AGENT_TIME",
+      () => alternativeAgent(product)
+    ),
+
+    measureAgent(
+      "PRODUCT_OVERVIEW_AGENT_TIME",
+      () =>
+        getOrCreateProductOverview(
+          product
+        )
+    ),
+
+    measureAgent(
+      "SPECIFICATIONS_AGENT_TIME",
+      () => specificationsAgent(product)
+    ),
+  ]);
+
+  console.log(
+    "ORCHESTRATOR_SPECIFICATIONS_RAW:",
+    JSON.stringify(
+      specifications,
+      null,
+      2
+    )
+  );
+
+  const normalisedSpecifications:
+    ProductSpecifications =
+      typeof specifications === "object" &&
+      specifications !== null &&
+      "specifications" in specifications
+        ? (
+            specifications as {
+              specifications?: ProductSpecifications;
+            }
+          ).specifications ?? {}
+        : (
+            specifications as ProductSpecifications
+          ) ?? {};
+
+  console.log(
+    "ORCHESTRATOR_SPECIFICATIONS_NORMALISED:",
+    JSON.stringify(
+      normalisedSpecifications,
+      null,
+      2
+    )
+  );
+
+  const decisionStartedAt =
+    performance.now();
+
+  const decision = decisionAgent(
     pricing,
     reviews,
     retailers,
     alternatives
   );
 
- const enrichedProduct = {
-  ...product,
+  console.log(
+    `DECISION_AGENT_TIME: ${Math.round(
+      performance.now() -
+        decisionStartedAt
+    )}ms`
+  );
 
-  imageUrl:
-    pricing.productImage ??
-    product.imageUrl ??
-    product.image ??
-    undefined,
+  const enrichedProduct = {
+    ...product,
 
-  ctaUrl:
-    pricing.bestRetailerUrl ??
-    product.ctaUrl ??
-    undefined,
+    imageUrl:
+      pricing.productImage ??
+      product.imageUrl ??
+      product.image ??
+      undefined,
 
-  ctaLabel:
-    pricing.bestRetailerUrl || product.ctaUrl
-      ? "Buy Now"
-      : undefined,
-};
+    ctaUrl:
+      pricing.bestRetailerUrl ??
+      product.ctaUrl ??
+      undefined,
 
-  return recommendationAgent({
+    ctaLabel:
+      pricing.bestRetailerUrl ||
+      product.ctaUrl
+        ? "Buy Now"
+        : undefined,
+  };
+  console.log(
+  "ENRICHED_PRODUCT:",
+  JSON.stringify(enrichedProduct, null, 2)
+);
+
+  const recommendationStartedAt =
+    performance.now();
+
+  const report = recommendationAgent({
     product: enrichedProduct,
     pricing,
     reviews,
     retailers,
     alternatives,
     decision,
-    
   });
+console.log(
+  "RECOMMENDATION_PRODUCT:",
+  JSON.stringify(report.product, null, 2)
+);
+  console.log(
+    `RECOMMENDATION_AGENT_TIME: ${Math.round(
+      performance.now() -
+        recommendationStartedAt
+    )}ms`
+  );
+
+  console.log(
+    "ORCHESTRATOR_FINAL_SPECIFICATIONS:",
+    JSON.stringify(
+      normalisedSpecifications,
+      null,
+      2
+    )
+  );
+
+  console.log(
+    `BLINLX ANALYSIS COMPLETE: ${Math.round(
+      performance.now() - startedAt
+    )}ms`
+  );
+
+  return {
+    ...report,
+    product: enrichedProduct,
+    productOverview,
+    specifications:
+      normalisedSpecifications,
+  };
 }

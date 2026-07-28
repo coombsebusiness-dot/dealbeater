@@ -339,17 +339,44 @@ function extractModelRevision(
 
   return null;
 }
+const PHONE_ACCESSORY_TERMS = [
+  "case",
+  "cover",
+  "wallet case",
+  "flip case",
+  "screen protector",
+  "tempered glass",
+  "bumper",
+  "protective case",
+  "silicone case",
+  "leather case",
+  "phone holder",
+  "car mount",
+  "charging case",
+];
+
+function isPhoneAccessory(text: string): boolean {
+  const normalised = text.toLowerCase();
+
+  return PHONE_ACCESSORY_TERMS.some((term) =>
+    normalised.includes(term)
+  );
+}
 
 export function compareExactProductVariant(
   originalText: string,
   candidateText: string
 ): ProductMatchResult {
 
+  
+
   const original =
   createProductFingerprint(originalText);
 
 const candidate =
   createProductFingerprint(candidateText);
+
+  
 
   const originalV2 =
   createProductFingerprintV2(
@@ -366,23 +393,39 @@ const candidateV2 =
     candidateV2
   );
 
-console.log("🧪 VALIDATION V2");
-console.dir(
-  validationV2,
-  { depth: null }
-);
+  if (
+  originalV2.productType === "phone" &&
+  isPhoneAccessory(candidateText)
+) {
+  return {
+    accepted: false,
+    confidence: 0,
+    reasons: [
+      "Candidate is a phone accessory, not the phone itself",
+    ],
+    original,
+    candidate,
+  };
+}
+  
 
-console.log("🟢 ORIGINAL FP V2");
-console.dir(
-  originalV2,
-  { depth: null }
-);
+// // console.log("🧪 VALIDATION V2");
+// console.dir(
+//   validationV2,
+//   { depth: null }
+// );
 
-console.log("🔵 CANDIDATE FP V2");
-console.dir(
-  candidateV2,
-  { depth: null }
-);
+// console.log("🟢 ORIGINAL FP V2");
+// console.dir(
+//   originalV2,
+//   { depth: null }
+// );
+
+// console.log("🔵 CANDIDATE FP V2");
+// console.dir(
+//   candidateV2,
+//   { depth: null }
+// );
 
 
 const originalRevision =
@@ -408,10 +451,10 @@ const candidateRevision =
     };
   }
 
-  console.log("🟢 ORIGINAL FP");
+  // console.log("🟢 ORIGINAL FP");
   console.dir(original, { depth: null });
 
-  console.log("🔵 CANDIDATE FP");
+  // console.log("🔵 CANDIDATE FP");
   console.dir(candidate, { depth: null });
 
   if (
@@ -1108,4 +1151,29 @@ function escapeRegExp(
     /[.*+?^${}()|[\]\\]/g,
     "\\$&"
   );
+  const PHONE_ACCESSORY_TERMS = [
+  "case",
+  "cover",
+  "bumper",
+  "screen protector",
+  "tempered glass",
+  "wallet case",
+  "flip case",
+  "silicone case",
+  "leather case",
+  "clear case",
+  "protective case",
+  "phone holder",
+  "car mount",
+  "charging case",
+  "replacement case",
+];
+
+function isPhoneAccessory(title: string): boolean {
+  const normalised = title.toLowerCase();
+
+  return PHONE_ACCESSORY_TERMS.some((term) =>
+    normalised.includes(term)
+  );
+}
 }

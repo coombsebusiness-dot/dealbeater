@@ -1,6 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
-import { saveProductAnalysis } from "@/app/components/lib/products/saveProductAnalysis";
+import {
+  NextRequest,
+  NextResponse,
+  after,
+} from "next/server";
 
+import {
+  saveProductAnalysis,
+} from "@/app/components/lib/products/saveProductAnalysis";
 
 import {
   analyseDealWithAI,
@@ -26,20 +32,48 @@ interface AnalyseRequestBody {
   imageUrl?: string;
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(
+  request: NextRequest
+) {
+  /*
+   * Hide noisy development logs unless debugging
+   * has been explicitly enabled in .env.local.
+   *
+   * Timers using console.info() and genuine errors
+   * using console.error() will still appear.
+   */
+  if (
+    process.env.NODE_ENV === "development" &&
+    process.env.BLINLX_DEBUG !== "true"
+  ) {
+    console.log = () => {};
+    console.dir = () => {};
+    console.warn = () => {};
+  }
+
   try {
-    const body = (await request.json()) as AnalyseRequestBody;
+    const body =
+      (await request.json()) as AnalyseRequestBody;
 
-    const mode = body.mode ?? "describe";
-    const userInput = body.userInput ?? body.input ?? "";
+    const mode =
+      body.mode ?? "describe";
 
-    if (!["link", "describe"].includes(mode)) {
+    const userInput =
+      body.userInput ??
+      body.input ??
+      "";
+
+    if (
+      !["link", "describe"].includes(mode)
+    ) {
       return NextResponse.json(
         {
           success: false,
           error: "Invalid analysis mode.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
@@ -47,45 +81,73 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "Please provide a product link or description.",
+          error:
+            "Please provide a product link or description.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
-    let resolvedUserInput = userInput.trim();
+    let resolvedUserInput =
+      userInput.trim();
 
     let resolvedImageUrl =
-      body.imageUrl?.trim() || undefined;
+      body.imageUrl?.trim() ||
+      undefined;
 
     let scrapedContent =
-      body.scrapedContent?.trim() || undefined;
+      body.scrapedContent?.trim() ||
+      undefined;
 
-    let scrapeWarning: string | undefined;
+    let scrapeWarning:
+      | string
+      | undefined;
 
-    if (mode === "link" && !scrapedContent) {
+    if (
+      mode === "link" &&
+      !scrapedContent
+    ) {
       const ebayItemId =
-        extractEbayLegacyItemId(resolvedUserInput);
+        extractEbayLegacyItemId(
+          resolvedUserInput
+        );
 
       /*
-       * eBay blocks normal page scraping, so eBay links
-       * are resolved through the official Browse API.
+       * eBay blocks normal page scraping, so eBay
+       * links are resolved through the official
+       * Browse API.
        */
       if (ebayItemId) {
         try {
           const ebayItem =
-            await getEbayItemByLegacyId(ebayItemId);
+            await getEbayItemByLegacyId(
+              ebayItemId
+            );
+            if (!ebayItem) {
+  throw new Error(
+    "The eBay listing could not be found."
+  );
+}
 
-          resolvedUserInput = ebayItem.title;
+          resolvedUserInput =
+            ebayItem.title;
 
-          if (!resolvedImageUrl && ebayItem.imageUrl) {
-            resolvedImageUrl = ebayItem.imageUrl;
+          if (
+            !resolvedImageUrl &&
+            ebayItem.imageUrl
+          ) {
+            resolvedImageUrl =
+              ebayItem.imageUrl;
           }
 
-          scrapedContent = buildEbayEvidence({
-            originalUrl: userInput.trim(),
-            item: ebayItem,
-          });
+          scrapedContent =
+            buildEbayEvidence({
+              originalUrl:
+                userInput.trim(),
+              item: ebayItem,
+            });
         } catch (ebayError) {
           scrapeWarning =
             ebayError instanceof Error
@@ -99,24 +161,34 @@ export async function POST(request: NextRequest) {
         }
       } else {
         try {
-          const scrapedPage = await Promise.race([
-            scrapeProductPage(resolvedUserInput),
+          const scrapedPage =
+            await Promise.race([
+              scrapeProductPage(
+                resolvedUserInput
+              ),
 
-            new Promise<never>((_, reject) => {
-              setTimeout(() => {
-                reject(
-                  new Error(
-                    "The retailer page took too long to respond."
-                  )
-                );
-              }, 4_000);
-            }),
-          ]);
+              new Promise<never>(
+                (_, reject) => {
+                  setTimeout(() => {
+                    reject(
+                      new Error(
+                        "The retailer page took too long to respond."
+                      )
+                    );
+                  }, 4_000);
+                }
+              ),
+            ]);
 
-          scrapedContent = scrapedPage.evidence;
+          scrapedContent =
+            scrapedPage.evidence;
 
-          if (!resolvedImageUrl && scrapedPage.image) {
-            resolvedImageUrl = scrapedPage.image;
+          if (
+            !resolvedImageUrl &&
+            scrapedPage.image
+          ) {
+            resolvedImageUrl =
+              scrapedPage.image;
           }
 
           resolvedUserInput =
@@ -139,39 +211,79 @@ export async function POST(request: NextRequest) {
 
     const input: AnalyseDealInput = {
       mode,
-      userInput: resolvedUserInput,
+      userInput:
+        resolvedUserInput,
       scrapedContent,
-      imageUrl: resolvedImageUrl,
+      imageUrl:
+        resolvedImageUrl,
     };
 
-   const report = await analyseDealWithAI(input);
-   
+    const analysisStartedAt =
+      performance.now();
 
-let savedProduct:
-  | {
-      id: string;
-      slug: string;
-    }
-  | undefined;
+    const report =
+      await analyseDealWithAI(input);
 
-try {
-  savedProduct = await saveProductAnalysis(report);
-} catch (saveError) {
-  console.error(
-    "Product analysis could not be saved:",
-    saveError
-  );
-}
+    const analysisDuration =
+      Math.round(
+        performance.now() -
+          analysisStartedAt
+      );
 
-return NextResponse.json({
-  success: true,
-  report,
-  product: savedProduct,
-  pageEvidenceUsed: Boolean(scrapedContent),
-  scrapeWarning,
-});
+    /*
+     * console.info remains enabled so the useful
+     * performance result is still visible.
+     */
+    console.info(
+      `BLINLX ANALYSIS COMPLETE: ${analysisDuration}ms`
+    );
+
+    /*
+     * Saving the generated product page must not
+     * delay the buying recommendation shown to
+     * the user.
+     */
+    after(async () => {
+      const saveStartedAt =
+        performance.now();
+
+      try {
+        const savedProduct =
+          await saveProductAnalysis(
+            report
+          );
+
+        console.info(
+          `BLINLX PRODUCT SAVED: ${Math.round(
+            performance.now() -
+              saveStartedAt
+          )}ms`,
+          savedProduct
+        );
+      } catch (saveError) {
+        console.error(
+          "Product analysis could not be saved:",
+          saveError
+        );
+      }
+    });
+
+    return NextResponse.json({
+      success: true,
+      report,
+      pageEvidenceUsed:
+        Boolean(scrapedContent),
+      scrapeWarning,
+      performance: {
+        analysisMs:
+          analysisDuration,
+      },
+    });
   } catch (error) {
-    console.error("Deal analysis failed:", error);
+    console.error(
+      "Deal analysis failed:",
+      error
+    );
 
     const message =
       error instanceof Error
@@ -183,7 +295,9 @@ return NextResponse.json({
         success: false,
         error: message,
       },
-      { status: 500 }
+      {
+        status: 500,
+      }
     );
   }
 }
@@ -199,38 +313,55 @@ function extractEbayLegacyItemId(
     return null;
   }
 
-  const hostname = url.hostname
-    .toLowerCase()
-    .replace(/^www\./, "");
+  const hostname =
+    url.hostname
+      .toLowerCase()
+      .replace(/^www\./, "");
 
   const isEbayHostname =
     hostname === "ebay.co.uk" ||
-    hostname.endsWith(".ebay.co.uk") ||
+    hostname.endsWith(
+      ".ebay.co.uk"
+    ) ||
     hostname === "ebay.com" ||
-    hostname.endsWith(".ebay.com");
+    hostname.endsWith(
+      ".ebay.com"
+    );
 
   if (!isEbayHostname) {
     return null;
   }
 
   const queryItemId =
-    url.searchParams.get("item") ??
-    url.searchParams.get("itemid");
+    url.searchParams.get(
+      "item"
+    ) ??
+    url.searchParams.get(
+      "itemid"
+    );
 
   if (
     queryItemId &&
-    /^\d{9,15}$/.test(queryItemId)
+    /^\d{9,15}$/.test(
+      queryItemId
+    )
   ) {
     return queryItemId;
   }
 
-  const pathParts = url.pathname
-    .split("/")
-    .filter(Boolean)
-    .reverse();
+  const pathParts =
+    url.pathname
+      .split("/")
+      .filter(Boolean)
+      .reverse();
 
-  for (const pathPart of pathParts) {
-    const match = pathPart.match(/\b(\d{9,15})\b/);
+  for (
+    const pathPart of pathParts
+  ) {
+    const match =
+      pathPart.match(
+        /\b(\d{9,15})\b/
+      );
 
     if (match) {
       return match[1];
@@ -245,26 +376,44 @@ function buildEbayEvidence({
   item,
 }: {
   originalUrl: string;
-  item: Awaited<
-    ReturnType<typeof getEbayItemByLegacyId>
-  >;
+ item: NonNullable<
+  Awaited<
+    ReturnType<
+      typeof getEbayItemByLegacyId
+    >
+  >
+>;
 }): string {
   const price =
     item.price === null
       ? "Not found"
-      : `${item.currency} ${item.price.toFixed(2)}`;
+      : `${item.currency} ${item.price.toFixed(
+          2
+        )}`;
 
   return [
     "VERIFIED EBAY LISTING EVIDENCE",
     "",
     `Original URL: ${originalUrl}`,
     `Legacy eBay item ID: ${item.legacyItemId}`,
-    `eBay Browse item ID: ${item.itemId ?? "Not found"}`,
+    `eBay Browse item ID: ${
+      item.itemId ??
+      "Not found"
+    }`,
     `Product title: ${item.title}`,
     `Price: ${price}`,
-    `Condition: ${item.condition ?? "Not found"}`,
-    `Image URL: ${item.imageUrl ?? "Not found"}`,
-    `Listing URL: ${item.itemUrl ?? originalUrl}`,
+    `Condition: ${
+      item.condition ??
+      "Not found"
+    }`,
+    `Image URL: ${
+      item.imageUrl ??
+      "Not found"
+    }`,
+    `Listing URL: ${
+      item.itemUrl ??
+      originalUrl
+    }`,
     "",
     "This information was obtained through the official eBay Browse API.",
     "Treat only the information above as verified listing evidence.",

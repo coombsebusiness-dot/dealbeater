@@ -1,3 +1,5 @@
+import { compareExactProductVariant } from "@/app/components/lib/shopping/exactProductMatcher";
+
 type EbayTokenResponse = {
   access_token: string;
   expires_in: number;
@@ -132,31 +134,93 @@ export async function findEbayAffiliateListing(
     return null;
   }
 
-  const data = (await response.json()) as EbaySearchResponse;
+const data =
+  (await response.json()) as EbaySearchResponse;
 
-  const candidates = (data.itemSummaries ?? []).filter(
-    (item) => item.itemAffiliateWebUrl
+const candidates = (
+  data.itemSummaries ?? []
+).filter((item) => {
+  if (
+    !item.itemAffiliateWebUrl ||
+    !item.title
+  ) {
+    return false;
+  }
+
+  const match =
+    compareExactProductVariant(
+      query,
+      item.title
+    );
+
+  if (!match.accepted) {
+    console.log(
+      `🚫 eBay affiliate candidate rejected: ${item.title}`
+    );
+
+    console.log(
+      "Reasons:",
+      match.reasons.join(" | ")
+    );
+
+    return false;
+  }
+
+  return true;
+});
+
+if (candidates.length === 0) {
+  return null;
+}
+
+const selected = chooseClosestPrice(
+  candidates,
+  expectedPrice
+);
+
+if (!selected?.itemAffiliateWebUrl) {
+  return null;
+}
+
+const selectedPrice = selected.price
+  ? Number(selected.price.value)
+  : null;
+
+if (
+  expectedPrice !== undefined &&
+  Number.isFinite(expectedPrice) &&
+  selectedPrice !== null &&
+  Number.isFinite(selectedPrice)
+) {
+  const maximumDifference = Math.max(
+    20,
+    expectedPrice * 0.25
   );
 
-  if (candidates.length === 0) {
+  if (
+    Math.abs(
+      selectedPrice - expectedPrice
+    ) > maximumDifference
+  ) {
+    console.log(
+      `🚫 eBay affiliate candidate rejected due to price mismatch: ${selected.title}`
+    );
+
     return null;
   }
-
-  const selected = chooseClosestPrice(candidates, expectedPrice);
-
-  if (!selected?.itemAffiliateWebUrl) {
-    return null;
-  }
-
-  return {
-    itemId: selected.itemId,
-    legacyItemId: selected.legacyItemId ?? null,
-    title: selected.title,
-    price: selected.price ? Number(selected.price.value) : null,
-    currency: selected.price?.currency ?? null,
-    affiliateUrl: selected.itemAffiliateWebUrl,
-  };
 }
+
+return {
+  itemId: selected.itemId,
+  legacyItemId:
+    selected.legacyItemId ?? null,
+  title: selected.title,
+  price: selectedPrice,
+  currency:
+    selected.price?.currency ?? null,
+  affiliateUrl:
+    selected.itemAffiliateWebUrl,
+};
 
 function chooseClosestPrice(
   items: EbayItemSummary[],
@@ -187,4 +251,5 @@ function chooseClosestPrice(
       Math.abs(bPrice - expectedPrice)
     );
   })[0];
+}
 }

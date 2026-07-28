@@ -1,11 +1,8 @@
 import { notFound } from "next/navigation";
 
-import type {
-  Product,
-  ProductAlternative,
-  ProductOffer,
-} from "@/types/product";
-
+import type { Product } from "@/types/product";
+import { extractProductIdentity } from "@/lib/product-intelligence/product-identity";
+import BlinlxVerified from "@/app/components/product/BlinlxVerified";
 import ProductHero from "@/app/components/product/ProductHero";
 import ProductDecision from "@/app/components/product/ProductDecision";
 import ProductOverview from "@/app/components/product/ProductOverview";
@@ -15,16 +12,17 @@ import ProductOffers from "@/app/components/product/ProductOffers";
 import ProductSpecifications from "@/app/components/product/ProductSpecifications";
 import ProductWhoShouldBuy from "@/app/components/product/ProductWhoShouldBuy";
 import ProductAlternatives from "@/app/components/product/ProductAlternatives";
-import type {ProductFAQItem,} from "@/types/product";
-import { getProductBySlug } from "@/app/components/lib/products/getProductBySlug";
 import ProductFAQ from "@/app/components/product/ProductFAQ";
+import BlinlxIntelligenceScore from "@/app/components/product/BlinlxIntelligenceScore";
+import BlinlxGauge from "@/app/components/results/BlinlxGauge";
+import ShareReport from "@/app/components/product/ShareReport";
+
+import { getProductBySlug } from "@/app/components/lib/products/getProductBySlug";
+
 import {
   buildProductPageSchema,
   stringifyJsonLd,
 } from "@/app/components/lib/schema/productPageSchema";
-import BlinlxIntelligenceScore from "@/app/components/product/BlinlxIntelligenceScore";
-import BlinlxGauge from "@/app/components/results/BlinlxGauge";
-
 
 type ProductPageProps = {
   params: Promise<{
@@ -34,245 +32,123 @@ type ProductPageProps = {
   }>;
 };
 
-type RawOffer = {
-  retailer?: unknown;
-  title?: unknown;
-  price?: unknown;
-  url?: unknown;
-  image?: unknown;
-};
-
-type RawAlternative = {
-  name?: unknown;
-  title?: unknown;
-  slug?: unknown;
-  category?: unknown;
-  brand?: unknown;
-  reason?: unknown;
-  summary?: unknown;
-  price?: unknown;
-  image?: unknown;
-  imageUrl?: unknown;
-  url?: unknown;
-  score?: unknown;
-};
-
-
-function createFAQs(
-  value: unknown
-): ProductFAQItem[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value.reduce<ProductFAQItem[]>(
-    (faqs, rawFAQ: unknown) => {
-      if (
-        !rawFAQ ||
-        typeof rawFAQ !== "object"
-      ) {
-        return faqs;
-      }
-
-      const item = rawFAQ as {
-        question?: unknown;
-        answer?: unknown;
-      };
-
-      const question =
-        typeof item.question === "string"
-          ? item.question.trim()
-          : "";
-
-      const answer =
-        typeof item.answer === "string"
-          ? item.answer.trim()
-          : "";
-
-      if (!question || !answer) {
-        return faqs;
-      }
-
-      faqs.push({
-        question,
-        answer,
-      });
-
-      return faqs;
-    },
-    []
-  );
-}
-
-
-
-function toOptionalString(value: unknown): string | undefined {
-  if (typeof value !== "string") {
-    return undefined;
-  }
-
-  const cleanedValue = value.trim();
-
-  return cleanedValue.length > 0
-    ? cleanedValue
-    : undefined;
-}
-
-function toOptionalNumber(value: unknown): number | undefined {
-  if (
-    value === null ||
-    value === undefined ||
-    value === ""
-  ) {
-    return undefined;
-  }
-
-  const parsedValue = Number(value);
-
-  return Number.isFinite(parsedValue)
-    ? parsedValue
-    : undefined;
-}
-
-function createTopOffers(value: unknown): ProductOffer[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value.reduce<ProductOffer[]>(
-    (offers, rawOffer: unknown) => {
-      if (
-        !rawOffer ||
-        typeof rawOffer !== "object"
-      ) {
-        return offers;
-      }
-
-      const offer = rawOffer as RawOffer;
-
-      const retailer = toOptionalString(offer.retailer);
-      const title = toOptionalString(offer.title);
-      const price = toOptionalNumber(offer.price);
-      const url = toOptionalString(offer.url);
-      const image = toOptionalString(offer.image);
-
-      if (
-        !retailer ||
-        !title ||
-        price === undefined ||
-        price <= 0 ||
-        !url
-      ) {
-        return offers;
-      }
-
-      offers.push({
-        retailer,
-        title,
-        price,
-        url,
-        image,
-      });
-
-      return offers;
-    },
-    []
-  );
-}
-
-function createAlternatives(
-  value: unknown
-): ProductAlternative[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value.reduce<ProductAlternative[]>(
-    (alternatives, rawAlternative: unknown) => {
-      if (typeof rawAlternative === "string") {
-        const name = rawAlternative.trim();
-
-        if (name.length > 0) {
-          alternatives.push({
-            name,
-          });
-        }
-
-        return alternatives;
-      }
-
-      if (
-        !rawAlternative ||
-        typeof rawAlternative !== "object"
-      ) {
-        return alternatives;
-      }
-
-      const item = rawAlternative as RawAlternative;
-
-      const name =
-        toOptionalString(item.name) ??
-        toOptionalString(item.title);
-
-      if (!name) {
-        return alternatives;
-      }
-
-      const reason =
-        toOptionalString(item.reason) ??
-        toOptionalString(item.summary);
-
-      const image =
-        toOptionalString(item.image) ??
-        toOptionalString(item.imageUrl);
-
-      alternatives.push({
-        name,
-        slug: toOptionalString(item.slug),
-        category: toOptionalString(item.category),
-        brand: toOptionalString(item.brand),
-        reason,
-        price: toOptionalNumber(item.price),
-        image,
-        url: toOptionalString(item.url),
-        score: toOptionalNumber(item.score),
-      });
-
-      return alternatives;
-    },
-    []
-  );
-}
-
-function createStringList(value: unknown): string[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
+function normaliseSlug(value: string): string {
   return value
-    .filter(
-      (item): item is string =>
-        typeof item === "string" &&
-        item.trim().length > 0
-    )
-    .map((item) => item.trim());
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
-function createSpecs(
-  value: unknown
-): Record<string, string | number | undefined> {
+function titleCase(value: string): string {
+  return value
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (character) =>
+      character.toUpperCase()
+    );
+}
+
+function cleanProductName(
+  value: string,
+  fallback: string
+): string {
+  const productName =
+    value.trim().length > 0
+      ? value
+      : titleCase(fallback);
+
+  return productName
+    .replace(
+      /\bsony a1\b/i,
+      "Sony Alpha 1"
+    )
+    .replace(
+      /\bcamera body only\b/i,
+      "Mirrorless Camera Body"
+    )
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function createVerdictLabel(
+  product: Product
+): string | undefined {
   if (
-    !value ||
-    typeof value !== "object" ||
-    Array.isArray(value)
+    typeof product.verdictLabel ===
+      "string" &&
+    product.verdictLabel.trim().length > 0
   ) {
-    return {};
+    return product.verdictLabel.trim();
   }
 
-  return value as Record<
-    string,
-    string | number | undefined
-  >;
+  if (
+    typeof product.verdict !== "string" ||
+    product.verdict.trim().length === 0
+  ) {
+    return undefined;
+  }
+
+  return product.verdict
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (character) =>
+      character.toUpperCase()
+    );
+}
+
+function createPriceStatus(
+  product: Product
+): Product["priceStatus"] {
+  if (product.priceStatus) {
+    return product.priceStatus;
+  }
+
+  if (
+    typeof product.currentPrice !==
+      "number" ||
+    typeof product.fairPrice !== "number"
+  ) {
+    return undefined;
+  }
+
+  if (
+    product.currentPrice <=
+    product.fairPrice * 0.9
+  ) {
+    return "Excellent";
+  }
+
+  if (
+    product.currentPrice <=
+    product.fairPrice
+  ) {
+    return "Good";
+  }
+
+  if (
+    product.currentPrice <=
+    product.fairPrice * 1.1
+  ) {
+    return "Fair";
+  }
+
+  return "High";
+}
+
+function SectionDivider() {
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        height: "1px",
+        width: "100%",
+        background:
+          "linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent)",
+      }}
+    />
+  );
 }
 
 export default async function ProductPage({
@@ -284,214 +160,244 @@ export default async function ProductPage({
     model,
   } = await params;
 
-  const fullSlug = `${brand}-${model}`
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+  const normalisedBrand =
+    normaliseSlug(brand);
 
+  const normalisedModel =
+    normaliseSlug(model);
+
+  const fullSlug = normaliseSlug(
+    `${normalisedBrand}-${normalisedModel}`
+  );
+
+  /*
+   * Some saved products include the brand at the
+   * beginning of the slug, while others use only
+   * the model.
+   */
   const storedProduct =
     (await getProductBySlug(fullSlug)) ??
-    (await getProductBySlug(model));
+    (await getProductBySlug(
+      normalisedModel
+    ));
 
   if (!storedProduct) {
     notFound();
   }
 
+  const cleanedProductName =
+    cleanProductName(
+      storedProduct.name,
+      model
+    );
+
+  /*
+   * getProductBySlug() has already converted the
+   * raw Supabase record into the shared Product
+   * interface. Only page-specific fallbacks and
+   * presentation cleanup belong here.
+   */
+
+  const identity = extractProductIdentity(cleanedProductName);
   const product: Product = {
-    id: storedProduct.id,
-    slug: storedProduct.slug,
+    ...storedProduct,
 
-    name:
-      storedProduct.product_name ??
-      model.replace(/[-_]+/g, " "),
+    id:
+      storedProduct.id ||
+      storedProduct.slug,
 
-    brand:
-      storedProduct.brand ??
-      brand,
+    slug:
+      storedProduct.slug ||
+      fullSlug,
+
+    name: cleanedProductName,
+
+   brand:
+  storedProduct.brand ||
+  identity.brand ||
+  titleCase(brand),
 
     category:
-      storedProduct.category ??
-      category,
+  storedProduct.category ||
+  identity.category ||
+  titleCase(category),
 
     model: {
-      base:
-        storedProduct.model ??
-        model,
+      ...storedProduct.model,
+
+     base:
+  storedProduct.model?.base ||
+  identity.model ||
+  titleCase(model),
     },
 
-    specs: createSpecs(
-      storedProduct.specs
-    ),
+    specs:
+      storedProduct.specs ?? {},
 
     image:
-      storedProduct.product_image ??
+      storedProduct.image ||
       undefined,
 
-    imageAlt: storedProduct.product_name
-      ? `${storedProduct.product_name} product image`
-      : "Product image",
+    imageAlt:
+      storedProduct.imageAlt ||
+      `${cleanedProductName} product image`,
 
     summary:
-      storedProduct.summary ??
-      storedProduct.headline ??
-      `Blinlx analysis for ${
-        storedProduct.product_name ??
-        model.replace(/[-_]+/g, " ")
-      }.`,
-
-    currentPrice: toOptionalNumber(
-      storedProduct.current_price
-    ),
-
-    fairPrice: toOptionalNumber(
-      storedProduct.fair_price
-    ),
-
-    lowestPrice: toOptionalNumber(
-      storedProduct.lowest_price
-    ),
+      storedProduct.summary ||
+      `Blinlx analysis for ${cleanedProductName}.`,
 
     primaryOfferUrl:
-      storedProduct.affiliate_url ??
-      storedProduct.final_url ??
-      storedProduct.retailer_url ??
+      storedProduct.primaryOfferUrl ||
       undefined,
 
     primaryOfferRetailer:
-      storedProduct.retailer_name ??
-      storedProduct.retailer ??
-      undefined,
-
-    blinlxScore: toOptionalNumber(
-      storedProduct.score
-    ),
-
-    verdict:
-      storedProduct.verdict ??
+      storedProduct.primaryOfferRetailer ||
       undefined,
 
     verdictLabel:
-      storedProduct.verdict ??
-      undefined,
-
-    ifItWasOurMoney:
-      storedProduct.recommendation ??
-      undefined,
-
-    highlights: createStringList(
-      storedProduct.positives
-    ),
-
-    scoreContext: {
-      confidence:
-        toOptionalNumber(
-          storedProduct.confidence
-        ) ??
-        toOptionalNumber(
-          storedProduct.score
-        ) ??
-        0,
-
-      concerns: createStringList(
-        storedProduct.concerns ??
-        storedProduct.negatives
+      createVerdictLabel(
+        storedProduct
       ),
-    },
 
-    topOffers: createTopOffers(
-      storedProduct.top_offers
-    ),
+    priceStatus:
+      createPriceStatus(
+        storedProduct
+      ),
 
-    alternatives: createAlternatives(
-      storedProduct.better_alternatives
-    ),
+    priceHistoryUrl:
+      storedProduct.priceHistoryUrl ??
+      "#price-history",
 
-    faqs: createFAQs(
-  storedProduct.faqs
-),
+    highlights:
+      storedProduct.highlights ?? [],
+
+    topOffers:
+      storedProduct.topOffers ?? [],
+
+    alternatives:
+      storedProduct.alternatives ?? [],
+
+    faqs:
+      storedProduct.faqs ?? [],
   };
+
   const productSchema =
-  buildProductPageSchema({
-    product,
-    slug: `${category}/${brand}/${model}`,
-  });
+    buildProductPageSchema({
+      product,
+      slug: `${category}/${brand}/${model}`,
+    });
 
-const gaugeScore =
-  typeof product.blinlxScore === "number"
-    ? product.blinlxScore
-    : 0;
+  const gaugeScore =
+    typeof product.blinlxScore ===
+    "number"
+      ? product.blinlxScore
+      : typeof product.dealScore ===
+          "number"
+        ? product.dealScore
+        : 0;
 
-const gaugeConfidence =
-  typeof product.confidence === "number"
-    ? product.confidence
-    : product.scoreContext?.confidence ?? 0;
+  const gaugeConfidence =
+    typeof product.confidence ===
+    "number"
+      ? product.confidence
+      : typeof product.scoreContext
+              ?.confidence === "number"
+        ? product.scoreContext
+            .confidence
+        : 0;
+
   return (
     <main
-    
       style={{
         minHeight: "100vh",
         background:
-          "radial-gradient(circle at top, #182a3a 0%, #101b26 42%, #0b141d 100%)",
+          "radial-gradient(circle at top left, rgba(46,232,102,0.08), transparent 32%), radial-gradient(circle at top right, rgba(75,141,255,0.08), transparent 28%), linear-gradient(180deg, #132230 0%, #101b26 40%, #0b141d 100%)",
         color: "#ffffff",
-        padding: "48px 24px 96px",
+        padding:
+          "32px 20px 120px",
       }}
     >
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html:
+            stringifyJsonLd(
+              productSchema
+            ),
+        }}
+      />
+
       <div
         style={{
           width: "100%",
-          maxWidth: "1180px",
+          maxWidth: "1240px",
           margin: "0 auto",
-          display: "flex",
-          flexDirection: "column",
-          gap: "28px",
+          display: "grid",
+          gap: "32px",
         }}
       >
-          
+        <ProductHero
+          product={product}
+        />
 
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{
-        __html: stringifyJsonLd(productSchema),
-      }}
-    />
-        <ProductHero product={product} />
+        <BlinlxVerified
+          product={product}
+        />
 
-        <ProductOverview product={product} />
+        <ShareReport
+          product={product}
+        />
 
-        <ProductAIVerdict product={product} />
+        <section
+          style={{
+            display: "grid",
+            gap: "32px",
+          }}
+        >
+          <ProductDecision
+            product={product}
+          />
 
-        
-        
-<section
-  style={{
-    display: "grid",
-    gap: "18px",
-  }}
->
-  {gaugeScore > 0 && (
-    <BlinlxGauge
-      score={gaugeScore}
-      confidence={gaugeConfidence}
-    />
-  )}
-
-  {product.scoreBreakdown && (
-    <BlinlxIntelligenceScore
-      score={gaugeScore}
-      confidence={gaugeConfidence}
-      breakdown={product.scoreBreakdown}
-      explanation={product.scoreExplanation}
-    />
-  )}
-</section>
-
-<ProductDecision product={product} />
+          {gaugeScore > 0 && (
+            <BlinlxGauge
+              score={gaugeScore}
+              confidence={
+                gaugeConfidence
+              }
+            />
+          )}
+        </section>
 
         <ProductPriceIntelligence
           product={product}
         />
 
-        <ProductOffers product={product} />
+        <SectionDivider />
+
+        <ProductOverview
+          product={product}
+        />
+
+        <ProductAIVerdict
+          product={product}
+        />
+
+        {product.scoreBreakdown && (
+          <BlinlxIntelligenceScore
+            score={gaugeScore}
+            confidence={
+              gaugeConfidence
+            }
+            breakdown={
+              product.scoreBreakdown
+            }
+            explanation={
+              product.scoreExplanation
+            }
+          />
+        )}
+
+        <SectionDivider />
 
         <ProductSpecifications
           product={product}
@@ -501,11 +407,78 @@ const gaugeConfidence =
           product={product}
         />
 
+        <SectionDivider />
+
+        <ProductOffers
+          product={product}
+        />
+
         <ProductAlternatives
           product={product}
         />
 
-        <ProductFAQ product={product} />
+        <SectionDivider />
+
+        <ProductFAQ
+          product={product}
+        />
+
+        <section
+          style={{
+            padding: "28px 24px",
+            border:
+              "1px solid rgba(255,255,255,0.1)",
+            borderRadius: "24px",
+            background:
+              "linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.025))",
+            boxShadow:
+              "0 24px 60px rgba(0,0,0,0.22)",
+            textAlign: "center",
+          }}
+        >
+          <p
+            style={{
+              margin: 0,
+              color:
+                "rgba(255,255,255,0.55)",
+              fontSize: "13px",
+              fontWeight: 800,
+              letterSpacing:
+                "0.12em",
+              textTransform:
+                "uppercase",
+            }}
+          >
+            Blinlx Intelligence
+          </p>
+
+          <h2
+            style={{
+              margin: "10px 0 0",
+              fontSize:
+                "clamp(24px, 4vw, 38px)",
+              lineHeight: 1.1,
+            }}
+          >
+            Still deciding?
+          </h2>
+
+          <p
+            style={{
+              maxWidth: "680px",
+              margin:
+                "14px auto 0",
+              color:
+                "rgba(255,255,255,0.7)",
+              lineHeight: 1.7,
+            }}
+          >
+            Search another product,
+            compare alternatives or ask
+            Blinlx to check a different
+            deal before you buy.
+          </p>
+        </section>
       </div>
     </main>
   );

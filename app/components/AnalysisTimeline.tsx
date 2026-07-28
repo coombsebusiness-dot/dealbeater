@@ -1,79 +1,110 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-type AnalysisStep = {
-  label: string;
-  completeLabel: string;
-};
-
-const steps: AnalysisStep[] = [
-  {
-    label: "Understanding your request",
-    completeLabel: "Request understood",
-  },
-  {
-    label: "Identifying the product",
-    completeLabel: "Product identified",
-  },
-  {
-    label: "Comparing prices",
-    completeLabel: "Prices compared",
-  },
-  {
-    label: "Analysing reviews",
-    completeLabel: "Reviews analysed",
-  },
-  {
-    label: "Checking retailer trust",
-    completeLabel: "Retailer checked",
-  },
-  {
-    label: "Finding better alternatives",
-    completeLabel: "Alternatives found",
-  },
-  {
-    label: "Building your Blinlx report",
-    completeLabel: "Report ready",
-  },
+const steps = [
+  "Product identified",
+  "Comparing prices",
+  "Verifying offers",
+  "Building recommendation",
 ];
 
 export default function AnalysisTimeline() {
   const [activeStep, setActiveStep] = useState(0);
+  const [progress, setProgress] = useState(8);
 
   useEffect(() => {
-    const timer = window.setInterval(() => {
+    const stepTimer = window.setInterval(() => {
       setActiveStep((current) => {
         if (current >= steps.length - 1) {
-          window.clearInterval(timer);
+          window.clearInterval(stepTimer);
           return current;
         }
 
         return current + 1;
       });
-    }, 850);
+    }, 800);
 
-    return () => window.clearInterval(timer);
+    const progressTimer = window.setInterval(() => {
+      setProgress((current) => {
+       if (current >= 95) {
+  window.clearInterval(progressTimer);
+  return 95;
+}
+
+        const increase = Math.max(2, Math.floor(Math.random() * 8));
+        return Math.min(95, current + increase);
+      });
+    }, 260);
+
+    return () => {
+      window.clearInterval(stepTimer);
+      window.clearInterval(progressTimer);
+    };
   }, []);
 
+  const statusText = useMemo(() => {
+    switch (activeStep) {
+      case 0:
+        return "Identifying the exact product";
+      case 1:
+        return "Checking available prices";
+      case 2:
+        return "Removing unsuitable listings";
+      default:
+  return "Building your Blinlx report...";
+    }
+  }, [activeStep]);
+
   return (
-    <section className="mt-8 overflow-hidden rounded-3xl border border-white/10 bg-[#1d2a36] shadow-xl shadow-black/20">
-      <div className="border-b border-white/10 px-6 py-5 sm:px-8">
-        <p className="text-xs font-black uppercase tracking-[0.18em] text-[#52ee7e]">
-          Blinlx AI
-        </p>
+    <section
+      aria-live="polite"
+      aria-busy="true"
+      className="mt-8 overflow-hidden rounded-3xl border border-white/10 bg-[#1d2a36] p-6 shadow-xl shadow-black/20 sm:p-8"
+    >
+      <div className="flex items-start gap-4">
+        <div className="relative mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#2ee866]/35 bg-[#2ee866]/10">
+          <span className="absolute h-3 w-3 animate-ping rounded-full bg-[#2ee866]/45" />
+          <span className="relative h-3 w-3 rounded-full bg-[#2ee866]" />
+        </div>
 
-        <h3 className="mt-2 text-xl font-black text-white">
-          Analysing your request
-        </h3>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-[#68f18e]">
+            Checking the market
+          </p>
 
-        <p className="mt-2 text-sm leading-6 text-white/55">
-          Blinlx is checking the product, price, reviews and available
-          alternatives.
-        </p>
+          <h3 className="mt-2 text-xl font-black text-white sm:text-2xl">
+            Finding your best buying option
+          </h3>
+
+          <p className="mt-2 text-sm leading-6 text-white/55">
+            {statusText}
+          </p>
+        </div>
       </div>
 
-      <div className="space-y-3 p-6 sm:p-8">
+      <div className="mt-7">
+        <div className="mb-3 flex items-center justify-between gap-4">
+          <span className="text-sm font-bold text-white/75">
+            Blinlx is working...
+          </span>
+
+          <span className="text-sm font-black text-[#68f18e]">
+            {progress}%
+          </span>
+        </div>
+
+        <div className="h-3 overflow-hidden rounded-full bg-white/10">
+          <div
+            className="relative h-full rounded-full bg-[#2ee866] transition-[width] duration-500 ease-out"
+            style={{ width: `${progress}%` }}
+          >
+            <div className="absolute inset-y-0 right-0 w-16 animate-pulse bg-white/20 blur-md" />
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-7 grid gap-3 sm:grid-cols-2">
         {steps.map((step, index) => {
           const isComplete = index < activeStep;
           const isActive = index === activeStep;
@@ -81,17 +112,17 @@ export default function AnalysisTimeline() {
 
           return (
             <div
-              key={step.label}
-              className={`flex items-center gap-4 rounded-2xl border px-4 py-4 transition-all duration-500 ${
+              key={step}
+              className={`flex items-center gap-3 rounded-2xl border px-4 py-3 transition-all duration-300 ${
                 isActive
-                  ? "border-[#2ee866]/40 bg-[#2ee866]/10"
+                  ? "border-[#2ee866]/35 bg-[#2ee866]/10"
                   : isComplete
-                    ? "border-white/10 bg-white/5"
+                    ? "border-white/10 bg-white/[0.04]"
                     : "border-white/5 bg-white/[0.02]"
               }`}
             >
               <div
-                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm font-black transition-all duration-500 ${
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs font-black ${
                   isComplete
                     ? "border-[#2ee866] bg-[#2ee866] text-[#102018]"
                     : isActive
@@ -102,61 +133,27 @@ export default function AnalysisTimeline() {
                 {isComplete ? (
                   "✓"
                 ) : isActive ? (
-                  <span className="h-3 w-3 animate-pulse rounded-full bg-[#2ee866]" />
+                  <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-[#2ee866]" />
                 ) : (
                   index + 1
                 )}
               </div>
 
-              <div className="min-w-0 flex-1">
-                <p
-                  className={`font-bold transition-colors ${
-                    isPending ? "text-white/30" : "text-white"
-                  }`}
-                >
-                  {isComplete ? step.completeLabel : step.label}
-                </p>
-
-                {isActive && (
-                  <p className="mt-1 text-sm text-[#68f18e]">
-                    Working on this now...
-                  </p>
-                )}
-              </div>
-
-              {isComplete && (
-                <span className="text-xs font-bold uppercase tracking-[0.12em] text-[#68f18e]">
-                  Done
-                </span>
-              )}
-
-              {isActive && (
-                <span className="text-xs font-bold uppercase tracking-[0.12em] text-white/45">
-                  Analysing
-                </span>
-              )}
+              <p
+                className={`text-sm font-bold ${
+                  isPending ? "text-white/30" : "text-white/85"
+                }`}
+              >
+                {step}
+              </p>
             </div>
           );
         })}
       </div>
 
-      <div className="border-t border-white/10 px-6 py-4 sm:px-8">
-        <div className="h-2 overflow-hidden rounded-full bg-white/10">
-          <div
-            className="h-full rounded-full bg-[#2ee866] transition-all duration-700"
-            style={{
-              width: `${Math.max(
-                8,
-                ((activeStep + 1) / steps.length) * 100
-              )}%`,
-            }}
-          />
-        </div>
-
-        <p className="mt-3 text-center text-xs text-white/40">
-          This usually takes a few seconds.
-        </p>
-      </div>
+      <p className="mt-6 text-center text-xs leading-5 text-white/40">
+        Blinlx is checking retailers, prices and product intelligence...
+      </p>
     </section>
   );
 }

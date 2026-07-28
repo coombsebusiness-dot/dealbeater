@@ -42,14 +42,15 @@ export default function ProductHero({
 
           {product.image ? (
             <div className="relative z-10 h-[320px] w-full max-w-[420px]">
-              <Image
-                src={product.image}
-                alt={product.imageAlt ?? product.name}
-                fill
-                priority
-                sizes="(max-width: 1024px) 100vw, 42vw"
-                className="object-contain drop-shadow-[0_30px_40px_rgba(0,0,0,0.45)]"
-              />
+              <img
+  src={product.image}
+  alt={product.imageAlt ?? product.name}
+  style={{
+    width: "100%",
+    height: "100%",
+    objectFit: "contain",
+  }}
+/>
             </div>
           ) : (
             <div className="relative z-10 flex h-[320px] w-full items-center justify-center rounded-2xl border border-dashed border-white/15 bg-white/[0.03] text-center text-sm font-bold text-slate-500">
