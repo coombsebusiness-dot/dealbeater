@@ -255,9 +255,6 @@ after(async () => {
   console.info(
     "🔥 AFTER CALLBACK STARTED"
   );
-
-  try {
-    console.info("🚀 CANONICAL MATCH CHECK STARTED");
   const productName =
   report.productName ?? "";
 
@@ -284,6 +281,9 @@ after(async () => {
   "🚀 CANONICAL RESULT:",
   canonicalProduct
 );
+  try {
+    console.info("🚀 CANONICAL MATCH CHECK STARTED");
+
 
   if (canonicalProduct.found) {
     console.info(
