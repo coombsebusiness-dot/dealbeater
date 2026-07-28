@@ -246,26 +246,32 @@ export async function POST(
      * delay the buying recommendation shown to
      * the user.
      */
-console.info("🔥 ABOUT TO REGISTER AFTER CALLBACK");
+/*
+ * Temporarily run canonical detection in the main
+ * request so we can verify that matching works.
+ */
+console.info(
+  "🔥 REACHED CANONICAL LOOKUP"
+);
 
-after(async () => {
-  const saveStartedAt =
-    performance.now();
-
-  console.info(
-    "🔥 AFTER CALLBACK STARTED"
-  );
-  const productName =
+const productName =
   report.productName ?? "";
 
-  const identity =
-    extractProductIdentity(
-      productName
-    );
-console.info("🔥 REACHED CANONICAL LOOKUP");
-  const canonicalProduct =
+const identity =
+  extractProductIdentity(
+    productName
+  );
+
+let canonicalProduct:
+  Awaited<
+    ReturnType<
+      typeof findCanonicalProduct
+    >
+  > | null = null;
+
+try {
+  canonicalProduct =
     await findCanonicalProduct({
-      
       category:
         identity.category,
       brand:
@@ -277,13 +283,11 @@ console.info("🔥 REACHED CANONICAL LOOKUP");
           identity.model,
       },
     });
-    console.info(
-  "🚀 CANONICAL RESULT:",
-  canonicalProduct
-);
-  try {
-    console.info("🚀 CANONICAL MATCH CHECK STARTED");
 
+  console.info(
+    "🚀 CANONICAL RESULT:",
+    canonicalProduct
+  );
 
   if (canonicalProduct.found) {
     console.info(
@@ -302,31 +306,41 @@ console.info("🔥 REACHED CANONICAL LOOKUP");
       }
     );
   }
-
-  /*
-   * Detection-only stage:
-   * continue saving normally until
-   * canonical matching is verified.
-   */
-  const savedProduct =
-    await saveProductAnalysis(
-      report
-    );
-
-  console.info(
-    `BLINLX PRODUCT SAVED: ${Math.round(
-      performance.now() -
-        saveStartedAt
-    )}ms`,
-    savedProduct
-  );
-} catch (saveError) {
+} catch (canonicalError) {
   console.error(
-    "Product analysis could not be saved:",
-    saveError
+    "Canonical product lookup failed:",
+    canonicalError
   );
 }
-    });
+
+/*
+ * Product saving remains in the background so
+ * it does not delay the response unnecessarily.
+ */
+after(async () => {
+  const saveStartedAt =
+    performance.now();
+
+  try {
+    const savedProduct =
+      await saveProductAnalysis(
+        report
+      );
+
+    console.info(
+      `BLINLX PRODUCT SAVED: ${Math.round(
+        performance.now() -
+          saveStartedAt
+      )}ms`,
+      savedProduct
+    );
+  } catch (saveError) {
+    console.error(
+      "Product analysis could not be saved:",
+      saveError
+    );
+  }
+});
 
     return NextResponse.json({
       success: true,
