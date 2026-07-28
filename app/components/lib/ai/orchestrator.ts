@@ -1,11 +1,13 @@
 import type { DealReport } from "../types";
+
 import { productAgent } from "./productAgent";
 import { priceAgent } from "./priceAgent";
 import { reviewAgent } from "./reviewAgent";
 import { retailerAgent } from "./retailerAgent";
 import { alternativeAgent } from "./alternativeAgent";
-import { decisionAgent } from "@/app/components/lib/agents/decisionAgent";
 import { recommendationAgent } from "./recommendationAgent";
+
+import { decisionAgent } from "@/app/components/lib/agents/decisionAgent";
 import { getOrCreateProductOverview } from "@/app/components/lib/agents/productOverviewCache";
 import { specificationsAgent } from "@/app/components/lib/agents/specificationsAgent";
 
@@ -44,19 +46,141 @@ export async function analyseDeal(
     );
   }
 
-const product = await measureAgent(
-  "PRODUCT_AGENT_TIME",
-  () => productAgent(cleanInput)
-);
+  const product = await measureAgent(
+    "PRODUCT_AGENT_TIME",
+    () => productAgent(cleanInput)
+  );
 
-console.log("========== ORCHESTRATOR DEBUG ==========");
-console.log(JSON.stringify(product, null, 2));
-console.log("========================================");
-  
-console.log(
-  "PRODUCT_AGENT_RESULT:",
-  JSON.stringify(product, null, 2)
-);
+  console.log(
+    "========== ORCHESTRATOR DEBUG =========="
+  );
+
+  console.log(
+    JSON.stringify(
+      product,
+      null,
+      2
+    )
+  );
+
+  console.log(
+    "========================================"
+  );
+
+  console.log(
+    "PRODUCT_AGENT_RESULT:",
+    JSON.stringify(
+      product,
+      null,
+      2
+    )
+  );
+
+  console.error(
+    "🔥 ORCHESTRATOR PARALLEL AGENTS STARTED"
+  );
+
+  const agentResults =
+    await Promise.allSettled([
+      measureAgent(
+        "PRICE_AGENT_TIME",
+        () => priceAgent(product)
+      ),
+
+      measureAgent(
+        "REVIEW_AGENT_TIME",
+        () => reviewAgent(product)
+      ),
+
+      measureAgent(
+        "RETAILER_AGENT_TIME",
+        () => retailerAgent(product)
+      ),
+
+      measureAgent(
+        "ALTERNATIVE_AGENT_TIME",
+        () => alternativeAgent(product)
+      ),
+
+      measureAgent(
+        "PRODUCT_OVERVIEW_AGENT_TIME",
+        () =>
+          getOrCreateProductOverview(
+            product
+          )
+      ),
+
+      measureAgent(
+        "SPECIFICATIONS_AGENT_TIME",
+        () =>
+          specificationsAgent(
+            product
+          )
+      ),
+    ]);
+
+  const agentNames = [
+    "pricing",
+    "reviews",
+    "retailers",
+    "alternatives",
+    "productOverview",
+    "specifications",
+  ] as const;
+
+  console.error(
+    "🔥 ORCHESTRATOR AGENT RESULTS:",
+    agentResults.map(
+      (result, index) => ({
+        agent:
+          agentNames[index],
+
+        status:
+          result.status,
+
+        error:
+          result.status ===
+          "rejected"
+            ? result.reason instanceof
+              Error
+              ? result.reason.message
+              : String(
+                  result.reason
+                )
+            : null,
+      })
+    )
+  );
+
+  const failedAgent =
+    agentResults.find(
+      (result) =>
+        result.status ===
+        "rejected"
+    );
+
+  if (
+    failedAgent &&
+    failedAgent.status ===
+      "rejected"
+  ) {
+    throw failedAgent.reason;
+  }
+
+  const fulfilledResults =
+    agentResults.map(
+      (result) => {
+        if (
+          result.status !==
+          "fulfilled"
+        ) {
+          throw result.reason;
+        }
+
+        return result.value;
+      }
+    );
+
   const [
     pricing,
     reviews,
@@ -64,40 +188,38 @@ console.log(
     alternatives,
     productOverview,
     specifications,
-  ] = await Promise.all([
-    measureAgent(
-      "PRICE_AGENT_TIME",
-      () => priceAgent(product)
-    ),
-
-    measureAgent(
-      "REVIEW_AGENT_TIME",
-      () => reviewAgent(product)
-    ),
-
-    measureAgent(
-      "RETAILER_AGENT_TIME",
-      () => retailerAgent(product)
-    ),
-
-    measureAgent(
-      "ALTERNATIVE_AGENT_TIME",
-      () => alternativeAgent(product)
-    ),
-
-    measureAgent(
-      "PRODUCT_OVERVIEW_AGENT_TIME",
-      () =>
-        getOrCreateProductOverview(
-          product
-        )
-    ),
-
-    measureAgent(
-      "SPECIFICATIONS_AGENT_TIME",
-      () => specificationsAgent(product)
-    ),
-  ]);
+  ] = fulfilledResults as [
+    Awaited<
+      ReturnType<
+        typeof priceAgent
+      >
+    >,
+    Awaited<
+      ReturnType<
+        typeof reviewAgent
+      >
+    >,
+    Awaited<
+      ReturnType<
+        typeof retailerAgent
+      >
+    >,
+    Awaited<
+      ReturnType<
+        typeof alternativeAgent
+      >
+    >,
+    Awaited<
+      ReturnType<
+        typeof getOrCreateProductOverview
+      >
+    >,
+    Awaited<
+      ReturnType<
+        typeof specificationsAgent
+      >
+    >,
+  ];
 
   console.log(
     "ORCHESTRATOR_SPECIFICATIONS_RAW:",
@@ -110,14 +232,17 @@ console.log(
 
   const normalisedSpecifications:
     ProductSpecifications =
-      typeof specifications === "object" &&
+      typeof specifications ===
+        "object" &&
       specifications !== null &&
-      "specifications" in specifications
+      "specifications" in
+        specifications
         ? (
             specifications as {
               specifications?: ProductSpecifications;
             }
-          ).specifications ?? {}
+          ).specifications ??
+          {}
         : (
             specifications as ProductSpecifications
           ) ?? {};
@@ -134,12 +259,13 @@ console.log(
   const decisionStartedAt =
     performance.now();
 
-  const decision = decisionAgent(
-    pricing,
-    reviews,
-    retailers,
-    alternatives
-  );
+  const decision =
+    decisionAgent(
+      pricing,
+      reviews,
+      retailers,
+      alternatives
+    );
 
   console.log(
     `DECISION_AGENT_TIME: ${Math.round(
@@ -168,26 +294,39 @@ console.log(
         ? "Buy Now"
         : undefined,
   };
+
   console.log(
-  "ENRICHED_PRODUCT:",
-  JSON.stringify(enrichedProduct, null, 2)
-);
+    "ENRICHED_PRODUCT:",
+    JSON.stringify(
+      enrichedProduct,
+      null,
+      2
+    )
+  );
 
   const recommendationStartedAt =
     performance.now();
 
-  const report = recommendationAgent({
-    product: enrichedProduct,
-    pricing,
-    reviews,
-    retailers,
-    alternatives,
-    decision,
-  });
-console.log(
-  "RECOMMENDATION_PRODUCT:",
-  JSON.stringify(report.product, null, 2)
-);
+  const report =
+    recommendationAgent({
+      product:
+        enrichedProduct,
+      pricing,
+      reviews,
+      retailers,
+      alternatives,
+      decision,
+    });
+
+  console.log(
+    "RECOMMENDATION_PRODUCT:",
+    JSON.stringify(
+      report.product,
+      null,
+      2
+    )
+  );
+
   console.log(
     `RECOMMENDATION_AGENT_TIME: ${Math.round(
       performance.now() -
@@ -206,14 +345,19 @@ console.log(
 
   console.log(
     `BLINLX ANALYSIS COMPLETE: ${Math.round(
-      performance.now() - startedAt
+      performance.now() -
+        startedAt
     )}ms`
   );
 
   return {
     ...report,
-    product: enrichedProduct,
+
+    product:
+      enrichedProduct,
+
     productOverview,
+
     specifications:
       normalisedSpecifications,
   };
