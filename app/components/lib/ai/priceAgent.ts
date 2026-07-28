@@ -337,22 +337,22 @@ const verifiedOffers = allOffers.filter(
   .filter(Boolean)
   .join(" ");
 
-  console.error("➡️ MATCHING:", offer.title);
+  // console.error("➡️ MATCHING:", offer.title);
 const match =
   compareExactProductVariant(
     referenceProduct,
     offer.title
   );
-console.error("✅ MATCHED:", offer.title);
-console.log("🎯 VARIANT REFERENCE:");
-console.log(referenceProduct);
-console.log("================================");
-console.log("QUERY:", referenceProduct);
-console.log("TITLE:", offer.title);
-console.log("ACCEPTED:", match.accepted);
-console.log("CONFIDENCE:", match.confidence);
-console.log("REASONS:", match.reasons);
-console.log("================================");
+// console.error("✅ MATCHED:", offer.title);
+// console.log("🎯 VARIANT REFERENCE:");
+// console.log(referenceProduct);
+// console.log("================================");
+// console.log("QUERY:", referenceProduct);
+// console.log("TITLE:", offer.title);
+// console.log("ACCEPTED:", match.accepted);
+// console.log("CONFIDENCE:", match.confidence);
+// console.log("REASONS:", match.reasons);
+// console.log("================================");
 
     if (!match.accepted) {
       console.log(
