@@ -246,11 +246,18 @@ export async function POST(
      * delay the buying recommendation shown to
      * the user.
      */
-    after(async () => {
-      const saveStartedAt =
-        performance.now();
-console.info("🚀 CANONICAL MATCH CHECK STARTED");
-     try {
+console.info("🔥 ABOUT TO REGISTER AFTER CALLBACK");
+
+after(async () => {
+  const saveStartedAt =
+    performance.now();
+
+  console.info(
+    "🔥 AFTER CALLBACK STARTED"
+  );
+
+  try {
+    console.info("🚀 CANONICAL MATCH CHECK STARTED");
   const productName =
   report.productName ?? "";
 
