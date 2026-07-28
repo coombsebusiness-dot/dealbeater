@@ -249,7 +249,7 @@ export async function POST(
     after(async () => {
       const saveStartedAt =
         performance.now();
-
+console.info("🚀 CANONICAL MATCH CHECK STARTED");
      try {
   const productName =
   report.productName ?? "";
@@ -261,6 +261,7 @@ export async function POST(
 
   const canonicalProduct =
     await findCanonicalProduct({
+      
       category:
         identity.category,
       brand:
@@ -272,6 +273,10 @@ export async function POST(
           identity.model,
       },
     });
+    console.info(
+  "🚀 CANONICAL RESULT:",
+  canonicalProduct
+);
 
   if (canonicalProduct.found) {
     console.info(
