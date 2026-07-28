@@ -38,6 +38,9 @@ interface AnalyseRequestBody {
 export async function POST(
   request: NextRequest
 ) {
+  console.error(
+  "🔥 ROUTE VERSION: CANONICAL-V1"
+);
   /*
    * Hide noisy development logs unless debugging
    * has been explicitly enabled in .env.local.
