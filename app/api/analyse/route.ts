@@ -4,6 +4,9 @@ import {
   after,
 } from "next/server";
 
+import { extractProductIdentity } from "@/lib/product-intelligence/product-identity";
+import { findCanonicalProduct } from "@/product-intelligence/canonical/findCanonicalProduct";
+
 import {
   saveProductAnalysis,
 } from "@/app/components/lib/products/saveProductAnalysis";
@@ -247,25 +250,70 @@ export async function POST(
       const saveStartedAt =
         performance.now();
 
-      try {
-        const savedProduct =
-          await saveProductAnalysis(
-            report
-          );
+     try {
+  const productName =
+  report.productName ?? "";
 
-        console.info(
-          `BLINLX PRODUCT SAVED: ${Math.round(
-            performance.now() -
-              saveStartedAt
-          )}ms`,
-          savedProduct
-        );
-      } catch (saveError) {
-        console.error(
-          "Product analysis could not be saved:",
-          saveError
-        );
+  const identity =
+    extractProductIdentity(
+      productName
+    );
+
+  const canonicalProduct =
+    await findCanonicalProduct({
+      category:
+        identity.category,
+      brand:
+        identity.brand,
+      family:
+        identity.family,
+      model: {
+        base:
+          identity.model,
+      },
+    });
+
+  if (canonicalProduct.found) {
+    console.info(
+      "BLINLX CANONICAL PRODUCT MATCH:",
+      {
+        searchedProduct:
+          productName,
+        existingProductId:
+          canonicalProduct.productId,
+        existingSlug:
+          canonicalProduct.slug,
+        confidence:
+          canonicalProduct.confidence,
+        matchedFields:
+          canonicalProduct.matchedFields,
       }
+    );
+  }
+
+  /*
+   * Detection-only stage:
+   * continue saving normally until
+   * canonical matching is verified.
+   */
+  const savedProduct =
+    await saveProductAnalysis(
+      report
+    );
+
+  console.info(
+    `BLINLX PRODUCT SAVED: ${Math.round(
+      performance.now() -
+        saveStartedAt
+    )}ms`,
+    savedProduct
+  );
+} catch (saveError) {
+  console.error(
+    "Product analysis could not be saved:",
+    saveError
+  );
+}
     });
 
     return NextResponse.json({
