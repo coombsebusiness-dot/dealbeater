@@ -23,6 +23,8 @@ export interface PriceOffer {
   image?: string;
   title?: string;
 
+  
+
   affiliateUrl?: string;
   finalUrl?: string;
   retailerUrl?: string;
@@ -335,12 +337,13 @@ const verifiedOffers = allOffers.filter(
   .filter(Boolean)
   .join(" ");
 
+  console.error("➡️ MATCHING:", offer.title);
 const match =
   compareExactProductVariant(
     referenceProduct,
     offer.title
   );
-
+console.error("✅ MATCHED:", offer.title);
 console.log("🎯 VARIANT REFERENCE:");
 console.log(referenceProduct);
 console.log("================================");
