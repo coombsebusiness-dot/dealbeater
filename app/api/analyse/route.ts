@@ -262,7 +262,7 @@ after(async () => {
     extractProductIdentity(
       productName
     );
-
+console.info("🔥 REACHED CANONICAL LOOKUP");
   const canonicalProduct =
     await findCanonicalProduct({
       
