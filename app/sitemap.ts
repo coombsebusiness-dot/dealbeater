@@ -2,6 +2,9 @@ import type { MetadataRoute } from "next";
 import { blogPosts } from "@/app/components/lib/blog-posts";
 import { supabaseAdmin } from "@/app/components/lib/supabase/admin";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 const baseUrl = "https://blinlx.com";
 
 type SitemapProduct = {
@@ -88,18 +91,17 @@ function createCategorySlug(
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const { data: products, error } =
-    await supabaseAdmin
-      .from("products")
-      .select(
-        "slug, category, brand, model, updated_at, created_at"
-      )
-      .not("slug", "is", null)
-      .not("category", "is", null)
-      .not("brand", "is", null)
-      .not("model", "is", null)
-      .order("updated_at", {
-        ascending: false,
-      });
+  await supabaseAdmin
+    .from("products")
+    .select(
+      "slug, category, brand, model, updated_at, created_at"
+    )
+    .not("category", "is", null)
+    .not("brand", "is", null)
+    .not("model", "is", null)
+    .order("updated_at", {
+      ascending: false,
+    });
 
   if (error) {
     console.error(
