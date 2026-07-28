@@ -77,149 +77,90 @@ export async function analyseDeal(
   );
 
   console.error(
-    "🔥 ORCHESTRATOR PARALLEL AGENTS STARTED"
+    "➡️ Starting PRICE"
   );
 
-  const agentResults =
-    await Promise.allSettled([
-      measureAgent(
-        "PRICE_AGENT_TIME",
-        () => priceAgent(product)
-      ),
-
-      measureAgent(
-        "REVIEW_AGENT_TIME",
-        () => reviewAgent(product)
-      ),
-
-      measureAgent(
-        "RETAILER_AGENT_TIME",
-        () => retailerAgent(product)
-      ),
-
-      measureAgent(
-        "ALTERNATIVE_AGENT_TIME",
-        () => alternativeAgent(product)
-      ),
-
-      measureAgent(
-        "PRODUCT_OVERVIEW_AGENT_TIME",
-        () =>
-          getOrCreateProductOverview(
-            product
-          )
-      ),
-
-      measureAgent(
-        "SPECIFICATIONS_AGENT_TIME",
-        () =>
-          specificationsAgent(
-            product
-          )
-      ),
-    ]);
-
-  const agentNames = [
-    "pricing",
-    "reviews",
-    "retailers",
-    "alternatives",
-    "productOverview",
-    "specifications",
-  ] as const;
+  const pricing = await measureAgent(
+    "PRICE_AGENT_TIME",
+    () => priceAgent(product)
+  );
 
   console.error(
-    "🔥 ORCHESTRATOR AGENT RESULTS:",
-    agentResults.map(
-      (result, index) => ({
-        agent:
-          agentNames[index],
-
-        status:
-          result.status,
-
-        error:
-          result.status ===
-          "rejected"
-            ? result.reason instanceof
-              Error
-              ? result.reason.message
-              : String(
-                  result.reason
-                )
-            : null,
-      })
-    )
+    "✅ PRICE DONE"
   );
 
-  const failedAgent =
-    agentResults.find(
-      (result) =>
-        result.status ===
-        "rejected"
+  console.error(
+    "➡️ Starting REVIEWS"
+  );
+
+  const reviews = await measureAgent(
+    "REVIEW_AGENT_TIME",
+    () => reviewAgent(product)
+  );
+
+  console.error(
+    "✅ REVIEWS DONE"
+  );
+
+  console.error(
+    "➡️ Starting RETAILERS"
+  );
+
+  const retailers = await measureAgent(
+    "RETAILER_AGENT_TIME",
+    () => retailerAgent(product)
+  );
+
+  console.error(
+    "✅ RETAILERS DONE"
+  );
+
+  console.error(
+    "➡️ Starting ALTERNATIVES"
+  );
+
+  const alternatives = await measureAgent(
+    "ALTERNATIVE_AGENT_TIME",
+    () => alternativeAgent(product)
+  );
+
+  console.error(
+    "✅ ALTERNATIVES DONE"
+  );
+
+  console.error(
+    "➡️ Starting PRODUCT OVERVIEW"
+  );
+
+  const productOverview =
+    await measureAgent(
+      "PRODUCT_OVERVIEW_AGENT_TIME",
+      () =>
+        getOrCreateProductOverview(
+          product
+        )
     );
 
-  if (
-    failedAgent &&
-    failedAgent.status ===
-      "rejected"
-  ) {
-    throw failedAgent.reason;
-  }
+  console.error(
+    "✅ PRODUCT OVERVIEW DONE"
+  );
 
-  const fulfilledResults =
-    agentResults.map(
-      (result) => {
-        if (
-          result.status !==
-          "fulfilled"
-        ) {
-          throw result.reason;
-        }
+  console.error(
+    "➡️ Starting SPECIFICATIONS"
+  );
 
-        return result.value;
-      }
+  const specifications =
+    await measureAgent(
+      "SPECIFICATIONS_AGENT_TIME",
+      () =>
+        specificationsAgent(
+          product
+        )
     );
 
-  const [
-    pricing,
-    reviews,
-    retailers,
-    alternatives,
-    productOverview,
-    specifications,
-  ] = fulfilledResults as [
-    Awaited<
-      ReturnType<
-        typeof priceAgent
-      >
-    >,
-    Awaited<
-      ReturnType<
-        typeof reviewAgent
-      >
-    >,
-    Awaited<
-      ReturnType<
-        typeof retailerAgent
-      >
-    >,
-    Awaited<
-      ReturnType<
-        typeof alternativeAgent
-      >
-    >,
-    Awaited<
-      ReturnType<
-        typeof getOrCreateProductOverview
-      >
-    >,
-    Awaited<
-      ReturnType<
-        typeof specificationsAgent
-      >
-    >,
-  ];
+  console.error(
+    "✅ SPECIFICATIONS DONE"
+  );
 
   console.log(
     "ORCHESTRATOR_SPECIFICATIONS_RAW:",
@@ -241,8 +182,7 @@ export async function analyseDeal(
             specifications as {
               specifications?: ProductSpecifications;
             }
-          ).specifications ??
-          {}
+          ).specifications ?? {}
         : (
             specifications as ProductSpecifications
           ) ?? {};
