@@ -218,17 +218,73 @@ const [googleOffers, amazon, ebayOffers] =
   await Promise.all([
     measureTask(
       "GOOGLE_SHOPPING_TIME",
-      () => searchGoogleShopping(lookupQuery)
+      () =>
+        withTimeout(
+          searchGoogleShopping(
+            lookupQuery
+          ),
+          3000,
+          [],
+          "GOOGLE_SHOPPING_SEARCH"
+        )
     ),
+
     measureTask(
       "AMAZON_TIME",
-      () => searchAmazon(lookupQuery)
+      () =>
+        withTimeout(
+          searchAmazon(
+            lookupQuery
+          ),
+          2500,
+          {
+            products: [],
+            total: 0,
+          },
+          "AMAZON_SEARCH"
+        )
     ),
+
     measureTask(
       "EBAY_SEARCH_TIME",
-      () => searchEbay(lookupQuery)
+      () =>
+        searchEbay(
+          lookupQuery
+        )
     ),
   ]);
+  async function withTimeout<T>(
+  task: Promise<T>,
+  timeoutMs: number,
+  fallback: T,
+  taskName: string
+): Promise<T> {
+  let timeoutId:
+    | ReturnType<typeof setTimeout>
+    | undefined;
+
+  const timeoutPromise =
+    new Promise<T>((resolve) => {
+      timeoutId = setTimeout(() => {
+        console.warn(
+          `⏱️ ${taskName} timed out after ${timeoutMs}ms. Continuing without it.`
+        );
+
+        resolve(fallback);
+      }, timeoutMs);
+    });
+
+  try {
+    return await Promise.race([
+      task,
+      timeoutPromise,
+    ]);
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  }
+}
 
 console.timeEnd("LIVE_PRICE_SEARCHES");
 

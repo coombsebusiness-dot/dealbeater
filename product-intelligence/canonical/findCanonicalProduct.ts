@@ -185,56 +185,65 @@ export async function findCanonicalProduct(
   }
 
   const { data, error } =
-    await supabaseAdmin
-      .from("products")
-      .select(
-        "id, slug, name, category, brand, family, model"
-      )
-      .ilike(
-        "brand",
-        fingerprint.brand!.trim()
-      )
-      .limit(50);
+  await supabaseAdmin
+    .from("products")
+    .select(
+      "id, slug, category, brand, family, model"
+    )
+    .ilike(
+      "brand",
+      fingerprint.brand!.trim()
+    )
+    .limit(50);
 
-  if (error) {
-    console.error(
-      "CANONICAL_PRODUCT_LOOKUP_ERROR:",
-      error
-    );
+if (error) {
+  console.error(
+    "CANONICAL_PRODUCT_LOOKUP_ERROR:",
+    error
+  );
 
-    return {
-      found: false,
+  return {
+    found: false,
+  };
+}
+
+const products = (data ?? []).map(
+  (product) => ({
+    ...product,
+
+    name:
+      product.model ||
+      product.family ||
+      product.brand ||
+      product.slug,
+  })
+) as StoredProduct[];
+
+let bestMatch:
+  | {
+      product: StoredProduct;
+      confidence: number;
+      matchedFields: string[];
+    }
+  | undefined;
+
+for (const product of products) {
+  const match = calculateMatch(
+    fingerprint,
+    product
+  );
+
+  if (
+    !bestMatch ||
+    match.confidence >
+      bestMatch.confidence
+  ) {
+    bestMatch = {
+      product,
+      ...match,
     };
   }
-
-  const products =
-    (data ?? []) as StoredProduct[];
-
-  let bestMatch:
-    | {
-        product: StoredProduct;
-        confidence: number;
-        matchedFields: string[];
-      }
-    | undefined;
-
-  for (const product of products) {
-    const match = calculateMatch(
-      fingerprint,
-      product
-    );
-
-    if (
-      !bestMatch ||
-      match.confidence >
-        bestMatch.confidence
-    ) {
-      bestMatch = {
-        product,
-        ...match,
-      };
-    }
-  }
+}
 
   /*
    * V1 requires:
