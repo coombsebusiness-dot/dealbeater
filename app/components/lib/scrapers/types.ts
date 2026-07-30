@@ -8,5 +8,8 @@ export interface ProductInfo {
 
   image?: string;
 
-  specs: Record<string, string>;
+  specs: Record<
+  string,
+  string | number | boolean | null
+>;
 }

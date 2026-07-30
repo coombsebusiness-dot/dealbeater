@@ -207,6 +207,54 @@ function detectFamily(
       family: "MacBook Air",
     },
     {
+    pattern: /\bz9\b/i,
+    family: "Z9",
+},
+{
+    pattern: /\bz8\b/i,
+    family: "Z8",
+},
+{
+    pattern: /\bz7\s*iii\b/i,
+    family: "Z7",
+},
+{
+    pattern: /\bz7\s*ii\b/i,
+    family: "Z7",
+},
+{
+    pattern: /\bz7\b/i,
+    family: "Z7",
+},
+{
+    pattern: /\bz6\s*iii\b/i,
+    family: "Z6",
+},
+{
+    pattern: /\bz6\s*ii\b/i,
+    family: "Z6",
+},
+{
+    pattern: /\bz6\b/i,
+    family: "Z6",
+},
+{
+    pattern: /\bz5\s*ii\b/i,
+    family: "Z5",
+},
+{
+    pattern: /\bz5\b/i,
+    family: "Z5",
+},
+{
+    pattern: /\bz50\s*ii\b/i,
+    family: "Z50",
+},
+{
+    pattern: /\bz50\b/i,
+    family: "Z50",
+},
+    {
       pattern: /\bmacbook\b/i,
       family: "MacBook",
     },

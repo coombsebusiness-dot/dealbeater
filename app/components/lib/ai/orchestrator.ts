@@ -9,6 +9,13 @@ import { recommendationAgent } from "./recommendationAgent";
 
 import { decisionAgent } from "@/app/components/lib/agents/decisionAgent";
 import { specificationsAgent } from "@/app/components/lib/agents/specificationsAgent";
+import {
+  createProductFingerprintV2,
+} from "../matching/productFingerprint";
+
+import {
+  getBrain,
+} from "../matching/knowledge/brain";
 
 type ProductSpecifications = Record<
   string,
@@ -102,9 +109,9 @@ export async function analyseDeal(
     "\n\n=================================================="
   );
 
-  console.log(
-    "🚀 BLINLX ANALYSIS STARTED"
-  );
+ console.log(
+  "🚀 BLINLX ANALYSIS STARTED - ORCHESTRATOR V2 TEST"
+);
 
   console.log(
     "=================================================="
@@ -129,25 +136,164 @@ export async function analyseDeal(
      * PRODUCT IDENTIFICATION
      */
 
-    const product =
-      await measureAgent(
-        "PRODUCT_AGENT",
-        analysisStartedAt,
-        () =>
-          productAgent(
-            cleanInput
-          )
-      );
-
-    console.log(
-      "PRODUCT_AGENT_RESULT:",
-      JSON.stringify(
-        product,
-        null,
-        2
+   const product =
+  await measureAgent(
+    "PRODUCT_AGENT",
+    analysisStartedAt,
+    () =>
+      productAgent(
+        cleanInput
       )
+  );
+
+console.log(
+  "PRODUCT_AGENT_RESULT:",
+  JSON.stringify(
+    product,
+    null,
+    2
+  )
+);
+
+/*
+ * PRODUCT KNOWLEDGE BRAIN
+ */
+
+logTimeline(
+  "➡️ PRODUCT_BRAIN STARTED",
+  analysisStartedAt
+);
+
+try {
+  const fingerprint =
+    createProductFingerprintV2(
+      [
+        product.name,
+        product.brand,
+        product.family,
+        product.model,
+      ]
+        .filter(Boolean)
+        .join(" ")
     );
 
+  logTimeline(
+    `🧠 FINGERPRINT ${JSON.stringify(
+      fingerprint
+    )}`,
+    analysisStartedAt
+  );
+
+  const brain =
+    getBrain(fingerprint);
+
+  logTimeline(
+    `🧠 BRAIN RESULT ${JSON.stringify(
+      brain
+    )}`,
+    analysisStartedAt
+  );
+
+  if (brain.camera) {
+    logTimeline(
+      `📷 CAMERA MATCHED: ${brain.camera.name}`,
+      analysisStartedAt
+    );
+
+    product.name =
+      brain.camera.name;
+
+    product.brand =
+      brain.camera.brand;
+
+    product.family =
+      brain.camera.family;
+
+    product.model =
+      brain.camera.name.replace(
+        new RegExp(
+          `^${brain.camera.brand}\\s*`,
+          "i"
+        ),
+        ""
+      );
+
+    product.category =
+      "Camera";
+
+    product.description =
+      brain.camera.summary;
+
+    product.specs = {
+  ...(product.specs ?? {}),
+
+  cameraType:
+    brain.camera.cameraType,
+
+  sensorFormat:
+    brain.camera.sensorFormat,
+
+  tier:
+    brain.camera.tier ?? null,
+
+  generation:
+    brain.camera.generation ?? null,
+
+  releaseYear:
+    brain.camera.releaseYear ?? null,
+
+  megapixels:
+    brain.camera.megapixels ?? null,
+
+  lensMount:
+    brain.camera.lensMount ?? null,
+
+  inBodyStabilisation:
+    brain.camera.inBodyStabilisation ?? null,
+
+  headlineVideo:
+    brain.camera.headlineVideo ?? null,
+
+  autofocusSystem:
+    "autofocusSystem" in brain.camera
+      ? brain.camera.autofocusSystem ?? null
+      : null,
+};
+    product.confidence = 95;
+  } else {
+    logTimeline(
+      "⚠️ PRODUCT_BRAIN RETURNED NO CAMERA",
+      analysisStartedAt
+    );
+  }
+
+  logTimeline(
+    `🧠 PRODUCT AFTER BRAIN ${JSON.stringify(
+      product
+    )}`,
+    analysisStartedAt
+  );
+
+  logTimeline(
+    "✅ PRODUCT_BRAIN FINISHED",
+    analysisStartedAt
+  );
+} catch (error) {
+  const message =
+    error instanceof Error
+      ? `${error.name}: ${error.message}`
+      : String(error);
+
+  logTimeline(
+    `⚠️ PRODUCT_BRAIN FAILED: ${message}`,
+    analysisStartedAt
+  );
+
+  console.error(
+    "PRODUCT_BRAIN_ERROR:",
+    error
+  );
+}
     /*
      * LIVE PRICE SEARCHES
      */
@@ -483,3 +629,4 @@ const specifications:
     throw error;
   }
 }
+

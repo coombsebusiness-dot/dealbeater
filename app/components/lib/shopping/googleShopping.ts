@@ -315,12 +315,12 @@ function looksLikePhoneAccessory(text: string): boolean {
 const phoneSearch = looksLikePhoneQuery(cleanQuery);
 const phoneAccessory = looksLikePhoneAccessory(title);
 
-console.log("📱 PHONE FILTER:", {
-  cleanQuery,
-  title,
-  phoneSearch,
-  phoneAccessory,
-});
+// console.log("📱 PHONE FILTER:", {
+//   cleanQuery,
+//   title,
+//   phoneSearch,
+//   phoneAccessory,
+// });
 
 if (phoneSearch && phoneAccessory) {
   console.log(
@@ -373,10 +373,10 @@ console.log(
 
         return null;
       }
-console.log("================================");
-console.log("TITLE:", result.title);
-console.log("PRODUCT LINK:", result.product_link);
-console.log("LINK:", result.link);
+// console.log("================================");
+// console.log("TITLE:", result.title);
+// console.log("PRODUCT LINK:", result.product_link);
+// console.log("LINK:", result.link);
     const googleProductUrl =
   result.product_link ??
   result.link ??
@@ -442,71 +442,148 @@ return {
     );
   });
 
-  const sortedOffers = cleanedOffers.sort(
-  (a, b) => a.price - b.price
-);
+/**
+ * Strict validation gate.
+ *
+ * Every Google Shopping offer must match the requested
+ * product before it can be sorted, enriched or returned.
+ */
+const validatedOffers =
+  cleanedOffers.filter((offer) => {
+    const candidateText = [
+      offer.title,
+      offer.description,
+    ]
+      .filter(Boolean)
+      .join(" ");
 
-// Only enrich the offers most likely to be displayed.
-// This avoids using an extra SerpAPI credit for every raw result.
-const offersToEnrich = sortedOffers.slice(0, 5);
-
-const enrichmentStartedAt = performance.now();
-
-const enrichedResults = await Promise.all(
-  offersToEnrich.map(async (offer) => {
-    try {
-      const directOffer = await enrichOfferWithDirectLink(
-        offer,
-        apiKey,
-        cleanQuery
+    const match =
+      compareExactProductVariant(
+        cleanQuery,
+        candidateText
       );
 
-      if (!directOffer) {
-        return null;
+    console.log(
+      match.accepted
+        ? "✅ GOOGLE OFFER ACCEPTED"
+        : "🚫 GOOGLE OFFER REJECTED",
+      {
+        query: cleanQuery,
+        title: offer.title,
+        confidence: match.confidence,
+        reasons: match.reasons,
       }
+    );
 
-      const ebayOffer = await enrichEbayAffiliateLink(
-        directOffer
-      );
+    return match.accepted;
+  });
 
-      console.info(
-        "🟠 BEFORE:",
-        directOffer.finalUrl
-      );
-
-      console.info(
-        "🟢 AFTER :",
-        ebayOffer.finalUrl
-      );
-
-      return ebayOffer;
-    } catch (error) {
-      console.error(
-        "Offer enrichment failed:",
-        error
-      );
-
-      return null;
-    }
-  })
+console.info(
+  "GOOGLE_PRE_ENRICHMENT_VALIDATION:",
+  {
+    candidates: cleanedOffers.length,
+    accepted: validatedOffers.length,
+    rejected:
+      cleanedOffers.length -
+      validatedOffers.length,
+  }
 );
+
+const sortedOffers = [
+  ...validatedOffers,
+].sort(
+  (a, b) =>
+    a.price - b.price
+);
+
+// Only enrich verified offers most likely
+// to be displayed.
+const offersToEnrich =
+  sortedOffers.slice(0, 5);
+
+const enrichmentStartedAt =
+  performance.now();
+
+const enrichedResults =
+  await Promise.all(
+    offersToEnrich.map(
+      async (offer) => {
+        try {
+          const directOffer =
+            await enrichOfferWithDirectLink(
+              offer,
+              apiKey,
+              cleanQuery
+            );
+
+          if (!directOffer) {
+            return null;
+          }
+
+          const ebayOffer =
+            await enrichEbayAffiliateLink(
+              directOffer
+            );
+
+          console.info(
+            "🟠 BEFORE:",
+            directOffer.finalUrl
+          );
+
+          console.info(
+            "🟢 AFTER :",
+            ebayOffer.finalUrl
+          );
+
+          return ebayOffer;
+        } catch (error) {
+          console.error(
+            "Offer enrichment failed:",
+            error
+          );
+
+          return null;
+        }
+      }
+    )
+  );
 
 console.info(
   `DIRECT_LINK_ENRICHMENT_TIME: ${Math.round(
-    performance.now() - enrichmentStartedAt
+    performance.now() -
+      enrichmentStartedAt
   )}ms`
 );
 
-const enrichedOffers = enrichedResults.filter(
-  (offer): offer is ShoppingOffer => offer !== null
-);
+const enrichedOffers =
+  enrichedResults.filter(
+    (
+      offer
+    ): offer is ShoppingOffer =>
+      offer !== null
+  );
 
-const remainingOffers = sortedOffers.slice(5);
+const remainingOffers =
+  sortedOffers.slice(5);
 
 const finalOffers = [
   ...enrichedOffers,
   ...remainingOffers,
-].sort((a, b) => a.price - b.price);
+].sort(
+  (a, b) =>
+    a.price - b.price
+);
+
+console.info(
+  "GOOGLE_FINAL_VALIDATION:",
+  {
+    candidates: cleanedOffers.length,
+    accepted: finalOffers.length,
+    rejected:
+      cleanedOffers.length -
+      finalOffers.length,
+  }
+);
 
 console.info(
   `GOOGLE_FINAL_OFFERS_COUNT: ${finalOffers.length}`
@@ -681,7 +758,77 @@ console.log("================================");
     console.log(
       `🔗 Direct retailer link found: ${selectedStore.name} — ${directRetailerUrl}`
     );
+const requestedSonyModel =
+  extractSonyCameraIdentity(
+    originalQuery
+  );
 
+const storeTitleSonyModel =
+  extractSonyCameraIdentity(
+    selectedStore.title
+  );
+
+const retailerUrlSonyModel =
+  extractSonyCameraIdentity(
+    directRetailerUrl
+  );
+
+console.log(
+  "📷 RETAILER LINK MODEL CHECK",
+  {
+    originalQuery,
+    requestedSonyModel,
+    storeTitle:
+      selectedStore.title,
+    storeTitleSonyModel,
+    directRetailerUrl,
+    retailerUrlSonyModel,
+  }
+);
+
+if (
+  requestedSonyModel &&
+  retailerUrlSonyModel &&
+  requestedSonyModel !==
+    retailerUrlSonyModel
+) {
+  console.log(
+    "🚫 RETAILER LINK MODEL MISMATCH",
+    {
+      expected:
+        requestedSonyModel,
+      found:
+        retailerUrlSonyModel,
+      title:
+        selectedStore.title,
+      link:
+        directRetailerUrl,
+    }
+  );
+
+  return null;
+}
+
+if (
+  requestedSonyModel &&
+  storeTitleSonyModel &&
+  requestedSonyModel !==
+    storeTitleSonyModel
+) {
+  console.log(
+    "🚫 RETAILER TITLE MODEL MISMATCH",
+    {
+      expected:
+        requestedSonyModel,
+      found:
+        storeTitleSonyModel,
+      title:
+        selectedStore.title,
+    }
+  );
+
+  return null;
+}
 const directOffer: ShoppingOffer = {
   ...offer,
 
@@ -1343,4 +1490,114 @@ function isInvalidBuyingOffer(offer: ShoppingOffer): boolean {
   );
 }
 
+}
+function numberFromCameraGeneration(
+  value: string
+): string {
+  const generations: Record<
+    string,
+    string
+  > = {
+    ii: "2",
+    iii: "3",
+    iv: "4",
+    v: "5",
+    vi: "6",
+    vii: "7",
+    viii: "8",
+  };
+
+  return (
+    generations[
+      value.toLowerCase()
+    ] ?? value
+  );
+}
+
+/**
+ * Extracts a strict Sony Alpha 7 model identity
+ * from a search query, product title or URL.
+ *
+ * Examples:
+ * Sony A7R IV      -> a7r4
+ * ILCE-7RM4        -> a7r4
+ * ILCE-7RM4A       -> a7r4
+ * Sony A7 IV       -> a74
+ * ILCE-7M4B        -> a74
+ */
+function extractSonyCameraIdentity(
+  value: string | null | undefined
+): string | null {
+  if (!value) {
+    return null;
+  }
+
+  let decodedValue = value;
+
+  try {
+    decodedValue =
+      decodeURIComponent(value);
+  } catch {
+    // Keep the original value when URL decoding fails.
+  }
+
+  const normalised = decodedValue
+    .toLowerCase()
+    .replace(/[+/_-]+/g, " ")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const skuValue = decodedValue
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+
+  const skuMatch = skuValue.match(
+    /ilce7([rs]?)m(\d+)[a-z]*/
+  );
+
+  if (skuMatch) {
+    const series =
+      skuMatch[1] ?? "";
+
+    const generation =
+      skuMatch[2];
+
+    return generation
+      ? `a7${series}${generation}`
+      : null;
+  }
+
+  const publicModelMatch =
+    normalised.match(
+      /\ba?7\s*([rs]?)\s*(?:(?:mark|mk)\s*)?(ii|iii|iv|v|vi|vii|viii|\d+)\b/
+    );
+
+  if (publicModelMatch) {
+    const series =
+      publicModelMatch[1] ?? "";
+
+    const generation =
+      numberFromCameraGeneration(
+        publicModelMatch[2]
+      );
+
+    return `a7${series}${generation}`;
+  }
+
+  const compactValue =
+    normalised.replace(/\s+/g, "");
+
+  const compactModelMatch =
+    compactValue.match(
+      /\ba7([rs]?)(\d+)\b/
+    );
+
+  if (compactModelMatch) {
+    return `a7${
+      compactModelMatch[1] ?? ""
+    }${compactModelMatch[2]}`;
+  }
+
+  return null;
 }

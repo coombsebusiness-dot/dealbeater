@@ -320,20 +320,68 @@ function extractFamily(
       return item.family;
     }
   }
+  const panasonicFamily = value.match(
+  /\b(lumix\s+s|lumix\s+gh|lumix\s+g)\b/i
+);
 
+if (panasonicFamily?.[1]) {
+  return panasonicFamily[1]
+    .replace(/\s+/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+const fujiFamily = value.match(
+  /\b(x-h|x-t|x-pro|x-e|gfx)\b/i
+);
+
+if (fujiFamily?.[1]) {
+  return fujiFamily[1].toUpperCase();
+}
+
+const nikonFamily = value.match(
+  /\b(z|d)\b/i
+);
+
+if (nikonFamily?.[1]) {
+  return nikonFamily[1].toUpperCase();
+}
+
+const canonFamily = value.match(
+  /\b(eos\s*r)\b/i
+);
+
+if (canonFamily?.[1]) {
+  return "EOS R";
+}
+
+const sonyFamily = value.match(
+  /\b(a7|a1|a9|a6)\b/i
+);
+
+if (sonyFamily?.[1]) {
+  return sonyFamily[1].toUpperCase();
+}
   return null;
 }
 
 function extractModelBase(
   value: string
 ): string | null {
+
+  /*
+   * Apple chips
+   */
+
   const appleChip = value.match(
     /\b(m[1-9])\b/
   );
 
   if (appleChip?.[1]) {
-    return appleChip[1];
+    return appleChip[1].toUpperCase();
   }
+
+  /*
+   * CPUs / GPUs
+   */
 
   const processorModel = value.match(
     /\b(?:rtx|gtx|rx|ryzen|core)\s*[- ]?([a-z0-9-]+)\b/
@@ -341,10 +389,71 @@ function extractModelBase(
 
   if (processorModel?.[0]) {
     return processorModel[0]
-      .replace(/\s+/g, "-");
+      .replace(/\s+/g, "-")
+      .toUpperCase();
   }
 
+  /*
+   * Camera models
+   */
+
+  const cameraPatterns = [
+
+    /\b(s5\s*iix)\b/i,
+ /\b(s5\s*ii)\b/i,
+ /\b(gh7)\b/i,
+ /\b(gh6)\b/i,
+ /\b(g9\s*ii)\b/i,
+
+    /\b(z\d(?:ii|iii|iv|v)?[a-z]?)\b/i,
+
+    /\b(d\d{3,4})\b/i,
+
+   /\b(a(?:1|9|7|6\d{3}|5\d{3})(?:r|s|c)?(?:\s*(?:ii|iii|iv|v|2|3|4|5))?)\b/i,
+
+    /\b(eos\s*r\d+[a-z]?)\b/i,
+
+    /\b(r\d+[a-z]?)\b/i,
+
+    /\b(x-h\d+s?)\b/i,
+
+    /\b(x-t\d+)\b/i,
+
+    /\b(x-pro\d)\b/i,
+
+    /\b(x-e\d)\b/i,
+
+    /\b(gfx\s*100\s*ii)\b/i,
+
+    /\b(gfx\s*\d+s?)\b/i,
+
+  ];
+
+  for (const pattern of cameraPatterns) {
+
+    const match =
+      value.match(pattern);
+
+    if (match?.[1]) {
+
+      return match[1]
+        .toUpperCase()
+        .replace(/\s+/g, " ");
+
+    }
+
+  }
+  console.log(
+  "MODEL TEST:",
+  value,
+  "=>",
+  cameraPatterns
+    .map(pattern => value.match(pattern)?.[1])
+    .filter(Boolean)
+);
+
   return null;
+
 }
 
 function extractModelRevision(
