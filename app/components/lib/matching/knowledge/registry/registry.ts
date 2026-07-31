@@ -13,6 +13,29 @@ import { sonyProvider } from "./sonyProvider";
 import { canonProvider } from "./canonProvider";
 import { nikonProvider } from "./nikonProvider";
 
+import {
+  appleSiliconRegistry,
+} from "./apple/silicon";
+
+import {
+  appleMacBookRegistry,
+} from "./apple/macbooks";
+
+import type {
+  LaptopKnowledge,
+  ProcessorKnowledge,
+} from "./types";
+
+export const processorKnowledgeRegistry:
+  ProcessorKnowledge[] = [
+    ...appleSiliconRegistry,
+  ];
+
+  export const laptopKnowledgeRegistry:
+  LaptopKnowledge[] = [
+    ...appleMacBookRegistry,
+  ];
+
 const providers: ProductKnowledgeProvider[] = [
   appleProvider,
   samsungProvider,

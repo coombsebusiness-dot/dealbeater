@@ -147,6 +147,104 @@ export const merchants: Merchant[] = [
   enabled: true,
 },
 {
+  retailer: "Seentat",
+
+  domains: [
+    "seentat.com",
+    "www.seentat.com",
+  ],
+
+  network: "awin",
+
+  advertiserId: "125014",
+
+  enabled: true,
+},
+{
+  retailer: "lastminute.com",
+
+  domains: [
+    "lastminute.com",
+    "www.lastminute.com",
+  ],
+
+  network: "awin",
+
+  advertiserId: "4329",
+
+  enabled: true,
+},
+{
+  retailer: "InStock",
+
+  domains: [
+    "instock.net",
+    "www.instock.net",
+  ],
+
+  network: "awin",
+
+  advertiserId: "122444",
+
+  enabled: true,
+},
+{
+  retailer: "Candles Direct",
+
+  domains: [
+    "candlesdirect.com",
+    "www.candlesdirect.com",
+  ],
+
+  network: "awin",
+
+  advertiserId: "13560",
+
+  enabled: true,
+},
+{
+  retailer: "Simba Sleep",
+
+  domains: [
+    "simbasleep.com",
+    "www.simbasleep.com",
+  ],
+
+  network: "awin",
+
+  advertiserId: "6878",
+
+  enabled: true,
+},
+{
+  retailer: "Back to the Office",
+
+  domains: [
+    "backtotheoffice.co.uk",
+    "www.backtotheoffice.co.uk",
+  ],
+
+  network: "awin",
+
+  advertiserId: "61655",
+
+  enabled: true,
+},
+{
+  retailer: "Best Direct UK",
+
+  domains: [
+    "bestdirect.co.uk",
+    "www.bestdirect.co.uk",
+  ],
+
+  network: "awin",
+
+  advertiserId: "19319",
+
+  enabled: true,
+},
+{
   retailer: "The Sleep People",
 
   domains: [

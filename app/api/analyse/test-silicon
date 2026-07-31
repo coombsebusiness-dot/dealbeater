@@ -1,0 +1,14 @@
+import { createProductFingerprintV2 } from "../../components/lib/matching/productFingerprint";
+import { resolveProductKnowledge } from "../../components/lib/matching/knowledge";
+
+const fingerprint = createProductFingerprintV2(
+  "Apple MacBook Pro 14 M1 Pro 16GB 512GB"
+);
+
+console.log("Fingerprint");
+console.log(fingerprint);
+
+const brain = resolveProductKnowledge(fingerprint);
+
+console.log("Product Brain");
+console.dir(brain, { depth: null });

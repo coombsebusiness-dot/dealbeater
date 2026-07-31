@@ -1,5 +1,8 @@
 import { getEbayAccessToken } from "./auth";
 
+import { compareExactProductVariant } from "@/app/components/lib/shopping/exactProductMatcher";
+
+
 type EbayAmount = {
   value?: string;
   currency?: string;
@@ -200,6 +203,118 @@ const PHONE_QUERY_TERMS = [
   "mobile phone",
 ];
 
+const CAMERA_QUERY_TERMS = [
+  "canon eos",
+  "sony alpha",
+  "sony a7",
+  "sony a9",
+  "sony a1",
+  "nikon z",
+  "fujifilm",
+  "panasonic lumix",
+  "olympus",
+  "camera",
+  "mirrorless",
+  "dslr",
+];
+
+const CAMERA_REJECTION_TERMS = [
+  "battery",
+  "battery pack",
+  "battery grip",
+  "charger",
+  "charging cable",
+  "usb cable",
+  "strap",
+  "wrist strap",
+  "neck strap",
+  "shoulder strap",
+  "camera strap",
+  "case",
+  "camera case",
+  "camera bag",
+  "cage",
+  "camera cage",
+  "rig",
+  "mount",
+  "adapter",
+  "body cap",
+  "lens cap",
+  "screen protector",
+  "tempered glass",
+  "protective cover",
+  "skin",
+  "tripod",
+  "monopod",
+  "memory card",
+  "card reader",
+  "remote control",
+  "shutter release",
+  "dummy battery",
+  "power adapter",
+  "replacement part",
+  "spare part",
+  "repair part",
+  "hot shoe",
+  "eyecup",
+  "viewfinder cover",
+  "book",
+"paperback",
+"hardback",
+"hardcover",
+"kindle",
+"ebook",
+"manual",
+"user guide",
+"field guide",
+"photography guide",
+"camera guide",
+"for beginners",
+"mastering",
+"handbook",
+"reference guide",
+];
+
+function normaliseText(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function containsTerm(
+  value: string,
+  terms: string[]
+): boolean {
+  const normalisedValue =
+    normaliseText(value);
+
+  return terms.some((term) =>
+    normalisedValue.includes(
+      normaliseText(term)
+    )
+  );
+}
+
+function looksLikeCameraQuery(
+  value: string
+): boolean {
+  return containsTerm(
+    value,
+    CAMERA_QUERY_TERMS
+  );
+}
+
+function isRejectedCameraListing(
+  title: string
+): boolean {
+  return containsTerm(
+    title,
+    CAMERA_REJECTION_TERMS
+  );
+}
+
 const PHONE_ACCESSORY_TERMS = [
   "case",
   "cover",
@@ -309,18 +424,33 @@ export async function searchEbay(
   const data =
     (await response.json()) as EbaySearchResponse;
 
- const phoneSearch =
+const phoneSearch =
   looksLikePhoneQuery(trimmedQuery);
 
-return (data.itemSummaries ?? [])
-  .map(normaliseItem)
-  .filter(
-    (
-      offer
-    ): offer is EbayOffer =>
-      offer !== null
-  )
-  .filter((offer) => {
+const cameraSearch =
+  looksLikeCameraQuery(trimmedQuery);
+
+const normalisedOffers =
+  (data.itemSummaries ?? [])
+    .map(normaliseItem)
+    .filter(
+      (
+        offer
+      ): offer is EbayOffer =>
+        offer !== null
+    );
+
+console.log(
+  "🟦 EBAY RAW RESULTS:",
+  normalisedOffers.map((offer) => ({
+    title: offer.title,
+    price: offer.totalPrice,
+    condition: offer.condition,
+  }))
+);
+
+return normalisedOffers.filter(
+  (offer) => {
     if (
       phoneSearch &&
       isPhoneAccessoryListing(
@@ -334,8 +464,45 @@ return (data.itemSummaries ?? [])
       return false;
     }
 
+   if (
+  cameraSearch &&
+  isRejectedCameraListing(
+    offer.title
+  )
+) {
+  console.log(
+    `🚫 eBay non-camera listing rejected: ${offer.title}`
+  );
+
+  return false;
+}
+
+    const match =
+      compareExactProductVariant(
+        trimmedQuery,
+        offer.title
+      );
+
+    if (!match.accepted) {
+      console.log(
+        `🚫 eBay product mismatch rejected: ${offer.title}`
+      );
+
+      console.log(
+        "Reasons:",
+        match.reasons.join(" | ")
+      );
+
+      return false;
+    }
+
+    console.log(
+      `✅ eBay offer accepted: ${offer.title}`
+    );
+
     return true;
-  });
+  }
+);
 }
 
 export async function getEbayItemByLegacyId(

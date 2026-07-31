@@ -137,7 +137,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${baseUrl}/blog`,
-      lastModified: new Date("2026-07-24"),
+      lastModified: new Date("2026-07-30"),
     },
   ];
 

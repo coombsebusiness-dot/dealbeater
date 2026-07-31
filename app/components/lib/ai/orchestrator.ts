@@ -194,90 +194,109 @@ try {
     analysisStartedAt
   );
 
-  if (brain.camera) {
-    logTimeline(
-      `📷 CAMERA MATCHED: ${brain.camera.name}`,
-      analysisStartedAt
+ if (brain.camera) {
+  logTimeline(
+    `📷 CAMERA MATCHED: ${brain.camera.name}`,
+    analysisStartedAt
+  );
+
+  product.name =
+    brain.camera.name;
+
+  product.brand =
+    brain.camera.brand;
+
+  product.family =
+    brain.camera.family;
+
+  product.model =
+    brain.camera.name.replace(
+      new RegExp(
+        `^${brain.camera.brand}\\s*`,
+        "i"
+      ),
+      ""
     );
 
-    product.name =
-      brain.camera.name;
+  product.category =
+    "Camera";
 
-    product.brand =
-      brain.camera.brand;
+  product.description =
+    brain.camera.summary;
 
-    product.family =
-      brain.camera.family;
+  product.specs = {
+    ...(product.specs ?? {}),
 
-    product.model =
-      brain.camera.name.replace(
-        new RegExp(
-          `^${brain.camera.brand}\\s*`,
-          "i"
-        ),
-        ""
-      );
+    cameraType:
+      brain.camera.cameraType,
 
+    sensorFormat:
+      brain.camera.sensorFormat,
+
+    tier:
+      brain.camera.tier ?? null,
+
+    generation:
+      brain.camera.generation ?? null,
+
+    releaseYear:
+      brain.camera.releaseYear ?? null,
+
+    megapixels:
+      brain.camera.megapixels ?? null,
+
+    lensMount:
+      brain.camera.lensMount ?? null,
+
+    inBodyStabilisation:
+      brain.camera.inBodyStabilisation ?? null,
+
+    headlineVideo:
+      brain.camera.headlineVideo ?? null,
+
+    autofocusSystem:
+      "autofocusSystem" in brain.camera
+        ? brain.camera.autofocusSystem ?? null
+        : null,
+  };
+
+  product.confidence = 95;
+} else {
+  logTimeline(
+    "⚠️ PRODUCT_BRAIN RETURNED NO CAMERA",
+    analysisStartedAt
+  );
+
+  if (
+    fingerprint.productType === "camera"
+  ) {
     product.category =
       "Camera";
 
-    product.description =
-      brain.camera.summary;
+    product.confidence =
+      Math.max(
+        product.confidence ?? 0,
+        70
+      );
 
-    product.specs = {
-  ...(product.specs ?? {}),
-
-  cameraType:
-    brain.camera.cameraType,
-
-  sensorFormat:
-    brain.camera.sensorFormat,
-
-  tier:
-    brain.camera.tier ?? null,
-
-  generation:
-    brain.camera.generation ?? null,
-
-  releaseYear:
-    brain.camera.releaseYear ?? null,
-
-  megapixels:
-    brain.camera.megapixels ?? null,
-
-  lensMount:
-    brain.camera.lensMount ?? null,
-
-  inBodyStabilisation:
-    brain.camera.inBodyStabilisation ?? null,
-
-  headlineVideo:
-    brain.camera.headlineVideo ?? null,
-
-  autofocusSystem:
-    "autofocusSystem" in brain.camera
-      ? brain.camera.autofocusSystem ?? null
-      : null,
-};
-    product.confidence = 95;
-  } else {
     logTimeline(
-      "⚠️ PRODUCT_BRAIN RETURNED NO CAMERA",
+      "📷 CAMERA CATEGORY PRESERVED FROM FINGERPRINT",
       analysisStartedAt
     );
   }
+}
 
-  logTimeline(
-    `🧠 PRODUCT AFTER BRAIN ${JSON.stringify(
-      product
-    )}`,
-    analysisStartedAt
-  );
+logTimeline(
+  `🧠 PRODUCT AFTER BRAIN ${JSON.stringify(
+    product
+  )}`,
+  analysisStartedAt
+);
 
-  logTimeline(
-    "✅ PRODUCT_BRAIN FINISHED",
-    analysisStartedAt
-  );
+logTimeline(
+  "✅ PRODUCT_BRAIN FINISHED",
+  analysisStartedAt
+);
 } catch (error) {
   const message =
     error instanceof Error
@@ -629,4 +648,5 @@ const specifications:
     throw error;
   }
 }
+
 

@@ -77,6 +77,283 @@ export interface PriceData {
     | "WAIT"
     | "UNKNOWN";
 }
+function parseOfferPrice(
+  value: number | string | null | undefined
+): number | null {
+  if (typeof value === "number") {
+    return Number.isFinite(value)
+      ? value
+      : null;
+  }
+
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const cleaned = value
+    .replace(/,/g, "")
+    .replace(/[^\d.]/g, "");
+
+  const parsed = Number.parseFloat(cleaned);
+
+  return Number.isFinite(parsed)
+    ? parsed
+    : null;
+}
+
+const PHONE_MINIMUM_PRICE = 80;
+function isPhoneProduct(
+  product: ProductData
+): boolean {
+  const category =
+    product.category?.toLowerCase() ?? "";
+
+  return (
+    category === "phone" ||
+    category === "smartphone" ||
+    category.includes("mobile phone")
+  );
+}
+
+function isBelowPhoneMinimumPrice(
+  product: ProductData,
+  price: number | null
+): boolean {
+  if (!isPhoneProduct(product)) {
+    return false;
+  }
+
+  if (price === null) {
+    return false;
+  }
+
+  return (
+    price > 0 &&
+    price < PHONE_MINIMUM_PRICE
+  );
+}
+
+const CAMERA_BODY_MINIMUM_PRICE = 200;
+
+function isBelowCameraBodyMinimumPrice(
+  product: ProductData,
+  price: number | null
+): boolean {
+  if (
+    !isCameraProduct(product) ||
+    price === null
+  ) {
+    return false;
+  }
+
+  return (
+    price > 0 &&
+    price < CAMERA_BODY_MINIMUM_PRICE
+  );
+}
+
+function containsAnyTerm(
+  text: string,
+  terms: readonly string[]
+): boolean {
+  const value = text.toLowerCase();
+
+  return terms.some((term) =>
+    value.includes(term)
+  );
+}
+
+const CAMERA_NON_PRODUCT_TERMS = [
+  // Cables and power
+  "usb cable",
+  "data cable",
+  "sync cable",
+  "charging cable",
+  "charger",
+  "battery charger",
+  "power adapter",
+  "ac adapter",
+  "dc coupler",
+  "dummy battery",
+  "battery",
+  "cable",
+  "lead",
+
+  // Books and learning material
+  "book",
+  "manual",
+  "user guide",
+  "guide book",
+  "handbook",
+  "field guide",
+  "photography guide",
+  "for dummies",
+  "cheat sheet",
+  "quick reference",
+
+  // Camera accessories
+  "strap",
+  "camera bag",
+  "camera case",
+  "protective case",
+  "cover",
+  "body cap",
+  "lens cap",
+  "battery grip",
+  "camera grip",
+  "cage",
+  "tripod",
+  "monopod",
+  "remote control",
+  "remote shutter",
+  "shutter release",
+  "memory card",
+  "sd card",
+  "cfexpress",
+  "card reader",
+  "screen protector",
+  "cleaning kit",
+  "rain cover",
+  "flash",
+  "microphone",
+  "viewfinder eyecup",
+  "eyecup",
+] as const;
+
+const PHONE_ACCESSORY_TERMS = [
+  "screen protector",
+  "tempered glass",
+  "glass protector",
+  "phone case",
+  "mobile case",
+  "protective case",
+  "wallet case",
+  "flip case",
+  "back cover",
+  "bumper case",
+  "charging cable",
+  "usb cable",
+  "data cable",
+  "charger",
+  "charging plug",
+  "power adapter",
+  "car charger",
+  "wireless charger",
+  "charging dock",
+  "replacement screen",
+  "lcd screen",
+  "oled screen",
+  "digitizer",
+  "camera lens protector",
+  "lens protector",
+  "phone holder",
+  "car mount",
+  "desk mount",
+  "stylus",
+  "battery replacement",
+  "replacement battery",
+  "sim tray",
+] as const;
+
+
+
+function isCameraProduct(
+  product: ProductData
+): boolean {
+  const category =
+    String(product.category ?? "")
+      .toLowerCase();
+
+  const name =
+    String(product.name ?? "")
+      .toLowerCase();
+
+  const hasCameraSpecifications =
+    Boolean(product.specs?.cameraType) ||
+    Boolean(product.specs?.sensorFormat) ||
+    Boolean(product.specs?.lensMount) ||
+    Boolean(product.specs?.megapixels);
+
+  return (
+    category.includes("camera") ||
+    category.includes("dslr") ||
+    category.includes("mirrorless") ||
+    name.includes("camera") ||
+    hasCameraSpecifications
+  );
+}
+
+function isBookOffer(
+  title: string
+): boolean {
+  const value = title.toLowerCase();
+
+  const bookTerms = [
+    "book",
+    "guide",
+    "handbook",
+    "manual",
+    "field guide",
+    "for dummies",
+    "cheat sheet",
+    "quick reference",
+    "photography guide",
+    "digital slr photo",
+  ];
+
+  const hasBookTerm =
+    bookTerms.some((term) =>
+      value.includes(term)
+    );
+
+  const compactTitle =
+    title.replace(/[-\s]/g, "");
+
+  const hasIsbn =
+    /\b(?:97[89])?\d{9}[\dX]\b/i.test(
+      compactTitle
+    );
+
+  return hasBookTerm || hasIsbn;
+}
+
+function isCameraAccessoryOffer(
+  product: ProductData,
+  title: string
+): boolean {
+  if (
+    !title ||
+    !isCameraProduct(product)
+  ) {
+    return false;
+  }
+
+  return (
+    containsAnyTerm(
+      title,
+      CAMERA_NON_PRODUCT_TERMS
+    ) ||
+    isBookOffer(title)
+  );
+}
+
+function isPhoneAccessoryOffer(
+  product: ProductData,
+  title: string
+): boolean {
+  if (
+    !title ||
+    !isPhoneProduct(product)
+  ) {
+    return false;
+  }
+
+  return containsAnyTerm(
+    title,
+    PHONE_ACCESSORY_TERMS
+  );
+}
+
 
 function extractEbayLegacyItemId(
   url: string
@@ -95,7 +372,10 @@ async function resolveOfferUrl(
     extractEbayLegacyItemId(offerUrl);
 
   if (!ebayItemId) {
-  return addAmazonAffiliateTag(offerUrl) ?? offerUrl;
+    return (
+      addAmazonAffiliateTag(offerUrl) ??
+      offerUrl
+    );
   }
 
   try {
@@ -104,14 +384,14 @@ async function resolveOfferUrl(
         ebayItemId
       );
 
-   console.log("🟢 EBAY URL RESOLVED:", {
-  ebayItemId,
-  originalUrl: offerUrl,
-  resolvedUrl:
-    ebayItem?.itemUrl ?? offerUrl,
-});
+    console.log("🟢 EBAY URL RESOLVED:", {
+      ebayItemId,
+      originalUrl: offerUrl,
+      resolvedUrl:
+        ebayItem?.itemUrl ?? offerUrl,
+    });
 
-return ebayItem?.itemUrl ?? offerUrl;
+    return ebayItem?.itemUrl ?? offerUrl;
   } catch (error) {
     console.error(
       "🔴 Failed to resolve eBay affiliate URL:",
@@ -150,15 +430,6 @@ if (isProductUrl(product.name)) {
   try {
     const extractedProduct =
       await extractProductFromUrl(product.name);
-
-      const exactReferenceText = [
-  product.searchQuery,
-  product.model,
-  product.mpn,
-  product.description,
-]
-  .filter(Boolean)
-  .join(" ");
 
     console.log("🧠 EXTRACTED PRODUCT:", {
       title: extractedProduct.title,
@@ -381,40 +652,146 @@ const allOffers = [
     description: null,
   })),
 ];
-const verifiedOffers = allOffers.filter(
-  
+const pricedOffers = allOffers.flatMap(
   (offer) => {
-   const referenceProduct = [
-  product.searchQuery,
-  product.model,
-  product.mpn,
-  product.description,
-]
-  .filter(Boolean)
-  .join(" ");
+    const parsedPrice =
+      parseOfferPrice(offer.price);
 
-  // console.error("➡️ MATCHING:", offer.title);
-const match =
-  compareExactProductVariant(
-    referenceProduct,
-    offer.title
-  );
-// console.error("✅ MATCHED:", offer.title);
-// console.log("🎯 VARIANT REFERENCE:");
-// console.log(referenceProduct);
-// console.log("================================");
-// console.log("QUERY:", referenceProduct);
-// console.log("TITLE:", offer.title);
-// console.log("ACCEPTED:", match.accepted);
-// console.log("CONFIDENCE:", match.confidence);
-// console.log("REASONS:", match.reasons);
-// console.log("================================");
+    if (
+      parsedPrice === null ||
+      parsedPrice <= 0
+    ) {
+      console.log(
+        "🚫 OFFER WITH INVALID PRICE REJECTED:",
+        {
+          retailer: offer.retailer,
+          title: offer.title,
+          originalPrice: offer.price,
+        }
+      );
+
+      return [];
+    }
+
+    return [
+      {
+        ...offer,
+        price: parsedPrice,
+      },
+    ];
+  }
+);
+
+console.log("========== ALL OFFERS ==========");
+
+pricedOffers.forEach((offer) => {
+  console.log({
+    retailer: offer.retailer,
+    title: offer.title,
+    price: offer.price,
+  });
+});
+
+console.log("===============================");
+
+const verifiedOffers = pricedOffers.filter(
+  (offer) => {
+    const referenceProduct = [
+      product.searchQuery,
+      product.model,
+      product.mpn,
+      product.description,
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    const match =
+      compareExactProductVariant(
+        referenceProduct,
+        offer.title
+      );
 
     if (!match.accepted) {
       console.log(
         `🚫 Final offer rejected: ${offer.title} — ${match.reasons.join(
           "; "
         )}`
+      );
+
+      return false;
+    }
+
+    if (
+      isCameraAccessoryOffer(
+        product,
+        offer.title ?? ""
+      )
+    ) {
+      console.log(
+        "🚫 CAMERA NON-PRODUCT REJECTED:",
+        {
+          title: offer.title,
+          retailer: offer.retailer,
+          price: offer.price,
+        }
+      );
+
+      return false;
+    }
+
+    if (
+      isPhoneAccessoryOffer(
+        product,
+        offer.title ?? ""
+      )
+    ) {
+      console.log(
+        "🚫 PHONE ACCESSORY REJECTED:",
+        {
+          title: offer.title,
+          retailer: offer.retailer,
+          price: offer.price,
+        }
+      );
+
+      return false;
+    }
+
+    if (
+      isBelowCameraBodyMinimumPrice(
+        product,
+        offer.price
+      )
+    ) {
+      console.log(
+        "🚫 CAMERA OFFER BELOW MINIMUM PRICE:",
+        {
+          title: offer.title,
+          retailer: offer.retailer,
+          price: offer.price,
+          minimumPrice:
+            CAMERA_BODY_MINIMUM_PRICE,
+        }
+      );
+
+      return false;
+    }
+
+    if (
+      isBelowPhoneMinimumPrice(
+        product,
+        offer.price
+      )
+    ) {
+      console.log(
+        "🚫 PHONE OFFER BELOW MINIMUM PRICE:",
+        {
+          title: offer.title,
+          retailer: offer.retailer,
+          price: offer.price,
+          minimumPrice:
+            PHONE_MINIMUM_PRICE,
+        }
       );
 
       return false;
@@ -636,7 +1013,7 @@ if (savings > 0) {
 
   const marketConfidence = Math.min(
   100,
-  50 + allOffers.length* 5
+  50 + pricedOffers.length * 5
 );
 
 const difference =

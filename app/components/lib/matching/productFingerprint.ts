@@ -397,37 +397,35 @@ function extractModelBase(
    * Camera models
    */
 
-  const cameraPatterns = [
+const cameraPatterns = [
+  /\b(s5\s*iix)\b/i,
+  /\b(s5\s*ii)\b/i,
+  /\b(gh7)\b/i,
+  /\b(gh6)\b/i,
+  /\b(g9\s*ii)\b/i,
 
-    /\b(s5\s*iix)\b/i,
- /\b(s5\s*ii)\b/i,
- /\b(gh7)\b/i,
- /\b(gh6)\b/i,
- /\b(g9\s*ii)\b/i,
+  /\b(z\d(?:ii|iii|iv|v)?[a-z]?)\b/i,
 
-    /\b(z\d(?:ii|iii|iv|v)?[a-z]?)\b/i,
+  // Canon DSLR models: 5D, 6D, 7D, 80D, 90D, 850D, etc.
+  /\b((?:1|5|6|7|10|20|30|40|50|60|70|77|80|90|100|200|250|300|400|500|550|600|650|700|750|760|800|850)\s*d)\b/i,
 
-    /\b(d\d{3,4})\b/i,
+  // Nikon DSLR models: D500, D750, D850, D3500, etc.
+  /\b(d\d{3,4})\b/i,
 
-   /\b(a(?:1|9|7|6\d{3}|5\d{3})(?:r|s|c)?(?:\s*(?:ii|iii|iv|v|2|3|4|5))?)\b/i,
+  /\b(a(?:1|9|7|6\d{3}|5\d{3})(?:r|s|c)?(?:\s*(?:ii|iii|iv|v|2|3|4|5))?)\b/i,
 
-    /\b(eos\s*r\d+[a-z]?)\b/i,
+  /\b(eos\s*r\d+[a-z]?)\b/i,
 
-    /\b(r\d+[a-z]?)\b/i,
+  /\b(r\d+[a-z]?)\b/i,
 
-    /\b(x-h\d+s?)\b/i,
+  /\b(x-h\d+s?)\b/i,
+  /\b(x-t\d+)\b/i,
+  /\b(x-pro\d)\b/i,
+  /\b(x-e\d)\b/i,
 
-    /\b(x-t\d+)\b/i,
-
-    /\b(x-pro\d)\b/i,
-
-    /\b(x-e\d)\b/i,
-
-    /\b(gfx\s*100\s*ii)\b/i,
-
-    /\b(gfx\s*\d+s?)\b/i,
-
-  ];
+  /\b(gfx\s*100\s*ii)\b/i,
+  /\b(gfx\s*\d+s?)\b/i,
+];
 
   for (const pattern of cameraPatterns) {
 
@@ -459,12 +457,49 @@ function extractModelBase(
 function extractModelRevision(
   value: string
 ): string | null {
-  if (/\bmax\b/.test(value)) {
-    return "max";
+
+  if (/\bmark\s*ii\b/i.test(value)) {
+    return "Mark II";
   }
 
-  if (/\bultra\b/.test(value)) {
-    return "ultra";
+  if (/\bmark\s*iii\b/i.test(value)) {
+    return "Mark III";
+  }
+
+  if (/\bmark\s*iv\b/i.test(value)) {
+    return "Mark IV";
+  }
+
+  if (/\bmk\s*ii\b/i.test(value)) {
+    return "Mark II";
+  }
+
+  if (/\bmk\s*iii\b/i.test(value)) {
+    return "Mark III";
+  }
+
+  if (/\bmk\s*iv\b/i.test(value)) {
+    return "Mark IV";
+  }
+
+  if (/\bii\b/i.test(value)) {
+    return "II";
+  }
+
+  if (/\biii\b/i.test(value)) {
+    return "III";
+  }
+
+  if (/\biv\b/i.test(value)) {
+    return "IV";
+  }
+
+  if (/\bmax\b/i.test(value)) {
+    return "Max";
+  }
+
+  if (/\bultra\b/i.test(value)) {
+    return "Ultra";
   }
 
   return null;

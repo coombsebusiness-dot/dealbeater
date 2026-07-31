@@ -19,6 +19,8 @@ export type KnowledgeEntityType =
   | "accessory"
   | "retailer"
   | "brand"
+  | "software"
+  | "capability"
   | "category";
 
 export interface KnowledgeEntity {

@@ -37,7 +37,7 @@ interface SerpApiShoppingResult {
   immersive_product_page_token?: string;
 }
 
-interface SerpApiResponse {
+interface SerpApiShoppingResponse {
   shopping_results?: SerpApiShoppingResult[];
   error?: string;
 }
@@ -60,31 +60,78 @@ interface ImmersiveProductResponse {
   error?: string;
 }
 
+interface SerpRequestDiagnostics {
+  googleShopping: number;
+  immersiveProduct: number;
+}
+
+const MAX_OFFERS_TO_ENRICH = 2;
+
 const ACCESSORY_TERMS = [
+  // General
+  "accessory",
+  "replacement",
+  "spare part",
+  "parts only",
+  "service",
+
+  // Cases and protection
   "case",
   "cover",
-  "screen protector",
   "protector",
+  "screen protector",
   "tempered glass",
-  "keyboard case",
-  "keyboard cover",
+  "screen guard",
+  "bumper",
+  "wallet",
+  "flip cover",
   "folio",
   "sleeve",
   "skin",
+  "protective shell",
+  "hydrogel",
+  "shockproof",
+  "rugged",
+  "armour",
+  "armor",
+
+  // Power
+  "battery",
+  "battery pack",
+  "charger",
+  "charging",
+  "power adapter",
+  "mains adapter",
+  "cable",
+
+  // Camera accessories
+  "camera cage",
+  "cage",
+  "camera grip",
+  "battery grip",
+  "strap",
+  "camera bag",
+  "lens cap",
+  "body cap",
+  "filter",
+  "tripod",
+  "flash trigger",
+  "memory card",
+
+  // Computer and mobile accessories
+  "keyboard case",
+  "keyboard cover",
   "stand",
   "holder",
   "mount",
   "dock",
-  "cable",
   "adapter",
-  "charger",
-  "charging",
-  "replacement",
-  "strap",
-  "bag",
   "stylus",
   "apple pencil",
   "pencil holder",
+  "phone holder",
+  "car mount",
+  "replacement back",
 ];
 
 const USED_TERMS = [
@@ -92,6 +139,7 @@ const USED_TERMS = [
   "renewed",
   "pre-owned",
   "pre owned",
+  "preowned",
   "second hand",
   "used",
   "open box",
@@ -109,33 +157,24 @@ const PAYMENT_PLAN_TERMS = [
   "contract",
   "deposit",
   "finance from",
+  "pay monthly",
+  "subscription",
+  "lease",
 ];
 
-const IGNORED_WORDS = new Set([
-  "the",
-  "and",
-  "with",
-  "for",
-  "from",
-  "new",
-  "latest",
-  "wifi",
-  "wi-fi",
-  "inch",
-  "inches",
-  "generation",
-  "gen",
-]);
+const INVALID_BUYING_URL_TERMS = [
+  "sell.gizmo2go.com",
+  "/sell-your-",
+  "/trade-in",
+  "/tradein",
+];
 
 export async function searchGoogleShopping(
   query: string
 ): Promise<ShoppingOffer[]> {
+  const startedAt = performance.now();
   const apiKey = process.env.SERPAPI_API_KEY;
-
-  console.log(
-    "🛒 GOOGLE SHOPPING SEARCH RUNNING:",
-    query
-  );
+  const cleanQuery = query.trim();
 
   if (!apiKey) {
     throw new Error(
@@ -143,15 +182,184 @@ export async function searchGoogleShopping(
     );
   }
 
-  const cleanQuery = query.trim();
-
   if (!cleanQuery) {
     return [];
   }
 
+  const diagnostics: SerpRequestDiagnostics = {
+    googleShopping: 0,
+    immersiveProduct: 0,
+  };
+
+  console.log(
+    "🛒 GOOGLE SHOPPING SEARCH RUNNING:",
+    cleanQuery
+  );
+
+  try {
+    const rawResults = await fetchGoogleShoppingResults(
+      cleanQuery,
+      apiKey,
+      diagnostics
+    );
+
+    const mappedOffers = rawResults
+      .map((result) =>
+        mapShoppingResultToOffer(result)
+      )
+      .filter(
+        (offer): offer is ShoppingOffer =>
+          offer !== null
+      );
+
+    const preValidatedOffers =
+      mappedOffers.filter((offer) =>
+        validateOfferBeforeEnrichment(
+          cleanQuery,
+          offer
+        )
+      );
+
+    const priceFilteredOffers =
+      removePriceOutliers(
+        preValidatedOffers
+      );
+
+    const sortedOffers = [
+      ...priceFilteredOffers,
+    ].sort((a, b) => a.price - b.price);
+
+    console.info(
+      "GOOGLE_PRE_ENRICHMENT_VALIDATION:",
+      {
+        candidates: mappedOffers.length,
+        accepted: sortedOffers.length,
+        rejected:
+          mappedOffers.length -
+          sortedOffers.length,
+      }
+    );
+
+    const offersToEnrich =
+      sortedOffers.slice(
+        0,
+        MAX_OFFERS_TO_ENRICH
+      );
+
+    const remainingOffers =
+      sortedOffers.slice(
+        MAX_OFFERS_TO_ENRICH
+      );
+
+    const enrichmentStartedAt =
+      performance.now();
+
+    const enrichedResults =
+      await Promise.all(
+        offersToEnrich.map((offer) =>
+          enrichOffer(
+            offer,
+            cleanQuery,
+            apiKey,
+            diagnostics
+          )
+        )
+      );
+
+    console.info(
+      `DIRECT_LINK_ENRICHMENT_TIME: ${Math.round(
+        performance.now() -
+          enrichmentStartedAt
+      )}ms`
+    );
+
+    const enrichedOffers =
+      enrichedResults.filter(
+        (
+          offer
+        ): offer is ShoppingOffer =>
+          offer !== null
+      );
+
+    const finalOffers = [
+      ...enrichedOffers,
+      ...remainingOffers,
+    ]
+      .filter(
+        (offer) =>
+          !isInvalidBuyingOffer(offer)
+      )
+      .filter((offer) =>
+        validateFinalOffer(
+          cleanQuery,
+          offer
+        )
+      )
+      .sort((a, b) => a.price - b.price);
+
+    console.info(
+      "GOOGLE_FINAL_VALIDATION:",
+      {
+        candidates:
+          sortedOffers.length,
+        accepted: finalOffers.length,
+        rejected:
+          sortedOffers.length -
+          finalOffers.length,
+      }
+    );
+
+    console.info(
+      `GOOGLE_FINAL_OFFERS_COUNT: ${finalOffers.length}`
+    );
+
+    return finalOffers;
+  } finally {
+    const totalSerpRequests =
+      diagnostics.googleShopping +
+      diagnostics.immersiveProduct;
+
+    console.info(
+      "================================"
+    );
+    console.info(
+      "📊 SERP REQUEST DIAGNOSTICS"
+    );
+    console.info({
+      query: cleanQuery,
+      googleShopping:
+        diagnostics.googleShopping,
+      immersiveProduct:
+        diagnostics.immersiveProduct,
+      totalSerpRequests,
+      maximumPossibleWithCurrentConfig:
+        1 + MAX_OFFERS_TO_ENRICH,
+      totalTimeMs: Math.round(
+        performance.now() - startedAt
+      ),
+    });
+    console.info(
+      "================================"
+    );
+  }
+}
+
+async function fetchGoogleShoppingResults(
+  query: string,
+  apiKey: string,
+  diagnostics: SerpRequestDiagnostics
+): Promise<SerpApiShoppingResult[]> {
+  diagnostics.googleShopping += 1;
+
+  console.info(
+    `📡 SERP REQUEST ${getTotalSerpRequests(
+      diagnostics
+    )}: google_shopping`
+  );
+
   const params = new URLSearchParams({
     engine: "google_shopping",
-    q: cleanQuery,
+    q: query,
     api_key: apiKey,
     gl: "uk",
     hl: "en",
@@ -173,7 +381,7 @@ export async function searchGoogleShopping(
   }
 
   const data =
-    (await response.json()) as SerpApiResponse;
+    (await response.json()) as SerpApiShoppingResponse;
 
   if (data.error) {
     throw new Error(
@@ -181,967 +389,446 @@ export async function searchGoogleShopping(
     );
   }
 
-  const rawResults = data.shopping_results ?? [];
+  const rawResults =
+    data.shopping_results ?? [];
 
   console.log(
     `📦 Google Shopping returned ${rawResults.length} raw results for:`,
-    cleanQuery
+    query
   );
 
-  const textMatchedOffers = rawResults
-    .map((result): ShoppingOffer | null => {
-      const title =
-        result.title?.trim() ?? "";
-
-      if (!title) {
-        return null;
-      }
-
-   const basicRejectionReason =
-  getRejectionReason(cleanQuery, title);
-
-const hardRejectionTerms = [
-  "used",
-  "refurbished",
-  "renewed",
-  "pre-owned",
-  "preowned",
-  "lease",
-  "subscription",
-  "monthly payment",
-  "pay monthly",
-  "contract",
-  "parts only",
-  "spares or repair",
-    "case",
-  "cover",
-  "protector",
-  "tempered glass",
-  "screen guard",
-  "bumper",
-  "wallet",
-  "flip cover",
-  "folio",
-  "shockproof",
-  "rugged",
-  "armour",
-  "armor",
-  "silicone",
-  "phone holder",
-  "car mount",
-  "replacement back",
-  "protective shell",
-  "hydrogel",
-  "service",
-];
-
-const isHardRejection =
-  basicRejectionReason &&
-  hardRejectionTerms.some((term) =>
-    basicRejectionReason
-      .toLowerCase()
-      .includes(term)
-  );
-
-if (isHardRejection) {
-  console.log(
-    `🚫 Hard rejected: ${title} — ${basicRejectionReason}`
-  );
-
-  return null;
+  return rawResults;
 }
 
-if (basicRejectionReason === "appears to be an accessory") {
-  console.log(
-    `🚫 Rejected accessory: ${title}`
-  );
+function mapShoppingResultToOffer(
+  result: SerpApiShoppingResult
+): ShoppingOffer | null {
+  const title =
+    result.title?.trim() ?? "";
 
-  return null;
-}
+  if (!title) {
+    return null;
+  }
 
-if (basicRejectionReason) {
-  console.log(
-    `⚠️ Possible mismatch, sending to variant matcher: ${title} — ${basicRejectionReason}`
-  );
-}
+  const price =
+    typeof result.extracted_price ===
+    "number"
+      ? result.extracted_price
+      : extractPrice(result.price);
 
-const PHONE_QUERY_TERMS = [
-  "iphone",
-  "samsung galaxy",
-  "galaxy s",
-  "google pixel",
-  "smartphone",
-  "mobile phone",
-  " phone",
-];
-
-const PHONE_ACCESSORY_TERMS = [
-  "case",
-  "cover",
-  "protector",
-  "tempered glass",
-  "screen guard",
-  "bumper",
-  "wallet",
-  "flip cover",
-  "folio",
-  "shockproof",
-  "rugged",
-  "armour",
-  "armor",
-  "silicone",
-  "phone holder",
-  "car mount",
-  "replacement back",
-  "protective shell",
-  "hydrogel",
-];
-
-function looksLikePhoneQuery(text: string): boolean {
-  const normalised = text.toLowerCase();
-
-  return PHONE_QUERY_TERMS.some((term) =>
-    normalised.includes(term)
-  );
-}
-
-function looksLikePhoneAccessory(text: string): boolean {
-  const normalised = text.toLowerCase();
-
-  return PHONE_ACCESSORY_TERMS.some((term) =>
-    normalised.includes(term)
-  );
-}
-const phoneSearch = looksLikePhoneQuery(cleanQuery);
-const phoneAccessory = looksLikePhoneAccessory(title);
-
-// console.log("📱 PHONE FILTER:", {
-//   cleanQuery,
-//   title,
-//   phoneSearch,
-//   phoneAccessory,
-// });
-
-if (phoneSearch && phoneAccessory) {
-  console.log(
-    `🚫 Phone accessory rejected before matching: ${title}`
-  );
-
-  return null;
-}
-
-const exactMatch = compareExactProductVariant(
-  cleanQuery,
-  title
-);
-
-if (!exactMatch.accepted) {
-  console.log(
-    `🚫 Variant rejected: ${title}`
-  );
-
-  console.log(
-    "Reasons:",
-    exactMatch.reasons.join(" | ")
-  );
-
-  console.log(
-    "Confidence:",
-    `${exactMatch.confidence}%`
-  );
-
-  return null;
-}
-
-console.log(
-  `✅ Variant accepted: ${title} (${exactMatch.confidence}%)`
-);
-
-      const price =
-        typeof result.extracted_price === "number"
-          ? result.extracted_price
-          : extractPrice(result.price);
-
-      if (
-        price === null ||
-        !Number.isFinite(price) ||
-        price <= 0
-      ) {
-        console.log(
-          `🚫 Rejected: ${title} — invalid price`
-        );
-
-        return null;
-      }
-// console.log("================================");
-// console.log("TITLE:", result.title);
-// console.log("PRODUCT LINK:", result.product_link);
-// console.log("LINK:", result.link);
-    const googleProductUrl =
-  result.product_link ??
-  result.link ??
-  null;
-
-return {
-  title,
-
-  retailer:
-    result.source?.trim() ||
-    "Unknown retailer",
-
-  price,
-
-  imageUrl:
-    result.thumbnail?.trim() ||
-    null,
-
-  googleProductUrl,
-
-  retailerUrl: null,
-  affiliateUrl: null,
-
-  // Temporary fallback until retailer enrichment succeeds.
-  finalUrl: googleProductUrl,
-
-  rating:
-    typeof result.rating === "number"
-      ? result.rating
-      : null,
-
-  reviewCount:
-    typeof result.reviews === "number"
-      ? result.reviews
-      : null,
-
-  delivery:
-    result.delivery?.trim() ||
-    null,
-
-  immersiveToken:
-    result.immersive_product_page_token ??
-    null,
-};
-    })
-    .filter(
-      (offer): offer is ShoppingOffer =>
-        offer !== null
+  if (
+    price === null ||
+    !Number.isFinite(price) ||
+    price <= 0
+  ) {
+    console.log(
+      `🚫 Rejected: ${title} — invalid price`
     );
 
-  const cleanedOffers =
-    removePriceOutliers(textMatchedOffers);
+    return null;
+  }
+
+  const googleProductUrl =
+    result.product_link ??
+    result.link ??
+    null;
+
+  return {
+    title,
+    retailer:
+      result.source?.trim() ||
+      "Unknown retailer",
+    price,
+    imageUrl:
+      result.thumbnail?.trim() ||
+      null,
+    googleProductUrl,
+    retailerUrl: null,
+    affiliateUrl: null,
+    finalUrl: googleProductUrl,
+    rating:
+      typeof result.rating ===
+      "number"
+        ? result.rating
+        : null,
+    reviewCount:
+      typeof result.reviews ===
+      "number"
+        ? result.reviews
+        : null,
+    delivery:
+      result.delivery?.trim() ||
+      null,
+    immersiveToken:
+      result.immersive_product_page_token ??
+      null,
+  };
+}
+
+function validateOfferBeforeEnrichment(
+  query: string,
+  offer: ShoppingOffer
+): boolean {
+  const rejectionReason =
+    getHardRejectionReason(
+      query,
+      offer.title
+    );
+
+  if (rejectionReason) {
+    console.log(
+      `🚫 Hard rejected: ${offer.title} — ${rejectionReason}`
+    );
+
+    return false;
+  }
+
+  const match =
+    compareExactProductVariant(
+      query,
+      offer.title
+    );
+
+  if (!match.accepted) {
+    console.log(
+      `🚫 Variant rejected: ${offer.title}`
+    );
+    console.log(
+      "Reasons:",
+      match.reasons.join(" | ")
+    );
+    console.log(
+      "Confidence:",
+      `${match.confidence}%`
+    );
+
+    return false;
+  }
 
   console.log(
-    `✅ Kept ${cleanedOffers.length} genuine matching offers`
+    `✅ Variant accepted: ${offer.title} (${match.confidence}%)`
   );
 
-  cleanedOffers.forEach((offer) => {
-    console.log(
-      `💷 ${offer.retailer}: £${offer.price.toFixed(
-        2
-      )} — ${offer.title}`
+  return true;
+}
+
+function validateFinalOffer(
+  query: string,
+  offer: ShoppingOffer
+): boolean {
+  const candidateText = [
+    offer.title,
+    offer.description,
+    offer.finalUrl,
+    offer.retailerUrl,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const match =
+    compareExactProductVariant(
+      query,
+      candidateText
     );
-  });
 
-/**
- * Strict validation gate.
- *
- * Every Google Shopping offer must match the requested
- * product before it can be sorted, enriched or returned.
- */
-const validatedOffers =
-  cleanedOffers.filter((offer) => {
-    const candidateText = [
-      offer.title,
-      offer.description,
-    ]
-      .filter(Boolean)
-      .join(" ");
-
-    const match =
-      compareExactProductVariant(
-        cleanQuery,
-        candidateText
-      );
-
+  if (!match.accepted) {
     console.log(
-      match.accepted
-        ? "✅ GOOGLE OFFER ACCEPTED"
-        : "🚫 GOOGLE OFFER REJECTED",
+      "🚫 GOOGLE FINAL OFFER REJECTED",
       {
-        query: cleanQuery,
+        query,
         title: offer.title,
-        confidence: match.confidence,
+        finalUrl: offer.finalUrl,
+        confidence:
+          match.confidence,
         reasons: match.reasons,
       }
     );
 
-    return match.accepted;
-  });
-
-console.info(
-  "GOOGLE_PRE_ENRICHMENT_VALIDATION:",
-  {
-    candidates: cleanedOffers.length,
-    accepted: validatedOffers.length,
-    rejected:
-      cleanedOffers.length -
-      validatedOffers.length,
+    return false;
   }
-);
 
-const sortedOffers = [
-  ...validatedOffers,
-].sort(
-  (a, b) =>
-    a.price - b.price
-);
+  const requestedSonyModel =
+    extractSonyCameraIdentity(query);
 
-// Only enrich verified offers most likely
-// to be displayed.
-const offersToEnrich =
-  sortedOffers.slice(0, 5);
+  const finalSonyModel =
+    extractSonyCameraIdentity(
+      candidateText
+    );
 
-const enrichmentStartedAt =
-  performance.now();
-
-const enrichedResults =
-  await Promise.all(
-    offersToEnrich.map(
-      async (offer) => {
-        try {
-          const directOffer =
-            await enrichOfferWithDirectLink(
-              offer,
-              apiKey,
-              cleanQuery
-            );
-
-          if (!directOffer) {
-            return null;
-          }
-
-          const ebayOffer =
-            await enrichEbayAffiliateLink(
-              directOffer
-            );
-
-          console.info(
-            "🟠 BEFORE:",
-            directOffer.finalUrl
-          );
-
-          console.info(
-            "🟢 AFTER :",
-            ebayOffer.finalUrl
-          );
-
-          return ebayOffer;
-        } catch (error) {
-          console.error(
-            "Offer enrichment failed:",
-            error
-          );
-
-          return null;
-        }
+  if (
+    requestedSonyModel &&
+    finalSonyModel &&
+    requestedSonyModel !==
+      finalSonyModel
+  ) {
+    console.log(
+      "🚫 SONY FINAL MODEL MISMATCH",
+      {
+        query,
+        expected:
+          requestedSonyModel,
+        found:
+          finalSonyModel,
+        title: offer.title,
+        finalUrl: offer.finalUrl,
       }
-    )
-  );
+    );
 
-console.info(
-  `DIRECT_LINK_ENRICHMENT_TIME: ${Math.round(
-    performance.now() -
-      enrichmentStartedAt
-  )}ms`
-);
-
-const enrichedOffers =
-  enrichedResults.filter(
-    (
-      offer
-    ): offer is ShoppingOffer =>
-      offer !== null
-  );
-
-const remainingOffers =
-  sortedOffers.slice(5);
-
-const finalOffers = [
-  ...enrichedOffers,
-  ...remainingOffers,
-].sort(
-  (a, b) =>
-    a.price - b.price
-);
-
-console.info(
-  "GOOGLE_FINAL_VALIDATION:",
-  {
-    candidates: cleanedOffers.length,
-    accepted: finalOffers.length,
-    rejected:
-      cleanedOffers.length -
-      finalOffers.length,
+    return false;
   }
-);
 
-console.info(
-  `GOOGLE_FINAL_OFFERS_COUNT: ${finalOffers.length}`
-);
+  return true;
+}
 
-return finalOffers;
+async function enrichOffer(
+  offer: ShoppingOffer,
+  originalQuery: string,
+  apiKey: string,
+  diagnostics: SerpRequestDiagnostics
+): Promise<ShoppingOffer | null> {
+  try {
+    const directOffer =
+      await enrichOfferWithDirectLink(
+        offer,
+        originalQuery,
+        apiKey,
+        diagnostics
+      );
+
+    if (!directOffer) {
+      return null;
+    }
+
+    return await enrichEbayAffiliateLink(
+  directOffer,
+  originalQuery
+);
+  } catch (error) {
+    console.error(
+      "Offer enrichment failed:",
+      error
+    );
+
+    return validateFinalOffer(
+      originalQuery,
+      offer
+    )
+      ? offer
+      : null;
+  }
+}
+
 async function enrichOfferWithDirectLink(
   offer: ShoppingOffer,
+  originalQuery: string,
   apiKey: string,
-  originalQuery: string
+  diagnostics: SerpRequestDiagnostics
 ): Promise<ShoppingOffer | null> {
-
-  console.log("🔥 ENTERED enrichOfferWithDirectLink()", offer.title);
-
   if (!offer.immersiveToken) {
-    console.log(`⚠️ No immersive token for: ${offer.title}`);
-
-    const originalMatch =compareExactProductVariant(
-  originalQuery,
-  `${offer.title} ${offer.description ?? ""}`
-)
-
-    if (!originalMatch.accepted) {
-      console.log(
-        `❌ Removing unrelated original offer: ${offer.title}`
-      );
-
-      return null;
-    }
-console.log("➡️ About to apply affiliate link");
-    return offer;
-  }
-
-  try {
-    const params = new URLSearchParams({
-      engine: "google_immersive_product",
-      page_token: offer.immersiveToken,
-      more_stores: "true",
-      api_key: apiKey,
-    });
-
-    const response = await fetch(
-      `https://serpapi.com/search.json?${params.toString()}`,
-      {
-        method: "GET",
-        cache: "no-store",
-      }
+    console.log(
+      `⚠️ No immersive token for: ${offer.title}`
     );
 
-    if (!response.ok) {
-      console.log(
-        `⚠️ Immersive lookup failed for ${offer.title}:`,
-        response.status
-      );
+    return validateFinalOffer(
+      originalQuery,
+      offer
+    )
+      ? offer
+      : null;
+  }
 
-      const originalMatch = compareExactProductVariant(
-  originalQuery,
-  `${offer.title} ${offer.description ?? ""}`
-)
+  diagnostics.immersiveProduct += 1;
 
-      return originalMatch.accepted ? offer : null;
-    }
+  console.info(
+    `📡 SERP REQUEST ${getTotalSerpRequests(
+      diagnostics
+    )}: google_immersive_product`
+  );
 
-    const data =
-      (await response.json()) as ImmersiveProductResponse;
-
-    if (data.error) {
-      console.log(
-        `⚠️ Immersive API error for ${offer.title}:`,
-        data.error
-      );
-
-      const originalMatch = compareExactProductVariant(
-  originalQuery,
-  `${offer.title} ${offer.description ?? ""}`
-)
-
-      return originalMatch.accepted ? offer : null;
-    }
-
-    const stores =
-      data.product_results?.stores?.filter(
-        (store) =>
-          typeof store.link === "string" &&
-          isDirectRetailerUrl(store.link)
-      ) ?? [];
-      console.log("================================");
-
-
-stores.forEach((store, index) => {
-  console.log(`STORE ${index + 1}`, {
-    name: store.name,
-    title: store.title,
-    link: store.link,
+  const params = new URLSearchParams({
+    engine:
+      "google_immersive_product",
+    page_token:
+      offer.immersiveToken,
+    more_stores: "true",
+    api_key: apiKey,
   });
-});
-console.log("================================");
 
-    if (stores.length === 0) {
-      console.log(
-        `⚠️ No direct retailer stores found for: ${offer.title}`
-      );
-
-      const originalMatch = compareExactProductVariant(
-  originalQuery,
-  `${offer.title} ${offer.description ?? ""}`
-)
-
-      return originalMatch.accepted ? offer : null;
+  const response = await fetch(
+    `https://serpapi.com/search.json?${params.toString()}`,
+    {
+      method: "GET",
+      cache: "no-store",
     }
+  );
 
-    console.log("ORIGINAL QUERY:", originalQuery);
-console.log("================================");
-console.log("🔍 CHECKING STORE MATCHES");
-console.log("ORIGINAL QUERY:", originalQuery);
-console.log("================================");
-    const matchingStores = stores.filter((store) => {
-      const storeTitle = store.title?.trim() ?? "";
+  if (!response.ok) {
+    console.log(
+      `⚠️ Immersive lookup failed for ${offer.title}:`,
+      response.status
+    );
 
-      if (!storeTitle) {
+    return validateFinalOffer(
+      originalQuery,
+      offer
+    )
+      ? offer
+      : null;
+  }
+
+  const data =
+    (await response.json()) as ImmersiveProductResponse;
+
+  if (data.error) {
+    console.log(
+      `⚠️ Immersive API error for ${offer.title}:`,
+      data.error
+    );
+
+    return validateFinalOffer(
+      originalQuery,
+      offer
+    )
+      ? offer
+      : null;
+  }
+
+  const stores =
+    data.product_results?.stores?.filter(
+      (store) =>
+        typeof store.link ===
+          "string" &&
+        isDirectRetailerUrl(
+          store.link
+        )
+    ) ?? [];
+
+  const matchingStores =
+    stores.filter((store) => {
+      const title =
+        store.title?.trim() ?? "";
+
+      if (!title) {
         return false;
       }
-      console.log("🏪 STORES FOUND:", stores.length);
 
-stores.forEach((store, i) => {
-  console.log(`Store ${i + 1}`, {
-    name: store.name,
-    title: store.title,
-    link: store.link,
-  });
-});
+      const rejectionReason =
+        getHardRejectionReason(
+          originalQuery,
+          title
+        );
 
-      const match = compareExactProductVariant(
-  originalQuery,
-  storeTitle
-);
+      if (rejectionReason) {
+        return false;
+      }
 
-console.log({
-  title: storeTitle,
-  accepted: match.accepted,
-  reasons: match.reasons,
-});
+      const match =
+        compareExactProductVariant(
+          originalQuery,
+          title
+        );
 
-return match.accepted;
+      return match.accepted;
     });
-console.log("================================");
-console.log("✅ MATCHING STORES:", matchingStores.length);
-console.log("================================");
-    if (matchingStores.length === 0) {
-      console.log(
-        `❌ No exact product stores matched query "${originalQuery}" for ${offer.title}`
-      );
 
-      return null;
-    }
-
-  const selectedStore = findBestRetailerStore(
-  offer,
-  matchingStores
-);
-console.log("================================");
-console.log("⭐ SELECTED STORE");
-console.dir(selectedStore, { depth: null });
-console.log("================================");
-
-    if (!selectedStore?.link) {
-      return null;
-    }
-
-    const directRetailerUrl = selectedStore.link;
-
+  if (matchingStores.length === 0) {
     console.log(
-      `🔗 Direct retailer link found: ${selectedStore.name} — ${directRetailerUrl}`
+      `⚠️ No exact retailer store matched: ${offer.title}`
     );
-const requestedSonyModel =
-  extractSonyCameraIdentity(
-    originalQuery
-  );
 
-const storeTitleSonyModel =
-  extractSonyCameraIdentity(
-    selectedStore.title
-  );
-
-const retailerUrlSonyModel =
-  extractSonyCameraIdentity(
-    directRetailerUrl
-  );
-
-console.log(
-  "📷 RETAILER LINK MODEL CHECK",
-  {
-    originalQuery,
-    requestedSonyModel,
-    storeTitle:
-      selectedStore.title,
-    storeTitleSonyModel,
-    directRetailerUrl,
-    retailerUrlSonyModel,
+    return validateFinalOffer(
+      originalQuery,
+      offer
+    )
+      ? offer
+      : null;
   }
-);
 
-if (
-  requestedSonyModel &&
-  retailerUrlSonyModel &&
-  requestedSonyModel !==
-    retailerUrlSonyModel
-) {
-  console.log(
-    "🚫 RETAILER LINK MODEL MISMATCH",
-    {
-      expected:
-        requestedSonyModel,
-      found:
-        retailerUrlSonyModel,
-      title:
-        selectedStore.title,
-      link:
-        directRetailerUrl,
-    }
-  );
+  const selectedStore =
+    findBestRetailerStore(
+      offer,
+      matchingStores
+    );
 
-  return null;
-}
+  if (!selectedStore?.link) {
+    return null;
+  }
 
-if (
-  requestedSonyModel &&
-  storeTitleSonyModel &&
-  requestedSonyModel !==
-    storeTitleSonyModel
-) {
-  console.log(
-    "🚫 RETAILER TITLE MODEL MISMATCH",
-    {
-      expected:
-        requestedSonyModel,
-      found:
-        storeTitleSonyModel,
-      title:
-        selectedStore.title,
-    }
-  );
+  const directRetailerUrl =
+    selectedStore.link;
 
-  return null;
-}
-const directOffer: ShoppingOffer = {
-  ...offer,
+  if (
+    hasSonyCameraModelMismatch(
+      originalQuery,
+      selectedStore.title,
+      directRetailerUrl
+    )
+  ) {
+    return null;
+  }
 
-  title:
-    selectedStore.title?.trim() ||
-    offer.title,
+  const directOffer: ShoppingOffer = {
+    ...offer,
+    title:
+      selectedStore.title?.trim() ||
+      offer.title,
+    retailer:
+      selectedStore.name?.trim() ||
+      offer.retailer,
+    price:
+      typeof selectedStore.extracted_price ===
+      "number"
+        ? selectedStore.extracted_price
+        : offer.price,
+    retailerUrl:
+      directRetailerUrl,
+    finalUrl:
+      directRetailerUrl,
+    rating:
+      typeof selectedStore.rating ===
+      "number"
+        ? selectedStore.rating
+        : offer.rating,
+    reviewCount:
+      typeof selectedStore.reviews ===
+      "number"
+        ? selectedStore.reviews
+        : offer.reviewCount,
+    delivery:
+      selectedStore.shipping?.trim() ||
+      offer.delivery,
+  };
 
-  retailer:
-    selectedStore.name?.trim() ||
-    offer.retailer,
-
-  price:
-    typeof selectedStore.extracted_price === "number"
-      ? selectedStore.extracted_price
-      : offer.price,
-
-  retailerUrl: directRetailerUrl,
-
-  // Use the retailer URL unless the affiliate engine
-  // successfully replaces it below.
-  finalUrl: directRetailerUrl,
-
-  rating:
-    typeof selectedStore.rating === "number"
-      ? selectedStore.rating
-      : offer.rating,
-
-  reviewCount:
-    typeof selectedStore.reviews === "number"
-      ? selectedStore.reviews
-      : offer.reviewCount,
-
-  delivery:
-    selectedStore.shipping?.trim() ||
-    offer.delivery,
-};
-
-    const affiliateResult = await getAffiliateLink(
+  const affiliateResult =
+    await getAffiliateLink(
       directRetailerUrl,
       "blinlx-shopping"
     );
 
-    console.log("🔗 AFFILIATE ENGINE RESULT:", {
-      retailer: directOffer.retailer,
-      network: affiliateResult.network,
-      success: affiliateResult.success,
-      originalUrl: directRetailerUrl,
-      affiliateUrl: affiliateResult.affiliateUrl,
-    });
-
   const affiliateUrl =
-  affiliateResult.success &&
-  affiliateResult.affiliateUrl
-    ? affiliateResult.affiliateUrl
-    : null;
-console.log("================================");
-console.log("🎉 RETURNING ENRICHED OFFER");
+    affiliateResult.success &&
+    affiliateResult.affiliateUrl
+      ? affiliateResult.affiliateUrl
+      : null;
 
-console.dir(
-  {
-    retailer: directOffer.retailer,
-    retailerUrl: directRetailerUrl,
+  return {
+    ...directOffer,
     affiliateUrl,
     finalUrl:
       affiliateUrl ??
       directRetailerUrl,
-  },
-  { depth: null }
-);
-
-console.log("================================");
-return {
-  ...directOffer,
-
-  affiliateUrl,
-
-  finalUrl:
-    affiliateUrl ??
-    directRetailerUrl,
-};
-  } catch (error) {
-    console.error(
-      `⚠️ Direct-link lookup failed for ${offer.title}:`,
-      error
-    );
-
-    const originalMatch = compareExactProductVariant(
-  originalQuery,
-  `${offer.title} ${offer.description ?? ""}`
-)
-
-    return originalMatch.accepted ? offer : null;
-  }
-}
-function retailerNamesMatch(
-  first: string,
-  second: string
-): boolean {
-  const firstName = normaliseRetailerName(first);
-  const secondName = normaliseRetailerName(second);
-
-  if (!firstName || !secondName) {
-    return false;
-  }
-
-  return (
-    firstName.includes(secondName) ||
-    secondName.includes(firstName)
-  );
+  };
 }
 
-function normaliseRetailerName(
-  value: string
-): string {
-  return value
-    .toLowerCase()
-    .replace(/amazon\.co\.uk/g, "amazon")
-    .replace(/ebay\.co\.uk/g, "ebay")
-    .replace(/\s*-\s*seller.*$/g, "")
-    .replace(/\s*store\s*$/g, "")
-    .replace(/[^a-z0-9]+/g, "")
-    .trim();
-}
-function isAffiliateSupportedStore(
-  store: ImmersiveStore
-): boolean {
-  if (!store.link) {
-    return false;
-  }
-
-  const merchant = getMerchantByUrl(store.link);
-
-  return Boolean(
-    merchant &&
-    merchant.enabled
-  );
-}
-
-function getAffiliateStorePriority(
-  store: ImmersiveStore
-): number {
-  if (!store.link) {
-    return 0;
-  }
-
-  const merchant = getMerchantByUrl(store.link);
-
-  if (!merchant || !merchant.enabled) {
-    return 0;
-  }
-
-  /*
-   * Higher number means greater priority.
-   *
-   * Direct AWIN merchants are preferred first,
-   * followed by Amazon and eBay.
-   */
-  switch (merchant.network) {
-    case "awin":
-      return 300;
-
-    case "amazon":
-      return 200;
-
-    case "ebay":
-      return 100;
-
-    default:
-      return 50;
-  }
-}
-
-function findBestRetailerStore(
-  originalOffer: ShoppingOffer,
-  stores: ImmersiveStore[]
-): ImmersiveStore | undefined {
-  const rankedStores = [...stores].sort(
-    (first, second) => {
-      const firstPriority =
-        getAffiliateStorePriority(first);
-
-      const secondPriority =
-        getAffiliateStorePriority(second);
-
-      if (firstPriority !== secondPriority) {
-        return secondPriority - firstPriority;
-      }
-
-      const firstRetailerMatch =
-        retailerNamesMatch(
-          originalOffer.retailer,
-          first.name ?? ""
-        )
-          ? 1
-          : 0;
-
-      const secondRetailerMatch =
-        retailerNamesMatch(
-          originalOffer.retailer,
-          second.name ?? ""
-        )
-          ? 1
-          : 0;
-
-      if (
-        firstRetailerMatch !==
-        secondRetailerMatch
-      ) {
-        return (
-          secondRetailerMatch -
-          firstRetailerMatch
-        );
-      }
-
-      const firstPriceDifference =
-        typeof first.extracted_price === "number"
-          ? Math.abs(
-              first.extracted_price -
-                originalOffer.price
-            )
-          : Number.MAX_SAFE_INTEGER;
-
-      const secondPriceDifference =
-        typeof second.extracted_price === "number"
-          ? Math.abs(
-              second.extracted_price -
-                originalOffer.price
-            )
-          : Number.MAX_SAFE_INTEGER;
-
-      return (
-        firstPriceDifference -
-        secondPriceDifference
-      );
-    }
-  );
-
-  const selectedStore = rankedStores[0];
-
-  if (selectedStore) {
-    console.log(
-      "🏪 BEST RETAILER STORE SELECTED:",
-      {
-        retailer: selectedStore.name,
-        url: selectedStore.link,
-        affiliateSupported:
-          isAffiliateSupportedStore(
-            selectedStore
-          ),
-        affiliatePriority:
-          getAffiliateStorePriority(
-            selectedStore
-          ),
-        price:
-          selectedStore.extracted_price,
-      }
-    );
-  }
-
-  return selectedStore;
-}
-
-function findClosestPricedStore(
-  targetPrice: number,
-  stores: ImmersiveStore[]
-): ImmersiveStore | undefined {
-  return stores
-    .filter(
-      (store) =>
-        typeof store.extracted_price === "number" &&
-        store.extracted_price > 0
-    )
-    .sort((first, second) => {
-      const firstDifference = Math.abs(
-        (first.extracted_price ?? 0) -
-          targetPrice
-      );
-
-      const secondDifference = Math.abs(
-        (second.extracted_price ?? 0) -
-          targetPrice
-      );
-
-      return firstDifference - secondDifference;
-    })[0];
-}
-
-function isDirectRetailerUrl(
-  value: string
-): boolean {
-  try {
-    const url = new URL(value);
-    const hostname = url.hostname
-      .replace(/^www\./, "")
-      .toLowerCase();
-
-    return (
-      hostname !== "google.com" &&
-      hostname !== "google.co.uk" &&
-      !hostname.endsWith(".google.com") &&
-      !hostname.endsWith(".google.co.uk")
-    );
-  } catch {
-    return false;
-  }
-}
-
-function getRejectionReason(
+function getHardRejectionReason(
   query: string,
   title: string
 ): string | null {
-  const normalisedQuery = normaliseText(query);
-  const normalisedTitle = normaliseText(title);
+  const normalisedQuery =
+    normaliseText(query);
+
+  const normalisedTitle =
+    normaliseText(title);
 
   if (
     containsAnyTerm(
@@ -1175,98 +862,10 @@ function getRejectionReason(
       PAYMENT_PLAN_TERMS
     )
   ) {
-    return "monthly payment or contract listing";
-  }
-
-  const queryTokens =
-    extractImportantTokens(normalisedQuery);
-
-  const titleTokens = new Set(
-    extractImportantTokens(normalisedTitle)
-  );
-
-  if (queryTokens.length === 0) {
-    return null;
-  }
-
-  const matchedTokens = queryTokens.filter(
-    (token) => titleTokens.has(token)
-  );
-
-  const similarity =
-    matchedTokens.length / queryTokens.length;
-
-  const requiredTokens =
-    extractRequiredProductTokens(queryTokens);
-
-  const missingRequiredTokens =
-    requiredTokens.filter(
-      (token) => !titleTokens.has(token)
-    );
-
-  if (missingRequiredTokens.length > 0) {
-    return `missing important detail: ${missingRequiredTokens.join(
-      ", "
-    )}`;
-  }
-
-  if (similarity < 0.55) {
-    return `weak title match (${Math.round(
-      similarity * 100
-    )}%)`;
+    return "monthly payment, contract or lease listing";
   }
 
   return null;
-}
-
-function extractImportantTokens(
-  value: string
-): string[] {
-  return Array.from(
-    new Set(
-      value
-        .split(/\s+/)
-        .map(normaliseToken)
-        .filter(Boolean)
-        .filter(
-          (token) =>
-            token.length > 1 &&
-            !IGNORED_WORDS.has(token)
-        )
-    )
-  );
-}
-
-function extractRequiredProductTokens(
-  tokens: string[]
-): string[] {
-  return tokens.filter((token) => {
-    return (
-      /^\d{4}$/.test(token) ||
-      /^\d+(gb|tb)$/.test(token) ||
-      /^\d+$/.test(token) ||
-      isColour(token)
-    );
-  });
-}
-
-function isColour(value: string): boolean {
-  return [
-    "black",
-    "white",
-    "silver",
-    "grey",
-    "gray",
-    "blue",
-    "green",
-    "red",
-    "pink",
-    "purple",
-    "yellow",
-    "gold",
-    "orange",
-    "beige",
-  ].includes(value);
 }
 
 function removePriceOutliers(
@@ -1280,7 +879,8 @@ function removePriceOutliers(
     .map((offer) => offer.price)
     .sort((a, b) => a - b);
 
-  const median = getMedian(sortedPrices);
+  const median =
+    getMedian(sortedPrices);
 
   const minimumReasonablePrice =
     median * 0.5;
@@ -1294,8 +894,10 @@ function removePriceOutliers(
 
   return offers.filter((offer) => {
     const isReasonable =
-      offer.price >= minimumReasonablePrice &&
-      offer.price <= maximumReasonablePrice;
+      offer.price >=
+        minimumReasonablePrice &&
+      offer.price <=
+        maximumReasonablePrice;
 
     if (!isReasonable) {
       console.log(
@@ -1316,7 +918,10 @@ function getMedian(
     sortedValues.length / 2
   );
 
-  if (sortedValues.length % 2 === 0) {
+  if (
+    sortedValues.length % 2 ===
+    0
+  ) {
     return (
       (sortedValues[middle - 1] +
         sortedValues[middle]) /
@@ -1327,47 +932,248 @@ function getMedian(
   return sortedValues[middle];
 }
 
+function findBestRetailerStore(
+  originalOffer: ShoppingOffer,
+  stores: ImmersiveStore[]
+): ImmersiveStore | undefined {
+  return [...stores].sort(
+    (first, second) => {
+      const priorityDifference =
+        getAffiliateStorePriority(
+          second
+        ) -
+        getAffiliateStorePriority(
+          first
+        );
+
+      if (
+        priorityDifference !== 0
+      ) {
+        return priorityDifference;
+      }
+
+      const firstRetailerMatch =
+        retailerNamesMatch(
+          originalOffer.retailer,
+          first.name ?? ""
+        )
+          ? 1
+          : 0;
+
+      const secondRetailerMatch =
+        retailerNamesMatch(
+          originalOffer.retailer,
+          second.name ?? ""
+        )
+          ? 1
+          : 0;
+
+      if (
+        firstRetailerMatch !==
+        secondRetailerMatch
+      ) {
+        return (
+          secondRetailerMatch -
+          firstRetailerMatch
+        );
+      }
+
+      return (
+        getPriceDifference(
+          originalOffer.price,
+          first.extracted_price
+        ) -
+        getPriceDifference(
+          originalOffer.price,
+          second.extracted_price
+        )
+      );
+    }
+  )[0];
+}
+
+function getAffiliateStorePriority(
+  store: ImmersiveStore
+): number {
+  if (!store.link) {
+    return 0;
+  }
+
+  const merchant =
+    getMerchantByUrl(store.link);
+
+  if (
+    !merchant ||
+    !merchant.enabled
+  ) {
+    return 0;
+  }
+
+  switch (merchant.network) {
+    case "awin":
+      return 300;
+    case "amazon":
+      return 200;
+    case "ebay":
+      return 100;
+    default:
+      return 50;
+  }
+}
+
+function getPriceDifference(
+  targetPrice: number,
+  candidatePrice:
+    | number
+    | undefined
+): number {
+  if (
+    typeof candidatePrice !==
+      "number" ||
+    candidatePrice <= 0
+  ) {
+    return Number.MAX_SAFE_INTEGER;
+  }
+
+  return Math.abs(
+    candidatePrice - targetPrice
+  );
+}
+
+function retailerNamesMatch(
+  first: string,
+  second: string
+): boolean {
+  const firstName =
+    normaliseRetailerName(first);
+
+  const secondName =
+    normaliseRetailerName(second);
+
+  if (
+    !firstName ||
+    !secondName
+  ) {
+    return false;
+  }
+
+  return (
+    firstName.includes(secondName) ||
+    secondName.includes(firstName)
+  );
+}
+
+function normaliseRetailerName(
+  value: string
+): string {
+  return value
+    .toLowerCase()
+    .replace(
+      /amazon\.co\.uk/g,
+      "amazon"
+    )
+    .replace(
+      /ebay\.co\.uk/g,
+      "ebay"
+    )
+    .replace(
+      /\s*-\s*seller.*$/g,
+      ""
+    )
+    .replace(
+      /\s*store\s*$/g,
+      ""
+    )
+    .replace(
+      /[^a-z0-9]+/g,
+      ""
+    )
+    .trim();
+}
+
+function isDirectRetailerUrl(
+  value: string
+): boolean {
+  try {
+    const url = new URL(value);
+    const hostname =
+      url.hostname
+        .replace(/^www\./, "")
+        .toLowerCase();
+
+    return (
+      hostname !== "google.com" &&
+      hostname !==
+        "google.co.uk" &&
+      !hostname.endsWith(
+        ".google.com"
+      ) &&
+      !hostname.endsWith(
+        ".google.co.uk"
+      )
+    );
+  } catch {
+    return false;
+  }
+}
+
+function isInvalidBuyingOffer(
+  offer: ShoppingOffer
+): boolean {
+  const url = (
+    offer.finalUrl ??
+    offer.retailerUrl ??
+    ""
+  ).toLowerCase();
+
+  return INVALID_BUYING_URL_TERMS.some(
+    (term) =>
+      url.includes(term)
+  );
+}
+
 function containsAnyTerm(
   value: string,
   terms: string[]
 ): boolean {
   return terms.some((term) =>
-    value.includes(normaliseText(term))
+    value.includes(
+      normaliseText(term)
+    )
   );
 }
 
-function normaliseText(value: string): string {
+function normaliseText(
+  value: string
+): string {
   return value
     .toLowerCase()
-    .replace(/(\d+)\s*(tb|gb)\b/g, "$1$2")
+    .replace(
+      /(\d+)\s*(tb|gb)\b/g,
+      "$1$2"
+    )
     .replace(/[“”"'’]/g, "")
-    .replace(/[^a-z0-9]+/g, " ")
+    .replace(
+      /[^a-z0-9]+/g,
+      " "
+    )
     .replace(/\s+/g, " ")
     .trim();
 }
 
-function normaliseToken(
-  token: string
-): string {
-  if (token === "ipad") {
-    return "ipad";
-  }
-
-  return token
-    .replace(/^0+(\d)/, "$1")
-    .trim();
-}
-
 function extractPrice(
-  formattedPrice: string | undefined
+  formattedPrice:
+    | string
+    | undefined
 ): number | null {
   if (!formattedPrice) {
     return null;
   }
 
-  const match = formattedPrice.match(
-    /[\d,]+(?:\.\d{1,2})?/
-  );
+  const match =
+    formattedPrice.match(
+      /[\d,]+(?:\.\d{1,2})?/
+    );
 
   if (!match) {
     return null;
@@ -1377,10 +1183,22 @@ function extractPrice(
     match[0].replace(/,/g, "")
   );
 
-  return Number.isFinite(parsedPrice)
+  return Number.isFinite(
+    parsedPrice
+  )
     ? parsedPrice
     : null;
 }
+
+function getTotalSerpRequests(
+  diagnostics: SerpRequestDiagnostics
+): number {
+  return (
+    diagnostics.googleShopping +
+    diagnostics.immersiveProduct
+  );
+}
+
 function isEbayOffer(
   offer: ShoppingOffer
 ): boolean {
@@ -1394,7 +1212,9 @@ function isEbayOffer(
     offer.googleProductUrl,
   ]
     .filter(
-      (value): value is string =>
+      (
+        value
+      ): value is string =>
         typeof value === "string"
     )
     .map((value) =>
@@ -1405,67 +1225,40 @@ function isEbayOffer(
     retailer.includes("ebay") ||
     possibleUrls.some(
       (url) =>
-        url.includes("ebay.co.uk") ||
+        url.includes(
+          "ebay.co.uk"
+        ) ||
         url.includes("ebay.com")
     )
   );
 }
+
 async function enrichEbayAffiliateLink(
-  offer: ShoppingOffer
+  offer: ShoppingOffer,
+  originalQuery: string
 ): Promise<ShoppingOffer> {
-  console.log("🟣 EBAY ENRICHMENT CALLED:", {
-    title: offer.title,
-    retailer: offer.retailer,
-    finalUrl: offer.finalUrl,
-  });
-
-  const recognisedAsEbay = isEbayOffer(offer);
-
-  console.log(
-    "🟡 RECOGNISED AS EBAY:",
-    recognisedAsEbay
-  );
-
-  if (!recognisedAsEbay) {
-    console.warn(
-      "⚠️ Offer was not recognised as eBay:",
-      offer
-    );
-
+  if (!isEbayOffer(offer)) {
     return offer;
   }
 
   try {
-    const result = await findEbayAffiliateListing(
-      offer.title,
-      offer.price
-    );
-
-    console.log("🟠 EBAY API RESULT:", result);
+   const result =
+  await findEbayAffiliateListing(
+    originalQuery,
+    offer.price
+  );
 
     if (!result?.affiliateUrl) {
-      console.warn(
-        "No eBay affiliate listing found:",
-        offer.title
-      );
-
       return offer;
     }
 
-    console.log(
-      "🟢 EBAY AFFILIATE URL:",
-      result.affiliateUrl
-    );
-
-   return {
-  ...offer,
-
-  affiliateUrl:
-    result.affiliateUrl,
-
-  finalUrl:
-    result.affiliateUrl,
-};
+    return {
+      ...offer,
+      affiliateUrl:
+        result.affiliateUrl,
+      finalUrl:
+        result.affiliateUrl,
+    };
   } catch (error) {
     console.error(
       "Failed to generate eBay affiliate link:",
@@ -1475,22 +1268,62 @@ async function enrichEbayAffiliateLink(
     return offer;
   }
 }
-function isInvalidBuyingOffer(offer: ShoppingOffer): boolean {
-  const url = (
-    offer.finalUrl ??
-    offer.retailerUrl ??
-    ""
-  ).toLowerCase();
 
-  return (
-    url.includes("sell.gizmo2go.com") ||
-    url.includes("/sell-your-") ||
-    url.includes("/trade-in") ||
-    url.includes("/tradein")
-  );
+function hasSonyCameraModelMismatch(
+  originalQuery: string,
+  storeTitle:
+    | string
+    | undefined,
+  retailerUrl: string
+): boolean {
+  const requestedModel =
+    extractSonyCameraIdentity(
+      originalQuery
+    );
+
+  if (!requestedModel) {
+    return false;
+  }
+
+  const storeTitleModel =
+    extractSonyCameraIdentity(
+      storeTitle
+    );
+
+  const retailerUrlModel =
+    extractSonyCameraIdentity(
+      retailerUrl
+    );
+
+  const mismatch =
+    Boolean(
+      storeTitleModel &&
+      storeTitleModel !==
+        requestedModel
+    ) ||
+    Boolean(
+      retailerUrlModel &&
+      retailerUrlModel !==
+        requestedModel
+    );
+
+  if (mismatch) {
+    console.log(
+      "🚫 RETAILER SONY MODEL MISMATCH",
+      {
+        expected:
+          requestedModel,
+        storeTitleModel,
+        retailerUrlModel,
+        storeTitle,
+        retailerUrl,
+      }
+    );
+  }
+
+  return mismatch;
 }
 
-}
 function numberFromCameraGeneration(
   value: string
 ): string {
@@ -1514,19 +1347,11 @@ function numberFromCameraGeneration(
   );
 }
 
-/**
- * Extracts a strict Sony Alpha 7 model identity
- * from a search query, product title or URL.
- *
- * Examples:
- * Sony A7R IV      -> a7r4
- * ILCE-7RM4        -> a7r4
- * ILCE-7RM4A       -> a7r4
- * Sony A7 IV       -> a74
- * ILCE-7M4B        -> a74
- */
 function extractSonyCameraIdentity(
-  value: string | null | undefined
+  value:
+    | string
+    | null
+    | undefined
 ): string | null {
   if (!value) {
     return null;
@@ -1538,23 +1363,35 @@ function extractSonyCameraIdentity(
     decodedValue =
       decodeURIComponent(value);
   } catch {
-    // Keep the original value when URL decoding fails.
+    // Keep the original value if URL decoding fails.
   }
 
-  const normalised = decodedValue
-    .toLowerCase()
-    .replace(/[+/_-]+/g, " ")
-    .replace(/[^a-z0-9\s]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+  const normalised =
+    decodedValue
+      .toLowerCase()
+      .replace(
+        /[+/_-]+/g,
+        " "
+      )
+      .replace(
+        /[^a-z0-9\s]/g,
+        " "
+      )
+      .replace(/\s+/g, " ")
+      .trim();
 
-  const skuValue = decodedValue
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "");
+  const skuValue =
+    decodedValue
+      .toLowerCase()
+      .replace(
+        /[^a-z0-9]/g,
+        ""
+      );
 
-  const skuMatch = skuValue.match(
-    /ilce7([rs]?)m(\d+)[a-z]*/
-  );
+  const skuMatch =
+    skuValue.match(
+      /ilce7([rs]?)m(\d+)[a-z]*/
+    );
 
   if (skuMatch) {
     const series =
@@ -1575,7 +1412,8 @@ function extractSonyCameraIdentity(
 
   if (publicModelMatch) {
     const series =
-      publicModelMatch[1] ?? "";
+      publicModelMatch[1] ??
+      "";
 
     const generation =
       numberFromCameraGeneration(
@@ -1586,7 +1424,10 @@ function extractSonyCameraIdentity(
   }
 
   const compactValue =
-    normalised.replace(/\s+/g, "");
+    normalised.replace(
+      /\s+/g,
+      ""
+    );
 
   const compactModelMatch =
     compactValue.match(
@@ -1595,7 +1436,8 @@ function extractSonyCameraIdentity(
 
   if (compactModelMatch) {
     return `a7${
-      compactModelMatch[1] ?? ""
+      compactModelMatch[1] ??
+      ""
     }${compactModelMatch[2]}`;
   }
 

@@ -1,5 +1,65 @@
 import { compareExactProductVariant } from "@/app/components/lib/shopping/exactProductMatcher";
 
+const EBAY_ACCESSORY_TERMS = [
+  "strap",
+  "neck strap",
+  "shoulder strap",
+  "wrist strap",
+  "camera strap",
+  "camera cage",
+  "cage",
+  "battery",
+  "battery pack",
+  "charger",
+  "charging cable",
+  "case",
+  "cover",
+  "protector",
+  "screen protector",
+  "tempered glass",
+  "body cap",
+  "lens cap",
+  "grip",
+  "battery grip",
+  "tripod",
+  "mount",
+  "adapter",
+  "memory card",
+  "filter",
+  "camera bag",
+  "replacement",
+  "spare part",
+  "parts only",
+];
+
+function normaliseText(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function containsAccessoryTerm(
+  value: string
+): boolean {
+  const normalised =
+    normaliseText(value);
+
+  return EBAY_ACCESSORY_TERMS.some(
+    (term) =>
+      normalised.includes(
+        normaliseText(term)
+      )
+  );
+}
+
+function queryRequestsAccessory(
+  query: string
+): boolean {
+  return containsAccessoryTerm(query);
+}
+
 type EbayTokenResponse = {
   access_token: string;
   expires_in: number;
@@ -136,6 +196,10 @@ export async function findEbayAffiliateListing(
 
 const data =
   (await response.json()) as EbaySearchResponse;
+  console.log(
+  "🟦 eBay Raw Results",
+  (data.itemSummaries ?? []).map(item => item.title)
+);
 
 const candidates = (
   data.itemSummaries ?? []
@@ -144,6 +208,25 @@ const candidates = (
     !item.itemAffiliateWebUrl ||
     !item.title
   ) {
+    return false;
+  }
+
+  const accessoryListing =
+    containsAccessoryTerm(
+      item.title
+    );
+
+  const accessoryRequested =
+    queryRequestsAccessory(query);
+
+  if (
+    accessoryListing &&
+    !accessoryRequested
+  ) {
+    console.log(
+      `🚫 eBay accessory rejected: ${item.title}`
+    );
+
     return false;
   }
 
@@ -165,6 +248,10 @@ const candidates = (
 
     return false;
   }
+  console.log(
+  "✅ eBay Accepted:",
+  item.title
+);
 
   return true;
 });

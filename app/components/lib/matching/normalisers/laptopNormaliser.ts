@@ -1,24 +1,32 @@
-import type { ProductFingerprint } from "../productFingerprint";
+import type { ProductFingerprint } from "@/app/components/lib/matching/productFingerprint";
 
 import { normaliseBrand } from "./brand";
 import { normaliseMemory } from "./memory";
 import { normaliseStorage } from "./storage";
 import { normaliseColour } from "./colour";
 import { detectAppleSilicon } from "./appleSilicon";
+import { detectIntelCpu } from "./intelCpu";
 
 export function normaliseLaptopFingerprint(
   fingerprint: ProductFingerprint
 ): ProductFingerprint {
   const brand = normaliseBrand(fingerprint.brand);
 
+ const searchableValues = [
+  fingerprint.model.base,
+  fingerprint.model.revision,
+  fingerprint.model.variant,
+];
+
   const appleSilicon =
-    brand === "apple"
-      ? detectAppleSilicon(
-          fingerprint.model.base,
-          fingerprint.model.revision,
-          fingerprint.model.variant
-        )
-      : null;
+  brand === "apple"
+    ? detectAppleSilicon(...searchableValues)
+    : null;
+
+const intelCpu =
+  appleSilicon === null
+    ? detectIntelCpu(...searchableValues)
+    : null;
 
   return {
     ...fingerprint,
@@ -28,9 +36,9 @@ export function normaliseLaptopFingerprint(
     model: {
       ...fingerprint.model,
 
-      // Preserve the existing variant unless an Apple chip is identified.
       variant:
         appleSilicon ??
+        intelCpu ??
         fingerprint.model.variant,
     },
 
