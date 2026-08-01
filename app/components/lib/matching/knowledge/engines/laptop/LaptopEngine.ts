@@ -4,13 +4,18 @@ import type { LaptopKnowledge } from "@/app/components/lib/matching/knowledge/re
 import type { LaptopIntelligence } from "./LaptopCapabilities";
 import { GpuEngine } from "../components/gpu/GpuEngine";
 import { CpuEngine } from "../components/cpu/CpuEngine";
+import { ReasoningEngine } from "../reasoning/ReasoningEngine";
 import { BatteryEngine } from "../components/battery/BatteryEngine";
+import {
+  ThermalEngine,
+} from "../components/thermal/ThermalEngine";
 import { StorageEngine } from "../components/storage/StorageEngine";
 import { MemoryEngine } from "../components/memory/MemoryEngine";
 import {
   calculateLaptopOverallScore,
   createLaptopCapability,
 } from "./LaptopScoring";
+
 
 export class LaptopEngine
   implements ProductEngine<LaptopKnowledge, LaptopIntelligence>
@@ -24,6 +29,10 @@ export class LaptopEngine
   new MemoryEngine();
   private readonly storageEngine =
   new StorageEngine();
+  private readonly thermalEngine =
+  new ThermalEngine();
+  private readonly reasoningEngine =
+  new ReasoningEngine();
 
   analyse(
   laptop: LaptopKnowledge,
@@ -32,6 +41,8 @@ export class LaptopEngine
     this.cpuEngine.analyse(
       laptop.canonical?.processor,
     );
+
+    
 
   const gpuIntelligence =
     this.gpuEngine.analyse(
@@ -56,6 +67,11 @@ export class LaptopEngine
   const storageIntelligence =
   this.storageEngine.analyse(
     laptop.canonical?.storage,
+  );
+
+  const thermalIntelligence =
+  this.thermalEngine.analyse(
+    laptop.canonical?.thermal,
   );
 
     /*
@@ -137,6 +153,7 @@ export class LaptopEngine
 
       value: 80,
     };
+    
 
  const strengths = [
   ...(laptop.strengths ?? []),
@@ -146,6 +163,7 @@ export class LaptopEngine
   ...batteryIntelligence.strengths,
   ...memoryIntelligence.strengths,
   ...storageIntelligence.strengths,
+  ...thermalIntelligence.strengths,
 ];
 
 const weaknesses = [
@@ -156,6 +174,7 @@ const weaknesses = [
   ...batteryIntelligence.weaknesses,
   ...memoryIntelligence.weaknesses,
   ...storageIntelligence.weaknesses,
+  ...thermalIntelligence.weaknesses,
 ];
 
 const warnings = [
@@ -165,7 +184,10 @@ const warnings = [
   ...batteryIntelligence.warnings,
   ...memoryIntelligence.warnings,
   ...storageIntelligence.warnings,
+  ...thermalIntelligence.warnings,
 ];
+
+
 
     return {
       productId: laptop.id,
@@ -176,6 +198,7 @@ display: displayIntelligence,
 battery: batteryIntelligence,
 memory: memoryIntelligence,
 storage: storageIntelligence,
+thermal: thermalIntelligence,
 
       overallScore:
         calculateLaptopOverallScore(
@@ -193,22 +216,38 @@ storage: storageIntelligence,
       
 
       capabilities: {
-       everydayUse:
+      everydayUse:
   createLaptopCapability(
-    this.combineScores(
+    this.combineSixScores(
       cpuIntelligence.capabilities
         .everydayUse.score,
       memoryIntelligence.capabilities
         .everydayUse.score,
-      0.65,
-      0.35,
-      90,
+      storageIntelligence.capabilities
+        .everydayUse.score,
+      displayIntelligence.capabilities
+        .webBrowsing.score,
+      batteryIntelligence.capabilities
+        .everydayUse.score,
+      thermalIntelligence.capabilities
+        .everydayUse.score,
+      0.20,
+      0.15,
+      0.20,
+      0.15,
+      0.20,
+      0.10,
+      70,
     ),
-    this.combineConfidence(
+    this.combineSixConfidences(
       cpuIntelligence.confidence,
       memoryIntelligence.confidence,
+      storageIntelligence.confidence,
+      displayIntelligence.confidence,
+      batteryIntelligence.confidence,
+      thermalIntelligence.confidence,
     ),
-    "Everyday-use capability combines processor responsiveness with sufficient memory for common applications and browser use.",
+    "Everyday-use capability combines general processor responsiveness, memory, storage speed, display comfort, battery life and quiet thermal behaviour.",
   ),
 
         officeWork:
@@ -267,7 +306,7 @@ storage: storageIntelligence,
 
        photoEditing:
   createLaptopCapability(
-    this.combineFiveScores(
+    this.combineSixScores(
       cpuIntelligence.capabilities
         .photoEditing.score,
       gpuIntelligence.capabilities
@@ -278,51 +317,59 @@ storage: storageIntelligence,
         .photoEditing.score,
       storageIntelligence.capabilities
         .photoEditing.score,
-      0.3,
+      thermalIntelligence.capabilities
+        .creativeWork.score,
+      0.20,
       0.15,
       0.25,
       0.15,
-      0.15,
-      75,
-    ),
-    this.combineFiveConfidences(
-      cpuIntelligence.confidence,
-      gpuIntelligence.confidence,
-      displayIntelligence.confidence,
-      memoryIntelligence.confidence,
-      storageIntelligence.confidence,
-    ),
-    "Photo-editing capability combines processor performance, graphics acceleration, display colour accuracy, available memory and storage performance.",
-  ),
-
-     videoEditing:
-  createLaptopCapability(
-    this.combineFiveScores(
-      cpuIntelligence.capabilities
-        .videoEditing.score,
-      gpuIntelligence.capabilities
-        .videoEditing.score,
-      displayIntelligence.capabilities
-        .videoEditing.score,
-      memoryIntelligence.capabilities
-        .videoEditing.score,
-      storageIntelligence.capabilities
-        .videoEditing.score,
-      0.25,
-      0.3,
-      0.15,
-      0.15,
+      0.10,
       0.15,
       70,
     ),
-    this.combineFiveConfidences(
+    this.combineSixConfidences(
       cpuIntelligence.confidence,
       gpuIntelligence.confidence,
       displayIntelligence.confidence,
       memoryIntelligence.confidence,
       storageIntelligence.confidence,
+      thermalIntelligence.confidence,
     ),
-    "Video-editing capability combines processor performance, graphics acceleration, display quality, available memory and storage speed.",
+    "Photo-editing capability combines processor performance, graphics acceleration, display quality, memory capacity, storage responsiveness and sustained thermal behaviour.",
+  ),
+
+    videoEditing:
+  createLaptopCapability(
+    this.combineSixScores(
+      cpuIntelligence.capabilities
+        .videoEditing.score,
+      gpuIntelligence.capabilities
+        .videoEditing.score,
+      displayIntelligence.capabilities
+        .videoEditing.score,
+      memoryIntelligence.capabilities
+        .videoEditing.score,
+      storageIntelligence.capabilities
+        .videoEditing.score,
+      thermalIntelligence.capabilities
+        .creativeWork.score,
+      0.22,
+      0.27,
+      0.13,
+      0.13,
+      0.10,
+      0.15,
+      70,
+    ),
+    this.combineSixConfidences(
+      cpuIntelligence.confidence,
+      gpuIntelligence.confidence,
+      displayIntelligence.confidence,
+      memoryIntelligence.confidence,
+      storageIntelligence.confidence,
+      thermalIntelligence.confidence,
+    ),
+    "Video-editing capability combines processor performance, graphics acceleration, display quality, memory capacity, storage performance and sustained thermal behaviour.",
   ),
      graphicDesign:
   createLaptopCapability(
@@ -365,29 +412,41 @@ storage: storageIntelligence,
 
       softwareDevelopment:
   createLaptopCapability(
-    this.combineThreeScores(
+    this.combineSixScores(
       cpuIntelligence.capabilities
         .softwareDevelopment.score,
       memoryIntelligence.capabilities
         .softwareDevelopment.score,
       storageIntelligence.capabilities
         .softwareDevelopment.score,
-      0.45,
-      0.35,
-      0.2,
-      75,
+      thermalIntelligence.capabilities
+        .softwareDevelopment.score,
+      batteryIntelligence.capabilities
+        .heavyWorkloads.score,
+      displayIntelligence.capabilities
+        .videoEditing.score,
+      0.30,
+      0.20,
+      0.15,
+      0.15,
+      0.10,
+      0.10,
+      70,
     ),
-    this.combineThreeConfidences(
+    this.combineSixConfidences(
       cpuIntelligence.confidence,
       memoryIntelligence.confidence,
       storageIntelligence.confidence,
+      thermalIntelligence.confidence,
+      batteryIntelligence.confidence,
+      displayIntelligence.confidence,
     ),
-    "Software-development capability combines processor performance, available memory and storage responsiveness for IDEs, builds, local services and development tools.",
+    "Software-development capability combines processor performance, memory capacity, storage responsiveness, sustained thermal performance, battery life and display quality for long coding sessions.",
   ),
 
- aiWorkloads:
+aiWorkloads:
   createLaptopCapability(
-    this.combineFourScores(
+    this.combineSixScores(
       cpuIntelligence.capabilities
         .aiWorkloads.score,
       gpuIntelligence.capabilities
@@ -396,21 +455,28 @@ storage: storageIntelligence,
         .aiWorkloads.score,
       storageIntelligence.capabilities
         .aiWorkloads.score,
-      0.25,
-      0.4,
-      0.2,
+      thermalIntelligence.capabilities
+        .aiWorkloads.score,
+      batteryIntelligence.capabilities
+        .heavyWorkloads.score,
+      0.20,
+      0.30,
+      0.20,
+      0.10,
       0.15,
-      40,
+      0.05,
+      55,
     ),
-    this.combineFourConfidences(
+    this.combineSixConfidences(
       cpuIntelligence.confidence,
       gpuIntelligence.confidence,
       memoryIntelligence.confidence,
       storageIntelligence.confidence,
+      thermalIntelligence.confidence,
+      batteryIntelligence.confidence,
     ),
-    "AI workload capability combines processor acceleration, graphics compute, available memory and storage performance for models and datasets.",
+    "AI-workload capability combines processor performance, graphics acceleration, memory capacity, storage performance, sustained thermal behaviour and heavy-workload battery capability.",
   ),
-
         /*
          * These remain estimates until the GPU Engine is connected.
          */
@@ -435,43 +501,65 @@ storage: storageIntelligence,
     ),
     "Casual gaming capability combines graphics performance, display quality and storage speed for loading and asset streaming.",
   ),
-    competitiveGaming:
+   competitiveGaming:
   createLaptopCapability(
-    this.combineThreeScores(
+    this.combineFiveScores(
       gpuIntelligence.capabilities
         .competitiveGaming.score,
       displayIntelligence.capabilities
         .competitiveGaming.score,
+      cpuIntelligence.capabilities
+        .videoEditing.score,
       storageIntelligence.capabilities
         .gaming.score,
-      0.65,
-      0.25,
-      0.10,
-      35,
+      thermalIntelligence.capabilities
+        .gaming.score,
+      0.35,
+      0.30,
+      0.15,
+      0.05,
+      0.15,
+      65,
     ),
-    this.combineThreeConfidences(
+    this.combineFiveConfidences(
       gpuIntelligence.confidence,
       displayIntelligence.confidence,
+      cpuIntelligence.confidence,
       storageIntelligence.confidence,
+      thermalIntelligence.confidence,
     ),
-    "Competitive gaming capability combines graphics performance, display responsiveness and storage performance.",
+    "Competitive-gaming capability combines high-frame-rate graphics performance, display responsiveness, processor performance, storage responsiveness and sustained thermal behaviour.",
   ),
-    aaaGaming:
+   aaaGaming:
   createLaptopCapability(
-    this.combineScores(
+    this.combineSixScores(
+      cpuIntelligence.capabilities.videoEditing.score,
       gpuIntelligence.capabilities
-        .aaaGaming.score,
+        .videoEditing.score,
+      displayIntelligence.capabilities.videoEditing.score,
+      memoryIntelligence.capabilities
+        .multitasking.score,
       storageIntelligence.capabilities
         .gaming.score,
-      0.85,
+      thermalIntelligence.capabilities
+        .gaming.score,
       0.15,
-      25,
+      0.35,
+      0.15,
+      0.10,
+      0.10,
+      0.15,
+      60,
     ),
-    this.combineConfidence(
+    this.combineSixConfidences(
+      cpuIntelligence.confidence,
       gpuIntelligence.confidence,
+      displayIntelligence.confidence,
+      memoryIntelligence.confidence,
       storageIntelligence.confidence,
+      thermalIntelligence.confidence,
     ),
-    "AAA gaming capability combines graphics performance with storage speed for large modern games.",
+    "AAA-gaming capability combines processor performance, graphics performance, display quality, memory, storage responsiveness and sustained thermal behaviour.",
   ),
         portability:
           createLaptopCapability(
@@ -607,6 +695,7 @@ storage: storageIntelligence,
       ),
     );
   }
+  
 
   private estimateCompetitiveGamingScore(
     performanceScore: number,
@@ -844,6 +933,94 @@ private getGpuCapabilityConfidence(
   return confidence > 0
     ? confidence
     : 45;
+}
+private combineSixScores(
+  scoreOne: number,
+  scoreTwo: number,
+  scoreThree: number,
+  scoreFour: number,
+  scoreFive: number,
+  scoreSix: number,
+  weightOne: number,
+  weightTwo: number,
+  weightThree: number,
+  weightFour: number,
+  weightFive: number,
+  weightSix: number,
+  fallbackScore: number,
+): number {
+  const scores = [
+    scoreOne,
+    scoreTwo,
+    scoreThree,
+    scoreFour,
+    scoreFive,
+    scoreSix,
+  ];
+
+  const weights = [
+    weightOne,
+    weightTwo,
+    weightThree,
+    weightFour,
+    weightFive,
+    weightSix,
+  ];
+
+  let weightedScore = 0;
+  let totalWeight = 0;
+
+  scores.forEach((score, index) => {
+    if (
+      typeof score === "number" &&
+      Number.isFinite(score)
+    ) {
+      weightedScore +=
+        score * weights[index];
+
+      totalWeight +=
+        weights[index];
+    }
+  });
+
+  if (totalWeight === 0) {
+    return fallbackScore;
+  }
+
+  return Math.max(
+    0,
+    Math.min(
+      100,
+      Math.round(
+        weightedScore / totalWeight,
+      ),
+    ),
+  );
+}
+private combineSixConfidences(
+  confidenceOne: number,
+  confidenceTwo: number,
+  confidenceThree: number,
+  confidenceFour: number,
+  confidenceFive: number,
+  confidenceSix: number,
+): number {
+  return Math.max(
+    0,
+    Math.min(
+      100,
+      Math.round(
+        (
+          confidenceOne +
+          confidenceTwo +
+          confidenceThree +
+          confidenceFour +
+          confidenceFive +
+          confidenceSix
+        ) / 6,
+      ),
+    ),
+  );
 }
 private combineFourConfidences(
   firstConfidence: number,
@@ -1172,4 +1349,5 @@ private combineThreeConfidences(
       knownConfidences.length,
   );
 }
+
 }

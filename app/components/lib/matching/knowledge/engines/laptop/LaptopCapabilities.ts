@@ -13,6 +13,10 @@ import type {
   GpuIntelligence,
 } from "../components/gpu/GpuIntelligence";
 
+import {
+  ThermalIntelligence,
+} from "../components/thermal/ThermalIntelligence";
+
 import type {
   DisplayIntelligence,
 } from "../components/display/DisplayIntelligence";
@@ -94,6 +98,7 @@ export interface LaptopIntelligence {
   memory: MemoryIntelligence;
 
   capabilities: LaptopCapabilities;
+  thermal: ThermalIntelligence;
 
   strengths: string[];
   weaknesses: string[];
