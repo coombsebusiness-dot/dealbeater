@@ -82,6 +82,32 @@ export const beginnerPhotographyBuyingGuide:
       "Buying used from a reputable retailer can stretch your budget further.",
     ],
   },
+  blinlxOpinion: {
+  title:
+    "What Blinlx Thinks",
+
+  summary:
+    "Most beginners do not need the most powerful or expensive camera. They need a camera that is enjoyable to carry, straightforward to learn and supported by lenses that match the photography they want to explore.",
+
+  ifItWasOurMoney:
+    "We would buy a modern APS-C mirrorless camera, choose one useful everyday lens and keep part of the budget for a spare battery, memory card and comfortable camera bag. We would rather buy a balanced setup than spend everything on the camera body.",
+
+  reasons: [
+    "Modern mirrorless autofocus makes it easier for beginners to capture sharp photographs.",
+    "APS-C cameras provide an excellent balance of image quality, size and price.",
+    "A useful lens will influence your photography more than small differences between camera bodies.",
+    "Keeping money aside for essential accessories prevents expensive surprises after the purchase.",
+  ],
+
+  caveats: [
+    "A used DSLR may still be the better choice when the budget is extremely limited.",
+    "Wildlife and sports photography may require more spending on lenses than general photography.",
+    "The best camera on paper can still be the wrong choice if it feels uncomfortable in your hands.",
+  ],
+
+  confidence:
+    96,
+},
 
   summary: [
     "Choose the camera that fits what you want to photograph, not the one with the longest specification sheet.",

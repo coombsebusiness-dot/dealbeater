@@ -3,6 +3,14 @@ import type {
 } from "./BuyingGuideSection";
 
 import type {
+  BlinlxOpinion,
+} from "./BlinlxOpinion";
+
+import {
+  WhatBlinlxThinks,
+} from "@/app/components/guide/WhatBlinlxThinks";
+
+import type {
   FAQ,
 } from "./FAQ";
 
@@ -86,6 +94,8 @@ export interface BuyingGuide {
   summary: string[];
 
   recommendations?: Recommendation[];
+
+  blinlxOpinion?: BlinlxOpinion;
 
   sections: BuyingGuideSection[];
 

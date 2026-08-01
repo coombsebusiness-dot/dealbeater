@@ -3,8 +3,22 @@ import type {
 } from "@/types/buying-guide/BuyingGuide";
 
 import {
+  DiscoveryRail,
+} from "@/app/components/discovery/DiscoveryRail";
+
+
+
+import {
+  discoveryEngine,
+} from "@/app/lib/discovery/DiscoveryEngine";
+
+import {
   GuidePromotionRail,
 } from "./GuidePromotionRail";
+
+import {
+  WhatBlinlxThinks,
+} from "@/app/components/guide/WhatBlinlxThinks";
 
 import {
   BackToTop,
@@ -100,27 +114,19 @@ export function BuyingGuide({
       guide,
     );
 
-  const promotions = [
-  {
-    id: "frame",
-    label: "Creative Community",
-    title: "Share your photography on Frame",
-    href: "https://frameapp.uk",
-    buttonLabel: "Discover Frame",
-    image: "/images/promotions/frame-guide-banner.webp",
-    imageAlt: "Frame creative community promotional banner",
-  },
-  {
-    id: "imsorted",
-    label: "Life Admin",
-    title: "Keep life organised with I'm Sorted",
-    href: "https://imsorted.co.uk",
-    buttonLabel: "Explore I'm Sorted",
-    image: "/images/promotions/imsorted-guide-banner.webp",
-    imageAlt: "I'm Sorted promotional banner",
-  },
-];
+ 
 
+  const discoveryItems =
+  discoveryEngine.build({
+    category:
+      guide.category.toLowerCase(),
+
+    guideSlug:
+      guide.slug,
+
+    productType:
+      guide.topic,
+  });
   return (
    <>
   <ReadingProgress />
@@ -175,6 +181,13 @@ export function BuyingGuide({
     <BlinlxVerdict
       verdict={guide.verdict}
     />
+    {guide.blinlxOpinion && (
+  <WhatBlinlxThinks
+    opinion={
+      guide.blinlxOpinion
+    }
+  />
+)}
 
     <BuyingGuideSummary
       items={guide.summary}
@@ -245,10 +258,10 @@ export function BuyingGuide({
     />
   </main>
 
- 
-  <GuidePromotionRail
-  promotions={promotions}
+ <DiscoveryRail
+  items={discoveryItems}
 />
+  
 </div>
         </div>
       </article>
