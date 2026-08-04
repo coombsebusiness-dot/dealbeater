@@ -7,29 +7,21 @@ import {
 } from "@/app/components/lib/blog-posts";
 
 import {
-  supabaseAdmin,
-} from "@/app/components/lib/supabase/admin";
-
-import {
   getAllBuyingGuides,
 } from "@/knowledge/guides/GuideRegistry";
+
+import {
+  defaultProductBrain,
+} from "@/knowledge/products/defaultProductBrain";
 
 export const dynamic =
   "force-dynamic";
 
-export const revalidate = 0;
+export const revalidate =
+  0;
 
 const baseUrl =
   "https://blinlx.com";
-
-type SitemapProduct = {
-  slug: string;
-  category: string | null;
-  brand: string | null;
-  model: string | null;
-  updated_at: string | null;
-  created_at: string | null;
-};
 
 function createUrlSlug(
   value?: string | null,
@@ -41,10 +33,22 @@ function createUrlSlug(
   return value
     .trim()
     .toLowerCase()
-    .replace(/&/g, "and")
-    .replace(/['’]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+    .replace(
+      /&/g,
+      "and",
+    )
+    .replace(
+      /['’]/g,
+      "",
+    )
+    .replace(
+      /[^a-z0-9]+/g,
+      "-",
+    )
+    .replace(
+      /^-+|-+$/g,
+      "",
+    );
 }
 
 function createCategorySlug(
@@ -59,40 +63,88 @@ function createCategorySlug(
     return null;
   }
 
-  const categoryRoutes: Record<
-    string,
-    string
-  > = {
-    phone: "phones",
-    phones: "phones",
-    smartphone: "phones",
-    smartphones: "phones",
-    "mobile phone": "phones",
-    "mobile phones": "phones",
+  const categoryRoutes:
+    Record<string, string> = {
+    phone:
+      "phones",
 
-    laptop: "laptops",
-    laptops: "laptops",
+    phones:
+      "phones",
 
-    tablet: "tablets",
-    tablets: "tablets",
+    smartphone:
+      "phones",
 
-    television: "tvs",
-    televisions: "tvs",
-    tv: "tvs",
-    tvs: "tvs",
+    smartphones:
+      "phones",
 
-    headphone: "headphones",
-    headphones: "headphones",
-    earbuds: "headphones",
+    "mobile phone":
+      "phones",
 
-    smartwatch: "smartwatches",
-    smartwatches: "smartwatches",
+    "mobile phones":
+      "phones",
 
-    camera: "cameras",
-    cameras: "cameras",
+    laptop:
+      "laptops",
 
-    monitor: "monitors",
-    monitors: "monitors",
+    laptops:
+      "laptops",
+
+    tablet:
+      "tablets",
+
+    tablets:
+      "tablets",
+
+    television:
+      "tvs",
+
+    televisions:
+      "tvs",
+
+    tv:
+      "tvs",
+
+    tvs:
+      "tvs",
+
+    headphone:
+      "headphones",
+
+    headphones:
+      "headphones",
+
+    earbuds:
+      "headphones",
+
+    smartwatch:
+      "smartwatches",
+
+    smartwatches:
+      "smartwatches",
+
+    camera:
+      "cameras",
+
+    cameras:
+      "cameras",
+
+    lens:
+      "lenses",
+
+    lenses:
+      "lenses",
+
+    battery:
+      "batteries",
+
+    batteries:
+      "batteries",
+
+    monitor:
+      "monitors",
+
+    monitors:
+      "monitors",
 
     "games console":
       "games-consoles",
@@ -111,8 +163,77 @@ function createCategorySlug(
     categoryRoutes[
       normalisedCategory
     ] ??
-    createUrlSlug(category)
+    createUrlSlug(
+      category,
+    )
   );
+}
+
+function createProductModelSlug(
+  productSlug: string,
+  brand: string,
+): string | null {
+  const normalisedProductSlug =
+    createUrlSlug(
+      productSlug,
+    );
+
+  const normalisedBrand =
+    createUrlSlug(
+      brand,
+    );
+
+  if (
+    !normalisedProductSlug ||
+    !normalisedBrand
+  ) {
+    return null;
+  }
+
+  const brandPrefix =
+    `${normalisedBrand}-`;
+
+  if (
+    normalisedProductSlug.startsWith(
+      brandPrefix,
+    )
+  ) {
+    return normalisedProductSlug.slice(
+      brandPrefix.length,
+    );
+  }
+
+  return normalisedProductSlug;
+}
+
+function createValidDate(
+  value:
+    | string
+    | Date
+    | null
+    | undefined,
+  fallback: string,
+): Date {
+  const candidate =
+    value
+      ? new Date(
+          value,
+        )
+      : new Date(
+          fallback,
+        );
+
+  if (
+    Number.isNaN(
+      candidate.getTime(),
+    )
+  ) {
+    return new Date(
+      fallback,
+    );
+  }
+
+  return candidate;
 }
 
 function removeDuplicateUrls(
@@ -125,9 +246,11 @@ function removeDuplicateUrls(
       MetadataRoute.Sitemap[number]
     >();
 
-  pages.forEach((page) => {
+  for (const page of pages) {
     const existing =
-      pagesByUrl.get(page.url);
+      pagesByUrl.get(
+        page.url,
+      );
 
     if (!existing) {
       pagesByUrl.set(
@@ -135,7 +258,7 @@ function removeDuplicateUrls(
         page,
       );
 
-      return;
+      continue;
     }
 
     const existingDate =
@@ -161,137 +284,131 @@ function removeDuplicateUrls(
         page,
       );
     }
-  });
+  }
 
   return Array.from(
     pagesByUrl.values(),
   );
 }
 
-export default async function sitemap():
-  Promise<
-    MetadataRoute.Sitemap
-  > {
-  const {
-    data: products,
-    error,
-  } = await supabaseAdmin
-    .from("products")
-    .select(
-      "slug, category, brand, model, updated_at, created_at",
-    )
-    .not(
-      "category",
-      "is",
-      null,
-    )
-    .not(
-      "brand",
-      "is",
-      null,
-    )
-    .not(
-      "model",
-      "is",
-      null,
-    )
-    .order(
-      "updated_at",
-      {
-        ascending: false,
-      },
-    );
-
-  if (error) {
-    console.error(
-      "SITEMAP_PRODUCTS_SUPABASE_ERROR:",
-      error,
-    );
-  }
+export default function sitemap():
+  MetadataRoute.Sitemap {
+  const products =
+    defaultProductBrain
+      .getAllKnowledge();
 
   const staticPages:
     MetadataRoute.Sitemap = [
     {
-      url: baseUrl,
+      url:
+        baseUrl,
+
       lastModified:
         new Date(
           "2026-07-24",
         ),
+
       changeFrequency:
         "daily",
-      priority: 1,
+
+      priority:
+        1,
     },
 
     {
       url:
         `${baseUrl}/about`,
+
       lastModified:
         new Date(
           "2026-07-24",
         ),
+
       changeFrequency:
         "monthly",
-      priority: 0.6,
+
+      priority:
+        0.6,
     },
 
     {
       url:
         `${baseUrl}/contact`,
+
       lastModified:
         new Date(
           "2026-07-24",
         ),
+
       changeFrequency:
         "yearly",
-      priority: 0.4,
+
+      priority:
+        0.4,
     },
 
     {
       url:
         `${baseUrl}/privacy`,
+
       lastModified:
         new Date(
           "2026-07-24",
         ),
+
       changeFrequency:
         "yearly",
-      priority: 0.3,
+
+      priority:
+        0.3,
     },
 
     {
       url:
         `${baseUrl}/terms`,
+
       lastModified:
         new Date(
           "2026-07-24",
         ),
+
       changeFrequency:
         "yearly",
-      priority: 0.3,
+
+      priority:
+        0.3,
     },
 
     {
       url:
         `${baseUrl}/cookies`,
+
       lastModified:
         new Date(
           "2026-07-24",
         ),
+
       changeFrequency:
         "yearly",
-      priority: 0.3,
+
+      priority:
+        0.3,
     },
 
     {
       url:
         `${baseUrl}/blog`,
+
       lastModified:
         new Date(
-          "2026-07-30",
+          "2026-08-04",
         ),
+
       changeFrequency:
         "daily",
-      priority: 0.8,
+
+      priority:
+        0.8,
     },
   ];
 
@@ -303,15 +420,17 @@ export default async function sitemap():
           `${baseUrl}/blog/${post.slug}`,
 
         lastModified:
-          new Date(
+          createValidDate(
             post.updatedAt ??
               post.publishedAt,
+            "2026-07-24",
           ),
 
         changeFrequency:
           "monthly",
 
-        priority: 0.7,
+        priority:
+          0.7,
       }),
     );
 
@@ -323,72 +442,81 @@ export default async function sitemap():
           `${baseUrl}${guide.seo.canonicalPath}`,
 
         lastModified:
-          new Date(
-            guide.updatedAt,
+          createValidDate(
+            guide.updatedAt ??
+              guide.publishedAt,
+            "2026-08-01",
           ),
 
         changeFrequency:
           "monthly",
 
-        priority: 0.9,
+        priority:
+          0.9,
       }),
     );
 
-  const productPages =
-    (
-      (products ?? []) as
-        SitemapProduct[]
-    )
-      .map((product) => {
-        const categorySlug =
-          createCategorySlug(
-            product.category,
-          );
+  const productPages:
+    MetadataRoute.Sitemap =
+    products
+      .map(
+        (
+          product,
+        ):
+          | MetadataRoute.Sitemap[number]
+          | null => {
+          const categorySlug =
+            createCategorySlug(
+              product.category,
+            );
 
-        const brandSlug =
-          createUrlSlug(
-            product.brand,
-          );
+          const brandSlug =
+            createUrlSlug(
+              product.brand,
+            );
 
-        const modelSlug =
-          createUrlSlug(
-            product.model,
-          );
+          const modelSlug =
+            createProductModelSlug(
+              product.slug,
+              product.brand,
+            );
 
-        if (
-          !categorySlug ||
-          !brandSlug ||
-          !modelSlug
-        ) {
-          return null;
-        }
+          if (
+            !categorySlug ||
+            !brandSlug ||
+            !modelSlug
+          ) {
+            return null;
+          }
 
-        return {
-          url:
-            `${baseUrl}/products/` +
-            `${categorySlug}/` +
-            `${brandSlug}/` +
-            `${modelSlug}`,
+          return {
+            url:
+              `${baseUrl}/products/` +
+              `${categorySlug}/` +
+              `${brandSlug}/` +
+              `${modelSlug}`,
 
-          lastModified:
-            new Date(
-              product.updated_at ??
-                product.created_at ??
-                Date.now(),
-            ),
+            lastModified:
+              createValidDate(
+                product.updatedAt ??
+                  product.createdAt,
+                "2026-08-04",
+              ),
 
-          changeFrequency:
-            "weekly" as const,
+            changeFrequency:
+              "weekly",
 
-          priority: 0.8,
-        };
-      })
+            priority:
+              0.9,
+          };
+        },
+      )
       .filter(
         (
           page,
-        ): page is NonNullable<
-          typeof page
-        > => page !== null,
+        ): page is
+          MetadataRoute.Sitemap[number] =>
+          page !== null,
       );
 
   return removeDuplicateUrls([
