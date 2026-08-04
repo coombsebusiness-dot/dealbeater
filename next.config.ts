@@ -23,6 +23,12 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "johnlewis.scene7.com",
       },
+      {
+        protocol: "https",
+        hostname: "uanzajhkaksdlldlfjjq.supabase.co",
+        pathname:
+          "/storage/v1/object/public/product-media/**",
+      },
     ],
   },
 };

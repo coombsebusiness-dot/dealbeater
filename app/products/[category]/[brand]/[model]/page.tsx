@@ -1,7 +1,10 @@
 import { notFound } from "next/navigation";
+import {
+  loadProductPage,
+} from "@/knowledge/products/loadProductPage";
 
 import type { Product } from "@/types/product";
-import { extractProductIdentity } from "@/lib/product-intelligence/product-identity";
+
 import BlinlxVerified from "@/app/components/product/BlinlxVerified";
 import ProductHero from "@/app/components/product/ProductHero";
 import ProductDecision from "@/app/components/product/ProductDecision";
@@ -17,7 +20,7 @@ import BlinlxIntelligenceScore from "@/app/components/product/BlinlxIntelligence
 import BlinlxGauge from "@/app/components/results/BlinlxGauge";
 import ShareReport from "@/app/components/product/ShareReport";
 
-import { getProductBySlug } from "@/app/components/lib/products/getProductBySlug";
+
 
 import {
   buildProductPageSchema,
@@ -40,102 +43,7 @@ function normaliseSlug(value: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-function titleCase(value: string): string {
-  return value
-    .replace(/[-_]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/\b\w/g, (character) =>
-      character.toUpperCase()
-    );
-}
 
-function cleanProductName(
-  value: string,
-  fallback: string
-): string {
-  const productName =
-    value.trim().length > 0
-      ? value
-      : titleCase(fallback);
-
-  return productName
-    .replace(
-      /\bsony a1\b/i,
-      "Sony Alpha 1"
-    )
-    .replace(
-      /\bcamera body only\b/i,
-      "Mirrorless Camera Body"
-    )
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function createVerdictLabel(
-  product: Product
-): string | undefined {
-  if (
-    typeof product.verdictLabel ===
-      "string" &&
-    product.verdictLabel.trim().length > 0
-  ) {
-    return product.verdictLabel.trim();
-  }
-
-  if (
-    typeof product.verdict !== "string" ||
-    product.verdict.trim().length === 0
-  ) {
-    return undefined;
-  }
-
-  return product.verdict
-    .replace(/_/g, " ")
-    .toLowerCase()
-    .replace(/\b\w/g, (character) =>
-      character.toUpperCase()
-    );
-}
-
-function createPriceStatus(
-  product: Product
-): Product["priceStatus"] {
-  if (product.priceStatus) {
-    return product.priceStatus;
-  }
-
-  if (
-    typeof product.currentPrice !==
-      "number" ||
-    typeof product.fairPrice !== "number"
-  ) {
-    return undefined;
-  }
-
-  if (
-    product.currentPrice <=
-    product.fairPrice * 0.9
-  ) {
-    return "Excellent";
-  }
-
-  if (
-    product.currentPrice <=
-    product.fairPrice
-  ) {
-    return "Good";
-  }
-
-  if (
-    product.currentPrice <=
-    product.fairPrice * 1.1
-  ) {
-    return "Fair";
-  }
-
-  return "High";
-}
 
 function SectionDivider() {
   return (
@@ -175,111 +83,15 @@ export default async function ProductPage({
    * beginning of the slug, while others use only
    * the model.
    */
-  const storedProduct =
-    (await getProductBySlug(fullSlug)) ??
-    (await getProductBySlug(
-      normalisedModel
-    ));
+  const product =
+  await loadProductPage(
+    fullSlug,
+    normalisedModel,
+  );
 
-  if (!storedProduct) {
-    notFound();
-  }
-
-  const cleanedProductName =
-    cleanProductName(
-      storedProduct.name,
-      model
-    );
-
-  /*
-   * getProductBySlug() has already converted the
-   * raw Supabase record into the shared Product
-   * interface. Only page-specific fallbacks and
-   * presentation cleanup belong here.
-   */
-
-  const identity = extractProductIdentity(cleanedProductName);
-  const product: Product = {
-    ...storedProduct,
-
-    id:
-      storedProduct.id ||
-      storedProduct.slug,
-
-    slug:
-      storedProduct.slug ||
-      fullSlug,
-
-    name: cleanedProductName,
-
-   brand:
-  storedProduct.brand ||
-  identity.brand ||
-  titleCase(brand),
-
-    category:
-  storedProduct.category ||
-  identity.category ||
-  titleCase(category),
-
-    model: {
-      ...storedProduct.model,
-
-     base:
-  storedProduct.model?.base ||
-  identity.model ||
-  titleCase(model),
-    },
-
-    specs:
-      storedProduct.specs ?? {},
-
-    image:
-      storedProduct.image ||
-      undefined,
-
-    imageAlt:
-      storedProduct.imageAlt ||
-      `${cleanedProductName} product image`,
-
-    summary:
-      storedProduct.summary ||
-      `Blinlx analysis for ${cleanedProductName}.`,
-
-    primaryOfferUrl:
-      storedProduct.primaryOfferUrl ||
-      undefined,
-
-    primaryOfferRetailer:
-      storedProduct.primaryOfferRetailer ||
-      undefined,
-
-    verdictLabel:
-      createVerdictLabel(
-        storedProduct
-      ),
-
-    priceStatus:
-      createPriceStatus(
-        storedProduct
-      ),
-
-    priceHistoryUrl:
-      storedProduct.priceHistoryUrl ??
-      "#price-history",
-
-    highlights:
-      storedProduct.highlights ?? [],
-
-    topOffers:
-      storedProduct.topOffers ?? [],
-
-    alternatives:
-      storedProduct.alternatives ?? [],
-
-    faqs:
-      storedProduct.faqs ?? [],
-  };
+if (!product) {
+  notFound();
+}
 
   const productSchema =
     buildProductPageSchema({

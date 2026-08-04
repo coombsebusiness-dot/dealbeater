@@ -46,7 +46,7 @@ export function DiscoveryMerchantCard({
       "
     >
       {item.image && (
-        <div className="relative aspect-[16/9] w-full overflow-hidden bg-slate-950">
+        <div className="relative aspect-video w-full overflow-hidden bg-slate-950">
           <Image
             src={item.image}
             alt={item.title}

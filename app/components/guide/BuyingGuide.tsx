@@ -6,15 +6,24 @@ import {
   DiscoveryRail,
 } from "@/app/components/discovery/DiscoveryRail";
 
+import {
+  GuideChapter,
+} from "./GuideChapter";
 
+import {
+  ShareGuide,
+} from "./ShareGuide";
+
+import {
+  KnowledgeSection,
+} from "./KnowledgeSection";
+
+import { GuideHero } from "./GuideHero";
 
 import {
   discoveryEngine,
 } from "@/app/lib/discovery/DiscoveryEngine";
 
-import {
-  GuidePromotionRail,
-} from "./GuidePromotionRail";
 
 import {
   WhatBlinlxThinks,
@@ -175,6 +184,10 @@ export function BuyingGuide({
               wordCount
             }
           />
+          <ShareGuide
+  title={guide.title}
+  path={guide.seo.canonicalPath}
+/>
 
          <div className="grid items-start gap-8 2xl:grid-cols-[minmax(0,1fr)_460px]">
   <main className="min-w-0 space-y-12">
@@ -192,6 +205,25 @@ export function BuyingGuide({
     <BuyingGuideSummary
       items={guide.summary}
     />
+
+    <GuideChapter
+  eyebrow="Chapter One"
+  title="The Blinlx Way"
+  icon="🧠"
+  description="Every recommendation we make is guided by three principles designed to protect your money and help you buy with confidence."
+/>
+
+    <KnowledgeSection
+  articleId="trust-before-profit"
+/>
+
+<KnowledgeSection
+  articleId="buy-for-needs"
+/>
+
+<KnowledgeSection
+  articleId="buy-for-longevity"
+/>
     <TableOfContents
   items={tableOfContents}
 />
@@ -229,15 +261,18 @@ export function BuyingGuide({
             id={section.id}
             heading={section.heading}
             introduction={
-              section.introduction
+              undefined
             }
           >
             {section.blocks.map(
               (block) => (
                 <GuideBlockRenderer
-                  key={block.id}
-                  block={block}
-                />
+  key={block.id}
+  block={block}
+  sectionHeading={
+    section.heading
+  }
+/>
               ),
             )}
           </BuyingGuideSection>
@@ -252,6 +287,10 @@ export function BuyingGuide({
     <RelatedGuides
       guides={guide.relatedGuides}
     />
+    <ShareGuide
+  title={guide.title}
+  path={guide.seo.canonicalPath}
+/>
 
     <AskBlinlxCTA
       prompt={guide.askBlinlxPrompt}

@@ -1,6 +1,7 @@
 import type {
   BuyingGuideBlock,
 } from "@/types/buying-guide/BuyingGuideSection";
+
 import {
   ComparisonTable,
 } from "./ComparisonTable";
@@ -42,21 +43,56 @@ import {
 } from "./AskBlinlxCTA";
 
 interface GuideBlockRendererProps {
-  block: BuyingGuideBlock;
+  block:
+    BuyingGuideBlock;
+
+  sectionHeading?:
+    string;
+}
+
+function normaliseHeading(
+  value?: string,
+): string {
+  return (
+    value
+      ?.trim()
+      .toLowerCase()
+      .replace(
+        /[?!.,:;]+$/g,
+        "",
+      ) ??
+    ""
+  );
 }
 
 export function GuideBlockRenderer({
   block,
+  sectionHeading,
 }: GuideBlockRendererProps) {
   switch (block.type) {
-    case "TEXT":
+    case "TEXT": {
+      const isDuplicateHeading =
+        normaliseHeading(
+          block.heading,
+        ) ===
+        normaliseHeading(
+          sectionHeading,
+        );
+
       return (
         <TextBlock
           id={block.id}
-          heading={block.heading}
-          paragraphs={block.paragraphs}
+          heading={
+            isDuplicateHeading
+              ? undefined
+              : block.heading
+          }
+          paragraphs={
+            block.paragraphs
+          }
         />
       );
+    }
 
     case "IMAGE":
       return (
@@ -122,16 +158,24 @@ export function GuideBlockRenderer({
       return (
         <RecommendationCard
           recommendation={{
-            id: block.id,
-            title: block.heading,
+            id:
+              block.id,
+
+            title:
+              block.heading,
+
             description:
               block.summary,
+
             reasons:
               block.reasons,
+
             image:
               block.image,
+
             href:
               block.productUrl,
+
             badge:
               block.productName,
           }}
@@ -153,13 +197,13 @@ export function GuideBlockRenderer({
       );
 
     case "COMPARISON":
-  return (
-    <ComparisonTable
-      id={block.id}
-      heading={block.heading}
-      items={block.items}
-    />
-  );
+      return (
+        <ComparisonTable
+          id={block.id}
+          heading={block.heading}
+          items={block.items}
+        />
+      );
 
     default:
       return null;

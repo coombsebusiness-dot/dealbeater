@@ -9,16 +9,17 @@ interface BlinlxVerdictProps {
 export function BlinlxVerdict({
   verdict,
 }: BlinlxVerdictProps) {
-  const confidence =
-    Math.max(
-      0,
-      Math.min(
-        100,
-        Math.round(
-          verdict.confidence,
-        ),
+ const confidence =
+  Math.max(
+    0,
+    Math.min(
+      100,
+      Math.round(
+        verdict.confidence *
+          100,
       ),
-    );
+    ),
+  );
 
   return (
     <section

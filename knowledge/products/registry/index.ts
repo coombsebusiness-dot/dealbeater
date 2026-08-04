@@ -1,0 +1,3 @@
+export {
+  ProductRegistry,
+} from "./ProductRegistry";

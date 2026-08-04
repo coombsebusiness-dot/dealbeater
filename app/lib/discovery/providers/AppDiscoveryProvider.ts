@@ -39,6 +39,28 @@ export class AppDiscoveryProvider {
         category:
           "photography",
       },
+      {
+  id: "ask-blinlx-photography",
+
+  type: "assistant",
+
+  priority: 90,
+
+  title:
+    "Still unsure which camera to buy?",
+
+  description:
+    "Tell Blinlx what you want to photograph, your experience level and your budget. We’ll help you choose the right setup.",
+
+  href:
+    "/?q=Help me choose a beginner photography setup",
+
+  badge:
+    "Ask Blinlx",
+
+  category:
+    "photography",
+},
     ];
   }
 }

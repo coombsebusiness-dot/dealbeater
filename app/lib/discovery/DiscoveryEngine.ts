@@ -14,6 +14,18 @@ import {
   MerchantDiscoveryProvider,
 } from "./providers/MerchantDiscoveryProvider";
 
+import {
+  DiscoveryFilter,
+} from "./DiscoveryFilter";
+
+import {
+  DiscoveryScorer,
+} from "./DiscoveryScorer";
+
+import {
+  DiscoverySorter,
+} from "./DiscoverySorter";
+
 import type {
   DiscoveryContext,
   DiscoveryItem,
@@ -32,10 +44,19 @@ export class DiscoveryEngine {
   private readonly dealProvider =
     new DealDiscoveryProvider();
 
+  private readonly filter =
+    new DiscoveryFilter();
+
+  private readonly scorer =
+    new DiscoveryScorer();
+
+  private readonly sorter =
+    new DiscoverySorter();
+
   build(
     context: DiscoveryContext,
   ): DiscoveryItem[] {
-    const items = [
+    const providerItems = [
       ...this.appProvider.getItems(
         context,
       ),
@@ -53,22 +74,27 @@ export class DiscoveryEngine {
       ),
     ];
 
-    return items
-      .filter(
-        (item) =>
-          item.visible !== false,
-      )
-      .filter(
-        (item) =>
-          !item.category ||
-          item.category ===
-            context.category,
-      )
-      .sort(
-        (first, second) =>
-          second.priority -
-          first.priority,
+    const filteredItems =
+      this.filter.apply(
+        providerItems,
+        context,
       );
+
+    const scoredItems =
+      this.scorer.score(
+        filteredItems,
+        context,
+      );
+
+    const sortedItems =
+      this.sorter.sort(
+        scoredItems,
+      );
+
+    return sortedItems.map(
+      (scoredItem) =>
+        scoredItem.item,
+    );
   }
 }
 

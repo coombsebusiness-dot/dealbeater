@@ -15,7 +15,7 @@ export function WhatBlinlxThinks({
       Math.min(
         100,
         Math.round(
-          opinion.confidence,
+          opinion.confidence * 100
         ),
       ),
     );
