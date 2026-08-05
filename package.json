@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test:products": "tsx product-intelligence/__tests__/runner.ts",
-    "media:import": "tsx scripts/import-product-images.ts"
+    "media:import": "tsx scripts/import-product-images.ts",
+    "publishing:report": "tsx scripts/publishing-report.ts"
   },
   "dependencies": {
     "@next/third-parties": "^16.2.11",
@@ -29,7 +30,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
     "tailwindcss": "^4",
-    "tsx": "^4.23.5",
+    "tsx": "^4.23.8",
     "typescript": "^5"
   }
 }

@@ -1,3 +1,7 @@
+import type {
+  LensProduct,
+} from "./LensProduct";
+
 import {
   sonyE18135OSS,
   sonyE35F18OSS,
@@ -22,6 +26,9 @@ import {
   nikkorZDX50250VR,
 } from "./nikon";
 
+
+
+
 export {
   sonyE18135OSS,
   sonyE35F18OSS,
@@ -40,7 +47,8 @@ export {
   nikkorZDX24F17,
 };
 
-export const lensProducts = [
+export const lensProducts:
+  LensProduct[] = [
   sonyEPZ1650OSS,
   sonyE18135OSS,
   sonyE55210OSS,
@@ -61,3 +69,49 @@ export const lensProducts = [
     nikkorZDX18140VR,
     nikkorZDX24F17,
 ];
+
+function normaliseLensLookup(
+  value: string,
+): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(
+      /&/g,
+      "and",
+    )
+    .replace(
+      /['’]/g,
+      "",
+    )
+    .replace(
+      /[^a-z0-9]+/g,
+      "-",
+    )
+    .replace(
+      /^-+|-+$/g,
+      "",
+    );
+}
+
+export function getLensProductById(
+  value: string,
+): LensProduct | undefined {
+  const lookupValue =
+    normaliseLensLookup(
+      value,
+    );
+
+  return lensProducts.find(
+    (product) =>
+      normaliseLensLookup(
+        product.id,
+      ) === lookupValue ||
+      normaliseLensLookup(
+        product.slug,
+      ) === lookupValue ||
+      normaliseLensLookup(
+        product.fullName,
+      ) === lookupValue,
+  );
+}

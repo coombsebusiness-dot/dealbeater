@@ -31,3 +31,12 @@ export {
 export type {
   EditorialQualityReport,
 } from "./QualityEngine";
+
+export type {
+  EditorialGuideResult,
+  EditorialGuideWriterInput,
+} from "./EditorialGuideTypes";
+
+export {
+  EditorialGuideWriter,
+} from "./EditorialGuideWriter";

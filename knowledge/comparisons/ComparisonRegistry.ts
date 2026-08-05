@@ -713,6 +713,343 @@ const comparisons: ComparisonDefinition[] = [
   isPublished:
     true,
 },
+{
+  slug:
+    "sony-a6000-vs-sony-a6400",
+
+  productAId:
+    "sony-a6000",
+
+  productBId:
+    "sony-a6400",
+
+  title:
+    "Sony A6000 vs Sony A6400",
+
+  description:
+    "Compare the Sony A6000 and Sony A6400 across autofocus, image quality, video, handling, used value and upgrade suitability.",
+
+  publishedAt:
+    "2026-08-05",
+
+  updatedAt:
+    "2026-08-05",
+
+  isPublished:
+    true,
+},
+
+{
+  slug:
+    "sony-a6400-vs-sony-a6700",
+
+  productAId:
+    "sony-a6400",
+
+  productBId:
+    "sony-a6700",
+
+  title:
+    "Sony A6400 vs Sony A6700",
+
+  description:
+    "Compare the Sony A6400 and Sony A6700 across autofocus, stabilisation, image quality, video, battery life, value and upgrade suitability.",
+
+  publishedAt:
+    "2026-08-05",
+
+  updatedAt:
+    "2026-08-05",
+
+  isPublished:
+    true,
+},
+
+{
+  slug:
+    "canon-eos-r50-vs-nikon-z50-ii",
+
+  productAId:
+    "canon-eos-r50",
+
+  productBId:
+    "nikon-z50-ii",
+
+  title:
+    "Canon EOS R50 vs Nikon Z50 II",
+
+  description:
+    "Compare the Canon EOS R50 and Nikon Z50 II across autofocus, burst shooting, video, handling, lens choice, portability and beginner value.",
+
+  publishedAt:
+    "2026-08-05",
+
+  updatedAt:
+    "2026-08-05",
+
+  isPublished:
+    true,
+},
+
+{
+  slug:
+    "nikon-z30-vs-nikon-z50-ii",
+
+  productAId:
+    "nikon-z30",
+
+  productBId:
+    "nikon-z50-ii",
+
+  title:
+    "Nikon Z30 vs Nikon Z50 II",
+
+  description:
+    "Compare the Nikon Z30 and Nikon Z50 II across viewfinder design, autofocus, photography, video, portability, controls and beginner suitability.",
+
+  publishedAt:
+    "2026-08-05",
+
+  updatedAt:
+    "2026-08-05",
+
+  isPublished:
+    true,
+},
+
+{
+  slug:
+    "nikon-zfc-vs-nikon-z50-ii",
+
+  productAId:
+    "nikon-zfc",
+
+  productBId:
+    "nikon-z50-ii",
+
+  title:
+    "Nikon Z fc vs Nikon Z50 II",
+
+  description:
+    "Compare the Nikon Z fc and Nikon Z50 II across design, controls, autofocus, video, handling, value and buying suitability.",
+
+  publishedAt:
+    "2026-08-05",
+
+  updatedAt:
+    "2026-08-05",
+
+  isPublished:
+    true,
+},
+
+{
+  slug:
+    "fujifilm-x-s20-vs-fujifilm-x-t5",
+
+  productAId:
+    "fujifilm-x-s20",
+
+  productBId:
+    "fujifilm-x-t5",
+
+  title:
+    "Fujifilm X-S20 vs Fujifilm X-T5",
+
+  description:
+    "Compare the Fujifilm X-S20 and Fujifilm X-T5 across image quality, stabilisation, controls, video, portability, battery life and value.",
+
+  publishedAt:
+    "2026-08-05",
+
+  updatedAt:
+    "2026-08-05",
+
+  isPublished:
+    true,
+},
+
+{
+  slug:
+    "fujifilm-x-h2-vs-fujifilm-x-h2s",
+
+  productAId:
+    "fujifilm-x-h2",
+
+  productBId:
+    "fujifilm-x-h2s",
+
+  title:
+    "Fujifilm X-H2 vs Fujifilm X-H2S",
+
+  description:
+    "Compare the Fujifilm X-H2 and Fujifilm X-H2S across resolution, sensor speed, autofocus, burst shooting, video and professional suitability.",
+
+  publishedAt:
+    "2026-08-05",
+
+  updatedAt:
+    "2026-08-05",
+
+  isPublished:
+    true,
+},
+
+{
+  slug:
+    "fujifilm-x-s20-vs-sony-a6700",
+
+  productAId:
+    "fujifilm-x-s20",
+
+  productBId:
+    "sony-a6700",
+
+  title:
+    "Fujifilm X-S20 vs Sony A6700",
+
+  description:
+    "Compare the Fujifilm X-S20 and Sony A6700 across autofocus, stabilisation, image quality, video, handling, lens systems and value.",
+
+  publishedAt:
+    "2026-08-05",
+
+  updatedAt:
+    "2026-08-05",
+
+  isPublished:
+    true,
+},
+
+{
+  slug:
+    "fujifilm-x-t5-vs-sony-a6700",
+
+  productAId:
+    "fujifilm-x-t5",
+
+  productBId:
+    "sony-a6700",
+
+  title:
+    "Fujifilm X-T5 vs Sony A6700",
+
+  description:
+    "Compare the Fujifilm X-T5 and Sony A6700 across resolution, autofocus, stabilisation, video, controls, portability and buying suitability.",
+
+  publishedAt:
+    "2026-08-05",
+
+  updatedAt:
+    "2026-08-05",
+
+  isPublished:
+    true,
+},
+
+{
+  slug:
+    "panasonic-lumix-s5-ii-vs-panasonic-lumix-s5-iix",
+
+  productAId:
+    "panasonic-lumix-s5-ii",
+
+  productBId:
+    "panasonic-lumix-s5-iix",
+
+  title:
+    "Panasonic Lumix S5 II vs S5 IIX",
+
+  description:
+    "Compare the Panasonic Lumix S5 II and S5 IIX across image quality, autofocus, video formats, recording options, design, value and creator suitability.",
+
+  publishedAt:
+    "2026-08-05",
+
+  updatedAt:
+    "2026-08-05",
+
+  isPublished:
+    true,
+},
+
+{
+  slug:
+    "panasonic-lumix-g9-ii-vs-panasonic-lumix-gh7",
+
+  productAId:
+    "panasonic-lumix-g9-ii",
+
+  productBId:
+    "panasonic-lumix-gh7",
+
+  title:
+    "Panasonic Lumix G9 II vs GH7",
+
+  description:
+    "Compare the Panasonic Lumix G9 II and GH7 across photography, autofocus, stabilisation, video, cooling, handling and hybrid-creator value.",
+
+  publishedAt:
+    "2026-08-05",
+
+  updatedAt:
+    "2026-08-05",
+
+  isPublished:
+    true,
+},
+
+{
+  slug:
+    "panasonic-lumix-s5-ii-vs-sony-a7-iv",
+
+  productAId:
+    "panasonic-lumix-s5-ii",
+
+  productBId:
+    "sony-a7-iv",
+
+  title:
+    "Panasonic Lumix S5 II vs Sony A7 IV",
+
+  description:
+    "Compare the Panasonic Lumix S5 II and Sony A7 IV across image quality, autofocus, stabilisation, video, lens systems, handling and value.",
+
+  publishedAt:
+    "2026-08-05",
+
+  updatedAt:
+    "2026-08-05",
+
+  isPublished:
+    true,
+},
+
+{
+  slug:
+    "panasonic-lumix-s5-ii-vs-canon-eos-r6-mark-ii",
+
+  productAId:
+    "panasonic-lumix-s5-ii",
+
+  productBId:
+    "canon-eos-r6-mark-ii",
+
+  title:
+    "Panasonic Lumix S5 II vs Canon EOS R6 Mark II",
+
+  description:
+    "Compare the Panasonic Lumix S5 II and Canon EOS R6 Mark II across autofocus, stabilisation, burst shooting, video, lens choice, handling and value.",
+
+  publishedAt:
+    "2026-08-05",
+
+  updatedAt:
+    "2026-08-05",
+
+  isPublished:
+    true,
+},
 ];
 
 export function getAllComparisons():

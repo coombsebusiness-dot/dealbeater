@@ -1,3 +1,7 @@
+import type {
+  CameraProduct,
+} from "./CameraProduct";
+
 export type {
   CameraProduct,
 } from "./CameraProduct";
@@ -164,3 +168,48 @@ export const cameraProducts = [
      panasonicLumixGH7,
      panasonicLumixG9II,
 ];
+function normaliseProductLookup(
+  value: string,
+): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(
+      /&/g,
+      "and",
+    )
+    .replace(
+      /['’]/g,
+      "",
+    )
+    .replace(
+      /[^a-z0-9]+/g,
+      "-",
+    )
+    .replace(
+      /^-+|-+$/g,
+      "",
+    );
+}
+
+export function getCameraProductById(
+  value: string,
+): CameraProduct | undefined {
+  const normalisedValue =
+    normaliseProductLookup(
+      value,
+    );
+
+  return cameraProducts.find(
+    (product) =>
+      normaliseProductLookup(
+        product.id,
+      ) === normalisedValue ||
+      normaliseProductLookup(
+        product.slug,
+      ) === normalisedValue ||
+      normaliseProductLookup(
+        product.fullName,
+      ) === normalisedValue,
+  );
+}

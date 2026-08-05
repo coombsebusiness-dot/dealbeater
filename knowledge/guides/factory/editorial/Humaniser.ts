@@ -65,6 +65,43 @@ const PHRASE_REPLACEMENTS: Array<
   ],
 ];
 
+const CONTRACTIONS: Array<
+  [RegExp, string]
+> = [
+  [
+    /\bdo not\b/gi,
+    "don't",
+  ],
+  [
+    /\bdoes not\b/gi,
+    "doesn't",
+  ],
+  [
+    /\bcannot\b/gi,
+    "can't",
+  ],
+  [
+    /\bwill not\b/gi,
+    "won't",
+  ],
+  [
+    /\byou are\b/gi,
+    "you're",
+  ],
+  [
+    /\bit is\b/gi,
+    "it's",
+  ],
+];
+
+const REPEATED_OPENING_TRANSITIONS = [
+  "In practice",
+  "More importantly",
+  "For everyday use",
+  "The other thing to consider",
+  "That matters because",
+] as const;
+
 function extractDraftMarker(
   value: string,
 ): {
@@ -114,78 +151,117 @@ function applyPhraseReplacements(
         replacement,
       ],
     ) => {
+      const updatedValue =
+        currentValue.replace(
+          pattern,
+          replacement,
+        );
+
       if (
-        !pattern.test(
-          currentValue,
-        )
+        updatedValue ===
+        currentValue
       ) {
         return currentValue;
       }
-
-      pattern.lastIndex = 0;
 
       changes.push(
         `Replaced robotic wording matching ${pattern}.`,
       );
 
-      return currentValue.replace(
-        pattern,
-        replacement,
-      );
+      return updatedValue;
     },
     value,
   );
 }
 
-function cleanSpacing(
+function rewriteRoboticOpening(
   value: string,
+  changes: string[],
 ): string {
-  return value
-    .replace(
-      /\s+/g,
-      " ",
-    )
-    .replace(
-      /\s+([,.!?;:])/g,
-      "$1",
-    )
-    .trim();
+  let rewritten =
+    value;
+
+  rewritten =
+    rewritten.replace(
+      /^The important question with .*? is not which option has the longest specification list\.\s*Whether\s+/i,
+      () => {
+        changes.push(
+          "Rewrote a mechanical specification-list opening.",
+        );
+
+        return "The real question is whether ";
+      },
+    );
+
+  rewritten =
+    rewritten.replace(
+      /^The practical value of (.+?) depends on how well the available options match the buyer's normal use, not on which product produces the most impressive specification sheet\./i,
+      (
+        _match,
+        topic: string,
+      ) => {
+        changes.push(
+          "Rewrote a repeated practical-value opening.",
+        );
+
+        return `What matters is how well ${topic.trim()} fits the way you'll actually use it, not how impressive it looks on a specification sheet.`;
+      },
+    );
+
+  rewritten =
+    rewritten.replace(
+      /^The important question is not which option has the longest specification list\.\s*/i,
+      () => {
+        changes.push(
+          "Removed a generic specification-list opening.",
+        );
+
+        return "";
+      },
+    );
+
+  rewritten =
+    rewritten.replace(
+      /^The decision becomes much easier once the buyer separates essential requirements from features that are merely attractive on paper\.\s*/i,
+      () => {
+        changes.push(
+          "Removed a repeated decision-making phrase.",
+        );
+
+        return "";
+      },
+    );
+
+  return rewritten;
+}
+
+function preserveReplacementCase(
+  match: string,
+  replacement: string,
+): string {
+  const beginsWithUppercase =
+    match.charAt(0) ===
+    match.charAt(0)
+      .toUpperCase();
+
+  if (
+    !beginsWithUppercase
+  ) {
+    return replacement;
+  }
+
+  return (
+    replacement.charAt(0)
+      .toUpperCase() +
+    replacement.slice(1)
+  );
 }
 
 function applyNaturalContractions(
   value: string,
   changes: string[],
 ): string {
-  const replacements: Array<
-    [RegExp, string]
-  > = [
-    [
-      /\bdo not\b/gi,
-      "don't",
-    ],
-    [
-      /\bdoes not\b/gi,
-      "doesn't",
-    ],
-    [
-      /\bcannot\b/gi,
-      "can't",
-    ],
-    [
-      /\bwill not\b/gi,
-      "won't",
-    ],
-    [
-      /\byou are\b/gi,
-      "you're",
-    ],
-    [
-      /\bit is\b/gi,
-      "it's",
-    ],
-  ];
-
-  return replacements.reduce(
+  return CONTRACTIONS.reduce(
     (
       currentValue,
       [
@@ -193,26 +269,109 @@ function applyNaturalContractions(
         replacement,
       ],
     ) => {
+      let replacementMade =
+        false;
+
+      const updatedValue =
+        currentValue.replace(
+          pattern,
+          (match) => {
+            replacementMade =
+              true;
+
+            return preserveReplacementCase(
+              match,
+              replacement,
+            );
+          },
+        );
+
       if (
-        !pattern.test(
-          currentValue,
-        )
+        replacementMade
       ) {
-        return currentValue;
+        changes.push(
+          `Used natural wording matching ${pattern}.`,
+        );
       }
 
-      pattern.lastIndex = 0;
-
-      changes.push(
-        `Used a natural contraction matching ${pattern}.`,
-      );
-
-      return currentValue.replace(
-        pattern,
-        replacement,
-      );
+      return updatedValue;
     },
     value,
+  );
+}
+
+function normaliseForComparison(
+  value: string,
+): string {
+  return value
+    .replace(
+      BLINLX_EDITORIAL_MARKER,
+      "",
+    )
+    .trim()
+    .toLowerCase()
+    .replace(
+      /[^\p{L}\p{N}\s]/gu,
+      "",
+    )
+    .replace(
+      /\s+/g,
+      " ",
+    );
+}
+
+function getOpeningWords(
+  value: string,
+  count = 4,
+): string {
+  return normaliseForComparison(
+    value,
+  )
+    .split(
+      " ",
+    )
+    .slice(
+      0,
+      count,
+    )
+    .join(
+      " ",
+    );
+}
+
+function createStableIndex(
+  value: string,
+  length: number,
+): number {
+  let total =
+    0;
+
+  for (
+    let index = 0;
+    index < value.length;
+    index += 1
+  ) {
+    total +=
+      value.charCodeAt(
+        index,
+      );
+  }
+
+  return total %
+    length;
+}
+
+function lowerFirst(
+  value: string,
+): string {
+  if (!value) {
+    return value;
+  }
+
+  return (
+    value.charAt(0)
+      .toLowerCase() +
+    value.slice(1)
   );
 }
 
@@ -228,38 +387,141 @@ function reduceRepeatedOpening(
     return value;
   }
 
-  const currentFirstWord =
-    value
-      .split(/\s+/)[0]
-      ?.toLowerCase();
+  const currentOpening =
+    getOpeningWords(
+      value,
+    );
 
-  const previousFirstWord =
-    previousParagraph
-      .replace(
-        BLINLX_EDITORIAL_MARKER,
-        "",
-      )
-      .trim()
-      .split(/\s+/)[0]
-      ?.toLowerCase();
+  const previousOpening =
+    getOpeningWords(
+      previousParagraph,
+    );
 
   if (
-    !currentFirstWord ||
-    currentFirstWord !==
-      previousFirstWord
+    !currentOpening ||
+    currentOpening !==
+      previousOpening
+  ) {
+    return value;
+  }
+
+  const transitionIndex =
+    createStableIndex(
+      value,
+      REPEATED_OPENING_TRANSITIONS
+        .length,
+    );
+
+  const transition =
+    REPEATED_OPENING_TRANSITIONS[
+      transitionIndex
+    ];
+
+  changes.push(
+    "Varied a repeated multi-word paragraph opening.",
+  );
+
+  return `${transition}, ${lowerFirst(
+    value,
+  )}`;
+}
+
+function removeRepeatedSentence(
+  value: string,
+  previousParagraph:
+    string | undefined,
+  changes: string[],
+): string {
+  if (
+    !previousParagraph
+  ) {
+    return value;
+  }
+
+  const previousSentences =
+    new Set(
+      previousParagraph
+        .split(
+          /(?<=[.!?])\s+/,
+        )
+        .map(
+          normaliseForComparison,
+        )
+        .filter(Boolean),
+    );
+
+  const sentences =
+    value
+      .split(
+        /(?<=[.!?])\s+/,
+      )
+      .filter(
+        (sentence) => {
+          const normalised =
+            normaliseForComparison(
+              sentence,
+            );
+
+          return (
+            normalised &&
+            !previousSentences.has(
+              normalised,
+            )
+          );
+        },
+      );
+
+  if (
+    sentences.length ===
+    value
+      .split(
+        /(?<=[.!?])\s+/,
+      )
+      .length
   ) {
     return value;
   }
 
   changes.push(
-    "Varied a repeated paragraph opening.",
+    "Removed a sentence repeated from the previous paragraph.",
   );
 
-  return `For most buyers, ${value
-    .charAt(0)
-    .toLowerCase()}${value.slice(
-    1,
-  )}`;
+  return sentences.join(
+    " ",
+  );
+}
+
+function cleanSpacing(
+  value: string,
+): string {
+  return value
+    .replace(
+      /\s+/g,
+      " ",
+    )
+    .replace(
+      /\s+([,.!?;:])/g,
+      "$1",
+    )
+    .replace(
+      /([.!?])([A-Z])/g,
+      "$1 $2",
+    )
+    .trim();
+}
+
+function ensureSentenceCase(
+  value: string,
+): string {
+  if (!value) {
+    return value;
+  }
+
+  return (
+    value.charAt(0)
+      .toUpperCase() +
+    value.slice(1)
+  );
 }
 
 export function humaniseParagraph({
@@ -284,16 +546,29 @@ export function humaniseParagraph({
     body;
 
   humanised =
+    rewriteRoboticOpening(
+      humanised,
+      changes,
+    );
+
+  humanised =
     applyPhraseReplacements(
       humanised,
       changes,
     );
 
- humanised =
-  applyNaturalContractions(
-    humanised,
-    changes,
-  );
+  humanised =
+    applyNaturalContractions(
+      humanised,
+      changes,
+    );
+
+  humanised =
+    removeRepeatedSentence(
+      humanised,
+      previousParagraph,
+      changes,
+    );
 
   humanised =
     reduceRepeatedOpening(
@@ -304,6 +579,11 @@ export function humaniseParagraph({
 
   humanised =
     cleanSpacing(
+      humanised,
+    );
+
+  humanised =
+    ensureSentenceCase(
       humanised,
     );
 
@@ -331,21 +611,26 @@ export function humaniseParagraph({
 export function humaniseParagraphs(
   paragraphs: string[],
 ): HumanisedParagraph[] {
-  return paragraphs.map(
-    (
-      paragraph,
-      index,
-    ) =>
-      humaniseParagraph({
-        value:
-          paragraph,
+  const results:
+    HumanisedParagraph[] = [];
 
-        previousParagraph:
-          index > 0
-            ? paragraphs[
-                index - 1
-              ]
-            : undefined,
-      }),
+  paragraphs.forEach(
+    (paragraph) => {
+      const previousParagraph =
+        results[
+          results.length - 1
+        ]?.value;
+
+      results.push(
+        humaniseParagraph({
+          value:
+            paragraph,
+
+          previousParagraph,
+        }),
+      );
+    },
   );
+
+  return results;
 }

@@ -3,26 +3,12 @@ import type {
 } from "@/types/buying-guide/BuyingGuide";
 
 import {
-  writeSummary,
-} from "@/knowledge/guides/factory/editorial/writers/SummaryWriter";
+  EditorialGuideWriter,
+} from "@/knowledge/guides/editorial-brain";
 
-import {
-  writeOpinion,
-} from "@/knowledge/guides/factory/editorial/writers/OpinionWriter";
-
-import {
-  writeFAQs,
-} from "@/knowledge/guides/factory/editorial/writers/FAQWriter";
-
-import {
-  writeRecommendations,
-} from "@/knowledge/guides/factory/editorial/writers/RecommendationWriter";
-
-import {
-  writeVerdict,
-} from "@/knowledge/guides/factory/editorial/writers/VerdictWriter";
-
-
+import type {
+  EditorialSectionKind,
+} from "@/knowledge/guides/editorial-brain/EditorialTypes";
 
 import type {
   GuideBlueprint,
@@ -574,6 +560,21 @@ function createFaqAnswer(
     createKnowledgeContext(
       input.blueprint,
     );
+
+    const editorialGuideWriter =
+  new EditorialGuideWriter();
+
+const editorialGuide =
+  editorialGuideWriter.write({
+    blueprint:
+      input.blueprint,
+
+    content:
+      input.content,
+
+    knowledge:
+      knowledgeContext,
+  });
 
   const editorialAuthor =
     new EditorialAuthor();
@@ -1251,158 +1252,162 @@ if (introductionSection) {
       ),
     );
 
-  const sections:
+  const editorialSectionsByKind =
+  new Map(
+    editorialGuide.sections.map(
+      (section) => [
+        section.sectionKind,
+        section,
+      ],
+    ),
+  );
+
+const sectionKindById:
+  Record<
+    string,
+    EditorialSectionKind
+  > = {
+  introduction:
+    "INTRODUCTION",
+
+  "do-you-need-it":
+    "NEED",
+
+  "who-is-it-for":
+    "AUDIENCE",
+
+  "what-to-prioritise":
+    "PRIORITIES",
+
+  "what-to-look-for":
+    "PRIORITIES",
+
+  budget:
+    "BUDGET",
+
+  "what-to-compromise":
+    "COMPROMISES",
+
+  "best-value":
+    "BEST_VALUE",
+
+  "new-vs-used":
+    "BUYING_USED",
+
+  mistakes:
+    "MISTAKES",
+
+  "common-mistakes":
+    "MISTAKES",
+
+  recommendations:
+    "RECOMMENDATIONS",
+
+  alternatives:
+    "ALTERNATIVES",
+
+  "before-you-buy":
+    "CHECKLIST",
+
+  "final-verdict":
+    "VERDICT",
+};
+
+const sections:
   BuyingGuide["sections"] =
   input.content.sections.map(
     (
       section,
-    ): BuyingGuide["sections"][number] => {
-        const authoredSection =
-          authoredSections.get(
-            section.id,
+    ): BuyingGuide[
+      "sections"
+    ][number] => {
+      const sectionKind =
+        sectionKindById[
+          section.id
+        ];
+
+      const editorialSection =
+        sectionKind
+          ? editorialSectionsByKind.get(
+              sectionKind,
+            )
+          : undefined;
+
+      if (!editorialSection) {
+        throw new Error(
+          [
+            `Missing Editorial Brain section: ${section.id}`,
+            `Guide: ${input.content.slug}`,
+            `Heading: ${section.heading}`,
+          ].join(
+            "\n",
+          ),
+        );
+      }
+
+      const introduction =
+        editorialSection
+          .introduction
+          .trim();
+
+      const paragraphs =
+        editorialSection
+          .paragraphs
+          .map(
+            (paragraph) =>
+              paragraph.text.trim(),
+          )
+          .filter(
+            Boolean,
           );
 
-        if (authoredSection) {
-  const introduction =
-    removeDraftPrefix(
-      authoredSection.introduction,
-    ).trim();
+      if (
+        !introduction ||
+        paragraphs.length === 0
+      ) {
+        throw new Error(
+          [
+            `Incomplete Editorial Brain section: ${section.id}`,
+            `Guide: ${input.content.slug}`,
+            `Heading: ${section.heading}`,
+          ].join(
+            "\n",
+          ),
+        );
+      }
 
-  const paragraphs =
-    authoredSection.paragraphs
-      .map(
-        removeDraftPrefix,
-      )
-      .map(
-        (paragraph) =>
-          paragraph.trim(),
-      )
-      .filter(
-        Boolean,
-      );
-
-  if (
-    !introduction ||
-    paragraphs.length === 0
-  ) {
-    throw new Error(
-      [
-        `Incomplete authored section: ${section.id}`,
-        `Guide: ${input.content.slug}`,
-        `Heading: ${authoredSection.heading}`,
-      ].join(
-        "\n",
-      ),
-    );
-  }
-
-  return {
-    id:
-      section.id,
-
-    heading:
-      authoredSection.heading,
-
-    introduction,
-
-    blocks: [
-      {
-        type:
-          "TEXT",
-
+       return {
         id:
-          `${section.id}-authored`,
+          section.id,
 
         heading:
-          authoredSection.heading,
+          editorialSection
+            .heading,
 
-        paragraphs,
-      },
-    ],
-  };
-}
+        introduction,
 
-        const writtenSection =
-  writtenSectionsById.get(
-    section.id,
+        blocks: [
+          {
+            type:
+              "TEXT",
+
+            id:
+              `${section.id}-editorial-brain`,
+
+            heading:
+              editorialSection
+                .heading,
+
+            paragraphs,
+          },
+        ],
+      };
+    },
   );
 
-if (!writtenSection) {
-  throw new Error(
-    [
-      `Missing finished section content: ${section.id}`,
-      `Guide: ${input.content.slug}`,
-      `Heading: ${section.heading}`,
-    ].join(
-      "\n",
-    ),
-  );
-}
-
-const introduction =
-  removeDraftPrefix(
-    writtenSection.introduction,
-  ).trim();
-
-const paragraphs =
-  writtenSection.paragraphs
-    .map(
-      removeDraftPrefix,
-    )
-    .map(
-      (paragraph) =>
-        paragraph.trim(),
-    )
-    .filter(
-      Boolean,
-    );
-
-if (
-  !introduction ||
-  paragraphs.length === 0
-) {
-  throw new Error(
-    [
-      `Incomplete finished section content: ${section.id}`,
-      `Guide: ${input.content.slug}`,
-      `Heading: ${section.heading}`,
-    ].join(
-      "\n",
-    ),
-  );
-}
-
-return {
-          id:
-            section.id,
-
-          heading:
-            section.heading,
-
-          introduction,
-
-          blocks: [
-            {
-              type:
-                "TEXT",
-
-              id:
-                `${section.id}-generated`,
-
-              heading:
-                section.heading,
-
-              paragraphs,
-            },
-          ],
-        };
-      },
-    );
-
-  const recommendations =
-  writeRecommendations(
-    knowledgeContext,
-  );
+        
+ const recommendations =
+  editorialGuide.recommendations;
 
   const faqs:
     BuyingGuide["faqs"] =
@@ -1456,30 +1461,21 @@ return {
     seo:
       input.seo,
 
-    verdict:
-  writeVerdict(
-    knowledgeContext,
-  ),
+   verdict:
+  editorialGuide.verdict,
 
-   blinlxOpinion:
-  writeOpinion(
-    knowledgeContext,
-  ),
+  blinlxOpinion:
+  editorialGuide.opinion,
 
-    summary:
-  writeSummary(
-    knowledgeContext,
-  ),
+   summary:
+  editorialGuide.summary,
 
     recommendations,
 
     sections,
 
-    faqs:
-  writeFAQs(
-    input.blueprint,
-    knowledgeContext,
-  ),
+   faqs:
+  editorialGuide.faqs,
 
     relatedGuides:
       [],

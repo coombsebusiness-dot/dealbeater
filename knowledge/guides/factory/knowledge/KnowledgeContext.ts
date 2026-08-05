@@ -1,17 +1,35 @@
+import type {
+  ProductIntelligence,
+} from "@/knowledge/intelligence";
+
 export interface KnowledgeFact {
-  title: string;
+  title:
+    string;
 
-  explanation: string;
+  explanation:
+    string;
 
-  confidence: number;
+  confidence:
+    number;
 }
 
 export type ProductRecommendationVerdict =
   | "BEST_OVERALL"
-  | "BEST_VALUE"
   | "BEST_BEGINNER"
+  | "BEST_VALUE"
+  | "BEST_BUDGET"
+  | "BEST_PRIME"
+  | "BEST_ZOOM"
   | "BEST_USED"
+  | "BEST_UPGRADE"
+  | "BEST_TRAVEL"
+  | "BEST_STREET"
+  | "BEST_PORTRAIT"
+  | "BEST_WILDLIFE"
+  | "BEST_SPORTS"
+  | "BEST_VIDEO"
   | "BEST_SPECIALIST"
+  | "SPECIALIST"
   | "ALTERNATIVE"
   | "CONSIDER";
 
@@ -56,26 +74,59 @@ export interface ProductRecommendation {
     string;
 }
 
-export interface BuyerWarning {
-  title: string;
+export interface ProductIntelligenceContextEntry {
+  productId:
+    string;
 
-  explanation: string;
+  productName:
+    string;
+
+  slug?:
+    string;
+
+  provider:
+    string | null;
+
+  confidence:
+    number;
+
+  intelligence:
+    ProductIntelligence;
+}
+
+export interface BuyerWarning {
+  title:
+    string;
+
+  explanation:
+    string;
 }
 
 export interface KnowledgeContext {
-  topic: string;
+  topic:
+    string;
 
-  category: string;
+  category:
+    string;
 
-  products: ProductRecommendation[];
+  products:
+    ProductRecommendation[];
 
-  keyFacts: KnowledgeFact[];
+  productIntelligence:
+    ProductIntelligenceContextEntry[];
 
-  tradeOffs: KnowledgeFact[];
+  keyFacts:
+    KnowledgeFact[];
 
-  commonMistakes: BuyerWarning[];
+  tradeOffs:
+    KnowledgeFact[];
 
-  terminology: string[];
+  commonMistakes:
+    BuyerWarning[];
 
-  buyerProfiles: string[];
+  terminology:
+    string[];
+
+  buyerProfiles:
+    string[];
 }

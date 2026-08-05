@@ -33,6 +33,17 @@ export interface ReaderQuestion {
     string;
 }
 
+export type EditorialEvidenceRole =
+  | "GENERAL"
+  | "AUDIENCE"
+  | "COMPATIBILITY"
+  | "UPGRADE"
+  | "ACCESSORY"
+  | "ALTERNATIVE"
+  | "VALUE"
+  | "RECOMMENDATION"
+  | "BUYING_ADVICE";
+
 export interface EditorialEvidenceItem {
   id:
     string;
@@ -51,6 +62,9 @@ export interface EditorialEvidenceItem {
     | "TRADE_OFF"
     | "WARNING"
     | "PRODUCT";
+
+    role:
+    EditorialEvidenceRole;
 }
 
 export interface EditorialEvidence {

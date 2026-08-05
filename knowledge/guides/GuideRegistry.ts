@@ -35,8 +35,21 @@ function createGeneratedBuyingGuides():
   BuyingGuide[] {
   bootstrapGuideBlueprints();
 
-  const MAX_GENERATED_GUIDES =
-  50;
+ const configuredGuideLimit =
+  Number.parseInt(
+    process.env
+      .BLINLX_GENERATED_GUIDE_LIMIT ??
+      "",
+    10,
+  );
+
+const generatedGuideLimit =
+  Number.isFinite(
+    configuredGuideLimit,
+  ) &&
+  configuredGuideLimit > 0
+    ? configuredGuideLimit
+    : undefined;
 
 const readyBlueprints =
   getAllGuideBlueprints()
@@ -45,15 +58,27 @@ const readyBlueprints =
         blueprint.status ===
         "READY",
     )
-    .slice(
-      0,
-      MAX_GENERATED_GUIDES,
+    .sort(
+      (
+        first,
+        second,
+      ) =>
+        second.priority -
+        first.priority,
     );
+
+const selectedBlueprints =
+  generatedGuideLimit
+    ? readyBlueprints.slice(
+        0,
+        generatedGuideLimit,
+      )
+    : readyBlueprints;
 
   const generatedGuides:
     BuyingGuide[] = [];
 
-  readyBlueprints.forEach(
+  selectedBlueprints.forEach(
     (blueprint) => {
       try {
         const publishedGuide =
@@ -145,17 +170,15 @@ const generatedGuides =
   "development"
 ) {
   console.info(
-    [
-      "Guide Registry Report",
-      `Manual guides: ${manualGuides.length}`,
-      `Generated guides: ${generatedGuides.length}`,
-      `Total guides: ${manualGuides.length + generatedGuides.length}`,
-    ].join(
-      "\n",
-    ),
-  );
+  [
+    "Guide Registry Report",
+    `Manual guides: ${manualGuides.length}`,
+    `Generated guides: ${generatedGuides.length}`,
+    `Total guides: ${manualGuides.length + generatedGuides.length}`,
+  ].join("\n"),
+);
+  
 }
-
 const guidesBySlug =
   new Map<
     string,

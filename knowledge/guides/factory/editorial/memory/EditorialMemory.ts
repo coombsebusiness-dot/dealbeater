@@ -56,15 +56,26 @@ function createEntryKey(
     RememberEditorialEntryInput,
 ): string {
   if (input.key?.trim()) {
-    return normaliseMemoryKey(
-      input.key,
-    );
+    return normaliseStoredKey(
+  input.key,
+);
   }
 
   return [
     input.kind,
     input.title,
   ]
+    .map(
+      normaliseMemoryKey,
+    )
+    .filter(Boolean)
+    .join(":");
+}
+function normaliseStoredKey(
+  value: string,
+): string {
+  return value
+    .split(":")
     .map(
       normaliseMemoryKey,
     )
@@ -123,15 +134,15 @@ export class EditorialMemory {
     return entry;
   }
 
-  has(
-    key: string,
-  ): boolean {
-    return this.entries.has(
-      normaliseMemoryKey(
-        key,
-      ),
-    );
-  }
+ has(
+  key: string,
+): boolean {
+  return this.entries.has(
+    normaliseStoredKey(
+      key,
+    ),
+  );
+}
 
   hasCovered(
     kind:
@@ -152,16 +163,16 @@ export class EditorialMemory {
   }
 
   get(
-    key: string,
-  ): EditorialMemoryEntry | null {
-    return (
-      this.entries.get(
-        normaliseMemoryKey(
-          key,
-        ),
-      ) ?? null
-    );
-  }
+  key: string,
+): EditorialMemoryEntry | null {
+  return (
+    this.entries.get(
+      normaliseStoredKey(
+        key,
+      ),
+    ) ?? null
+  );
+}
 
   getAll():
     EditorialMemoryEntry[] {
@@ -259,6 +270,21 @@ export class EditorialMemory {
       detail,
     });
   }
+  hasCoveredTitle(
+  title: string,
+): boolean {
+  const normalisedTitle =
+    normaliseMemoryKey(
+      title,
+    );
+
+  return this.getAll().some(
+    (entry) =>
+      normaliseMemoryKey(
+        entry.title,
+      ) === normalisedTitle,
+  );
+}
 
   reset():
     void {

@@ -3,6 +3,10 @@ import type {
 } from "@/knowledge/guides/factory/knowledge";
 
 import {
+  lensProducts,
+} from "@/knowledge/products/lenses";
+
+import {
   cameraBuyerProfiles,
 } from "./CameraBuyerProfiles";
 
@@ -78,10 +82,18 @@ export function getCameraKnowledgeDatabase():
   CameraKnowledgeDatabase {
   return {
     knowledge: {
-      products: [
+     products: [
   toProductRecommendation(
     sonyA6400,
   ),
+
+  ...lensProducts.map(
+    (lens) =>
+      toProductRecommendation(
+        lens,
+      ),
+  ),
+
 ],
 
       keyFacts:

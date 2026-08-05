@@ -2,14 +2,16 @@ import type {
   GuideBlueprint,
 } from "@/knowledge/guides/blueprints";
 
+
 import {
-  createBestForBlueprint,
-  createBudgetGuideBlueprint,
   createBuyingGuideBlueprint,
   createComparisonBlueprint,
+  createBudgetGuideBlueprint,
+   createBestForBlueprint,
   createExplainerBlueprint,
   createMistakesBlueprint,
-} from "@/knowledge/guides/blueprints";
+} from "../blueprints/createGuideBlueprint";
+
 
 import type {
   GuideCatalogue,
