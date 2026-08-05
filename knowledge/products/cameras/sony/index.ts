@@ -25,3 +25,23 @@ export {
 export {
   sonyA6700,
 } from "./SonyA6700";
+
+export {
+  sonyA7III,
+} from "./Sonya7iii";
+
+export {
+  sonyA7IV,
+} from "./Sonya7iv";
+
+export {
+  sonyA7CII,
+} from "./Sonya7cii";
+
+export {
+  sonyA7RV,
+} from "./Sonya7rv";
+
+export {
+  sonyA1II,
+} from "./Sonya1ii";

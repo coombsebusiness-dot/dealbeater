@@ -22,7 +22,8 @@ export interface ExpandSectionInput {
 }
 
 export interface ExpandedSectionDraft {
-  paragraphs: string[];
+  paragraphs:
+    string[];
 
   researchRequirements:
     string[];
@@ -36,127 +37,410 @@ function lowerFirst(
   }
 
   return (
-    value.charAt(0).toLowerCase() +
+    value.charAt(0)
+      .toLowerCase() +
     value.slice(1)
   );
 }
 
-function createWhyItMattersParagraph(
+function getTopic(
   blueprint: GuideBlueprint,
-  section: GeneratedSectionBlueprint,
 ): string {
+  return lowerFirst(
+    blueprint.topic.trim(),
+  );
+}
+
+function getAudience(
+  blueprint: GuideBlueprint,
+): string {
+  return (
+    blueprint.audience
+      ?.trim()
+      .toLowerCase() ||
+    "buyers"
+  );
+}
+
+function createIntroductionParagraphs(
+  blueprint: GuideBlueprint,
+): string[] {
   const topic =
-    lowerFirst(
-      blueprint.topic,
+    getTopic(
+      blueprint,
     );
 
-  switch (section.id) {
-    case "what-to-prioritise":
-    case "what-to-look-for":
-      return `This matters because the features that look most impressive in an advert are not always the ones that improve everyday use. With ${topic}, reliability, ease of use and suitability for the job usually matter more than owning every premium extra.`;
+  const audience =
+    getAudience(
+      blueprint,
+    );
 
-    case "what-to-compromise":
-      return `A compromise only becomes a problem when it gets in the way of what you actually need to do. Paying more to remove a limitation you will never notice is not an upgrade. It is simply extra expense.`;
+  switch (blueprint.type) {
+    case "MISTAKES":
+      return [
+        `Buying ${topic} can become expensive surprisingly quickly, particularly when marketing encourages ${audience} to focus on headline specifications rather than the complete setup they actually need.`,
 
-    case "best-value":
-      return `Good value does not mean choosing the lowest price. It means getting the capability you genuinely need without paying heavily for small improvements, specialist features or a more prestigious name.`;
+        `Most disappointing purchases are not caused by choosing an unusable product. They happen because the buyer overspends in the wrong area, overlooks an important limitation or forgets the additional costs needed to make the purchase genuinely useful.`,
 
-    case "new-vs-used":
-      return `The difference between new and used is about more than price. New gives you greater certainty, while used can unlock a much stronger product for the same budget. The right route depends on how much risk you are comfortable accepting.`;
+        `The aim of this guide is to identify those risks before money changes hands, explain why they catch buyers out and provide a practical way to avoid them.`,
+      ];
 
-    case "mistakes":
-    case "common-mistakes":
-      return `Most poor purchases are not caused by choosing a terrible product. They happen because the buyer chooses something unsuitable, forgets about the wider costs or pays extra for features that do not solve a real problem.`;
+    case "COMPARISON":
+      return [
+        `Choosing between ${topic} is rarely as simple as finding which option has the longest specification list. The meaningful differences usually involve how each choice performs in everyday use, what compromises it introduces and whether those differences justify the price.`,
 
-    case "recommendations":
-      return `A recommendation is only useful when it is tied to a particular buyer. The strongest choice for one person may be unnecessarily expensive, too complicated or simply wrong for somebody else.`;
+        `The better option depends on the buyer, the intended use and the wider ownership costs rather than one isolated feature.`,
 
-    case "final-verdict":
-      return `The purpose of the verdict is not to repeat everything above it. It should turn the evidence into one clear decision and explain the circumstances in which that decision would change.`;
+        `This guide compares the decision from a practical buying perspective so that the final choice is based on suitability rather than marketing.`,
+      ];
+
+    case "BUDGET_GUIDE":
+      return [
+        `A limited budget does not automatically mean accepting a poor product. It does mean being disciplined about which features deserve the money and which upgrades can safely be ignored.`,
+
+        `With ${topic}, the strongest purchase is often the one that protects the essentials while avoiding specialist features that add cost without improving normal use.`,
+
+        `This guide explains where the value sits, where compromises are likely and how to avoid a cheap purchase becoming an expensive mistake.`,
+      ];
+
+    case "BEST_FOR":
+      return [
+        `The best choice for ${audience} is not necessarily the most powerful or expensive option. It is the one that handles their real priorities without creating unnecessary cost, weight or complexity.`,
+
+        `When comparing ${topic}, suitability matters more than winning every specification. A product can be technically impressive and still be the wrong purchase for the person using it.`,
+
+        `This guide focuses on the factors that make an option genuinely useful for the intended buyer.`,
+      ];
+
+    case "EXPLAINER":
+      return [
+        `${blueprint.topic} is often presented through technical language that makes the buying decision harder than it needs to be.`,
+
+        `What matters is not simply how the technology works, but whether it produces a benefit the buyer will actually notice and whether that benefit is worth paying for.`,
+
+        `This guide explains the concept in practical terms and connects it directly to real purchasing decisions.`,
+      ];
 
     default:
-      return `Understanding ${topic} properly helps the reader judge value rather than relying on price, popularity or marketing claims alone.`;
+      return [
+        `Buying ${topic} can feel complicated because specifications, price differences and competing recommendations quickly create more noise than clarity.`,
+
+        `The sensible approach is to begin with the buyer's real needs, understand the compromises at each price level and only then compare individual products.`,
+
+        `This guide is designed to make that process clearer and reduce the risk of paying for features that will make little difference in everyday use.`,
+      ];
   }
 }
 
-function createTradeOffParagraph(
+function createMistakesParagraphs(
+  blueprint: GuideBlueprint,
+): string[] {
+  const topic =
+    getTopic(
+      blueprint,
+    );
+
+  return [
+    `One of the most common mistakes is spending the full budget on the headline purchase while leaving too little for the rest of the setup. With ${topic}, supporting items can affect usability, reliability and overall value just as much as the main product.`,
+
+    `Another mistake is assuming that a higher price automatically produces a noticeably better experience. Premium models often justify their cost through specialist performance, stronger construction or advanced controls, but those benefits only represent value when the buyer will genuinely use them.`,
+
+    `Buyers also underestimate convenience. Size, weight, battery life, controls, compatibility and ongoing costs may look less exciting than performance figures, but they often determine whether a product is enjoyable to own or regularly left unused.`,
+
+    `Finally, popularity should never replace suitability. A widely recommended product may still be too complicated, too expensive or poorly matched to the buyer's intended use.`,
+  ];
+}
+
+function createWhyMistakesHappenParagraphs(
+  blueprint: GuideBlueprint,
+): string[] {
+  const topic =
+    getTopic(
+      blueprint,
+    );
+
+  return [
+    `These mistakes happen because ${topic} is commonly marketed around numbers that are easy to compare. Faster performance, higher resolution and longer feature lists create a simple impression of progress, even when those improvements have little effect on the buyer's normal use.`,
+
+    `Online recommendations can also remove important context. A product praised by an experienced professional may be unnecessary for a beginner, while a compact and affordable option dismissed by an enthusiast may be exactly right for somebody who values simplicity.`,
+
+    `Buyers are also encouraged to think about the initial price rather than the total cost of ownership. Accessories, compatible products, subscriptions, maintenance and future upgrades can turn an apparently affordable purchase into a much larger commitment.`,
+
+    `The safest response is to connect every feature and every extra pound to a specific need. When the buyer cannot explain what problem an upgrade solves, the upgrade probably does not deserve the money.`,
+  ];
+}
+
+function createAvoidMistakesParagraphs(
+  blueprint: GuideBlueprint,
+): string[] {
+  const topic =
+    getTopic(
+      blueprint,
+    );
+
+  return [
+    `Begin by writing down what the purchase must do, what would merely be useful and what would be unnecessary. This prevents impressive but irrelevant features from controlling the decision.`,
+
+    `Set a complete budget rather than a body-only or product-only budget. Include the accessories, compatible equipment and protection required to use ${topic} properly from the first day.`,
+
+    `Compare weaknesses as carefully as strengths. A limitation that affects the main use should remove a product from consideration, while a limitation that will rarely be noticed may be a sensible way to save money.`,
+
+    `Where possible, handle or test the product before buying. Comfort, menus, controls and size are difficult to judge from a specification sheet, yet they strongly influence long-term satisfaction.`,
+
+    `Finally, walk away when the seller, condition, warranty or exact product variant cannot be confirmed. Missing information is not a reason to take a chance with a significant purchase.`,
+  ];
+}
+
+function createChecklistParagraphs(
+  blueprint: GuideBlueprint,
+): string[] {
+  const topic =
+    getTopic(
+      blueprint,
+    );
+
+  return [
+    `Before buying ${topic}, confirm that the exact model or variant matches the intended use and that no essential feature is missing.`,
+
+    `Check the complete ownership cost, including compatible accessories, replacements, warranties and any equipment needed immediately.`,
+
+    `Make sure the most important limitation is acceptable. Every product has compromises, but the wrong compromise can make even a highly rated option poor value.`,
+
+    `Compare the final choice with at least one cheaper alternative and one similarly priced competitor. The purchase should still make sense once the marketing is removed.`,
+
+    `Spend more only when the additional cost solves a real problem, improves reliability or keeps the purchase useful for substantially longer.`,
+  ];
+}
+
+function createPriorityParagraphs(
+  blueprint: GuideBlueprint,
+): string[] {
+  const topic =
+    getTopic(
+      blueprint,
+    );
+
+  return [
+    `Start with the features that affect every use of ${topic}. Reliability, comfort, compatibility and ease of operation usually matter more than specialist capabilities that may only be used occasionally.`,
+
+    `A useful feature should solve a recognisable problem. When a buyer cannot explain when or why a feature will help, it should not be allowed to increase the budget.`,
+
+    `Compatibility deserves particular attention because the first purchase may commit the buyer to additional products, accessories or an ecosystem that becomes expensive to leave later.`,
+
+    `The strongest shortlist therefore begins with suitability and removes products that fail an essential requirement before price or prestige are considered.`,
+  ];
+}
+
+function createCompromiseParagraphs(
+  blueprint: GuideBlueprint,
+): string[] {
+  const topic =
+    getTopic(
+      blueprint,
+    );
+
+  return [
+    `Every price level involves compromise. The important distinction is between limitations that reduce pride of ownership and limitations that genuinely interfere with the intended use.`,
+
+    `A cheaper ${topic} option may use older technology, offer fewer controls or feel less premium without producing a meaningfully worse result for an ordinary buyer.`,
+
+    `By contrast, weak reliability, poor compatibility or a limitation affecting the main task can create repeated frustration and may make the cheaper option more expensive in the long run.`,
+
+    `The sensible compromise is the one the buyer understands before purchase and is unlikely to notice during normal use.`,
+  ];
+}
+
+function createValueParagraphs(
+  blueprint: GuideBlueprint,
+): string[] {
+  const topic =
+    getTopic(
+      blueprint,
+    );
+
+  return [
+    `The best value in ${topic} usually sits above the absolute cheapest products but below the point where specialist features begin increasing the price sharply.`,
+
+    `Value comes from dependable performance, sensible ownership costs and enough capability to remain useful. It does not require the product to lead every category.`,
+
+    `Spending more is justified when it removes a limitation the buyer will regularly encounter, improves durability or avoids an early replacement.`,
+
+    `When the extra money mainly purchases prestige, marginal performance or capabilities that will rarely be used, keeping the difference is normally the smarter choice.`,
+  ];
+}
+
+function createNewVsUsedParagraphs(
+  blueprint: GuideBlueprint,
+): string[] {
+  const topic =
+    getTopic(
+      blueprint,
+    );
+
+  return [
+    `Buying new provides the greatest certainty. The buyer receives full warranty protection, clear return rights and less risk of hidden wear or missing accessories.`,
+
+    `Buying used can provide a much stronger ${topic} option for the same budget, but condition and seller protection become part of the buying decision rather than an afterthought.`,
+
+    `A used purchase should be checked for damage, abnormal wear, missing components and anything that could make repair uneconomical. The exact checks will depend on the product category.`,
+
+    `The used route makes most sense when the saving is meaningful, the seller is reputable and the remaining budget can absorb a replacement accessory or minor repair if necessary.`,
+  ];
+}
+
+function createRecommendationParagraphs(
+  blueprint: GuideBlueprint,
+): string[] {
+  const topic =
+    getTopic(
+      blueprint,
+    );
+
+  return [
+    `A useful recommendation for ${topic} must begin with the buyer rather than the product. Each option should have a clear reason to exist and a clearly defined person for whom it makes sense.`,
+
+    `The strongest balanced choice will normally combine dependable performance, manageable ownership costs and no serious weakness for the intended audience.`,
+
+    `Budget recommendations should protect the essentials rather than simply identify the cheapest available product. Premium recommendations should only appear when their additional capability creates a meaningful advantage.`,
+
+    `Every recommendation also needs an honest limitation. When no weakness is acknowledged, the recommendation is unlikely to provide enough context for a responsible buying decision.`,
+  ];
+}
+
+function createAlternativesParagraphs(
+  blueprint: GuideBlueprint,
+): string[] {
+  const topic =
+    getTopic(
+      blueprint,
+    );
+
+  return [
+    `The obvious ${topic} purchase may not be the only sensible route. An older model, a used premium product or a different product type may solve the same problem for less money.`,
+
+    `Alternatives become especially valuable when the buyer is being asked to pay heavily for one feature while accepting weaknesses elsewhere.`,
+
+    `Changing category can sometimes improve value more than moving between similar models. The right question is not which product is most impressive, but which route completes the job most effectively.`,
+
+    `A good alternative should reduce cost, complexity or ownership burden without sacrificing the requirement that matters most.`,
+  ];
+}
+
+function createVerdictParagraphs(
+  blueprint: GuideBlueprint,
+): string[] {
+  const topic =
+    getTopic(
+      blueprint,
+    );
+
+  return [
+    `The safest approach to ${topic} is to choose the least expensive option that fully satisfies the important requirements and avoids any limitation likely to cause regret.`,
+
+    `Most buyers gain more from a balanced complete setup than from stretching the budget for the most impressive headline product.`,
+
+    `Spend more when the improvement will be noticed regularly, when reliability matters professionally or when the cheaper route would force an early replacement.`,
+
+    `If it were our money, we would prioritise suitability, ownership cost and long-term usefulness over prestige. The best purchase is the one that solves the problem without creating a new one.`,
+  ];
+}
+
+function createGeneralParagraphs(
+  blueprint: GuideBlueprint,
+): string[] {
+  const topic =
+    getTopic(
+      blueprint,
+    );
+
+  return [
+    `The practical value of ${topic} depends on how well the available options match the buyer's normal use, not on which product produces the most impressive specification sheet.`,
+
+    `Strong performance is valuable when it removes frustration or enables something the buyer genuinely wants to do. It is far less valuable when it exists mainly as unused capability.`,
+
+    `Price should therefore be compared alongside suitability, ownership cost and the compromises involved rather than treated as a simple ranking of quality.`,
+
+    `A sensible decision removes unsuitable products first and then compares the remaining options on the benefits the buyer will actually notice.`,
+  ];
+}
+
+function createPublicParagraphs(
+  blueprint: GuideBlueprint,
   section: GeneratedSectionBlueprint,
-): string {
+): string[] {
   switch (section.id) {
     case "introduction":
-      return "There will rarely be one perfect option. A cheaper choice may involve accepting fewer controls, older technology or less room to grow, while a more expensive option may offer improvements that many buyers will never use.";
+      return createIntroductionParagraphs(
+        blueprint,
+      );
+
+    case "biggest-mistakes":
+    case "mistakes":
+    case "common-mistakes":
+      return createMistakesParagraphs(
+        blueprint,
+      );
+
+    case "why-they-happen":
+      return createWhyMistakesHappenParagraphs(
+        blueprint,
+      );
+
+    case "how-to-avoid-them":
+      return createAvoidMistakesParagraphs(
+        blueprint,
+      );
+
+    case "before-you-buy":
+      return createChecklistParagraphs(
+        blueprint,
+      );
 
     case "what-to-prioritise":
     case "what-to-look-for":
-      return "Prioritising one feature often means accepting less somewhere else. Better performance may increase cost, a smaller design may reduce comfort and a more advanced product may introduce complexity that a beginner does not need.";
+    case "what-matters":
+      return createPriorityParagraphs(
+        blueprint,
+      );
 
     case "what-to-compromise":
-      return "Some compromises are easy to live with. Others become frustrating every time the product is used. The guide should separate harmless limitations from the ones that could make the buyer regret the purchase.";
+      return createCompromiseParagraphs(
+        blueprint,
+      );
 
     case "best-value":
-      return "The best-value option may not lead every category. It may instead combine dependable performance, sensible ownership costs and fewer serious weaknesses than similarly priced alternatives.";
+    case "budget-options":
+    case "best-overall":
+    case "premium-options":
+      return createValueParagraphs(
+        blueprint,
+      );
 
     case "new-vs-used":
-      return "Buying new reduces uncertainty but usually buys less capability for the money. Buying used improves value but makes condition, seller protection and inspection far more important.";
-
-    case "mistakes":
-    case "common-mistakes":
-      return "Avoiding one mistake can sometimes create another. Choosing purely on price may mean buying twice, while stretching the budget too far can leave no money for the accessories or supporting products needed to use the purchase properly.";
+      return createNewVsUsedParagraphs(
+        blueprint,
+      );
 
     case "recommendations":
-      return "Every recommended option should have an honest weakness. If a product appears perfect, the draft probably has not examined its price, limitations or intended buyer carefully enough.";
+      return createRecommendationParagraphs(
+        blueprint,
+      );
+
+    case "alternatives":
+      return createAlternativesParagraphs(
+        blueprint,
+      );
 
     case "final-verdict":
-      return "The answer may change for buyers with specialist needs. The final recommendation should therefore cover the sensible default choice and the clearest reasons somebody might choose differently.";
+      return createVerdictParagraphs(
+        blueprint,
+      );
 
     default:
-      return "The useful answer lies in the trade-off: what the buyer gains, what they give up and whether that exchange makes sense for their needs.";
+      return createGeneralParagraphs(
+        blueprint,
+      );
   }
-}
-
-function createAudienceParagraph(
-  blueprint: GuideBlueprint,
-): string {
-  const audience =
-    blueprint.audience?.trim();
-
-  if (!audience) {
-    return "Think about how the product will actually be used. Occasional users, beginners and experienced buyers can all value very different things, even when they are shopping within the same category.";
-  }
-
-  return `For ${audience.toLowerCase()}, simplicity and suitability may be more valuable than maximum performance. The guide should speak to their likely use rather than assuming every reader wants the most advanced option available.`;
-}
-
-function createMoneyParagraph(
-  section: GeneratedSectionBlueprint,
-): string {
-  switch (section.id) {
-    case "best-value":
-    case "recommendations":
-      return "Spending more is worthwhile when it removes a meaningful limitation, improves reliability or keeps the purchase useful for considerably longer. It is not worthwhile when the difference mainly exists on a specification sheet.";
-
-    case "new-vs-used":
-      return "Remember to compare the complete cost. Warranty cover, replacement batteries, missing accessories, repairs and return protection can quickly change whether a used bargain is genuinely cheaper.";
-
-    case "mistakes":
-    case "common-mistakes":
-      return "Leave room in the budget for the complete setup. A low headline price can become poor value once essential accessories, compatible extras or an early replacement are added.";
-
-    default:
-      return "Before increasing the budget, identify the exact problem the extra money will solve. When there is no clear answer, saving the money is usually the smarter decision.";
-  }
-}
-
-function createNextStepParagraph(
-  blueprint: GuideBlueprint,
-  plan: EditorialPlan,
-): string {
-  const topic =
-    lowerFirst(
-      blueprint.topic,
-    );
-
-  return `The next step is to use these points as a filter when comparing ${topic}. Remove options that fail the important requirements first, then compare the remaining choices on value rather than trying to find one product that wins every specification. ${plan.finishWith}`;
 }
 
 function createResearchRequirements(
@@ -164,22 +448,30 @@ function createResearchRequirements(
   section: GeneratedSectionBlueprint,
 ): string[] {
   const requirements = [
-    `Verify all claims made about "${blueprint.topic}".`,
-    "Add at least one concrete, verified example.",
+    `Verify factual claims about "${blueprint.topic}".`,
+    "Replace generic statements with category-specific evidence where available.",
+    "Add at least one concrete example supported by the Product Brain.",
     "Confirm that every stated trade-off is accurate.",
-    "Remove generic advice that does not help the reader decide.",
+    "Remove any paragraph that does not help the reader make a decision.",
   ];
 
   if (
     section.id ===
       "recommendations" ||
     section.id ===
-      "best-value"
+      "best-value" ||
+    section.id ===
+      "best-overall" ||
+    section.id ===
+      "budget-options" ||
+    section.id ===
+      "premium-options"
   ) {
     requirements.push(
-      "Add current UK prices from verified sources.",
+      "Use current Product Brain records before naming products.",
+      "Verify current UK prices before publication.",
       "Confirm product availability and exact variants.",
-      "Explain who should not buy each option.",
+      "Explain who should not buy each recommended option.",
     );
   }
 
@@ -188,7 +480,7 @@ function createResearchRequirements(
     "new-vs-used"
   ) {
     requirements.push(
-      "Verify current warranty and retailer return information.",
+      "Verify warranty, returns and seller-protection information.",
     );
   }
 
@@ -198,33 +490,14 @@ function createResearchRequirements(
 export function expandSectionDraft({
   blueprint,
   section,
-  plan,
 }: ExpandSectionInput):
   ExpandedSectionDraft {
   return {
-    paragraphs: [
-      createWhyItMattersParagraph(
+    paragraphs:
+      createPublicParagraphs(
         blueprint,
         section,
       ),
-
-      createTradeOffParagraph(
-        section,
-      ),
-
-      createAudienceParagraph(
-        blueprint,
-      ),
-
-      createMoneyParagraph(
-        section,
-      ),
-
-      createNextStepParagraph(
-        blueprint,
-        plan,
-      ),
-    ],
 
     researchRequirements:
       createResearchRequirements(

@@ -1,12 +1,19 @@
 import type {
-  KnowledgeContext,
-} from "../knowledge/KnowledgeContext";
+  GuideBlueprint,
+  GuideBlueprintType,
+} from "@/knowledge/guides/blueprints";
+
+import {
+  EditorialBrain,
+} from "@/knowledge/guides/editorial-brain";
+
+import type {
+  EditorialSectionKind,
+  EditorialSectionResult,
+} from "@/knowledge/guides/editorial-brain";
 
 import {
   EditorialMemory,
-  EditorialRulesEngine,
-  KnowledgePreparationEngine,
-  NarrativeEngine,
 } from "../editorial";
 
 import type {
@@ -17,28 +24,22 @@ import type {
   EditorialGoal,
 } from "../editorial/EditorialGoal";
 
-import {
-  composeIntroduction,
-} from "../editorial/IntroductionComposer";
-
-import {
-  BuildConfidence,
-  ExplainConcept,
-  OpenWithEmpathy,
-} from "../editorial/techniques";
-
-import {
-  KnowledgeSelector,
-} from "../selector";
+import type {
+  KnowledgeContext,
+} from "../knowledge/KnowledgeContext";
 
 export interface EditorialSection {
-  heading: string;
+  heading:
+    string;
 
-  introduction: string;
+  introduction:
+    string;
 
-  paragraphs: string[];
+  paragraphs:
+    string[];
 
-  takeaway: string;
+  takeaway:
+    string;
 
   knowledgeUsed:
     string[];
@@ -70,365 +71,460 @@ export interface EditorialSection {
       string[];
   };
 }
-interface EditorialKnowledgeItem {
-  title: string;
 
-  explanation: string;
-}
+interface WriteEditorialSectionInput {
+  context:
+    KnowledgeContext;
 
-interface BuildEditorialSectionInput {
-  sectionId: string;
+  goal:
+    EditorialGoal;
 
   section:
     SectionContext;
 
-  introduction: string;
+  sectionId:
+    string;
 
-  coreParagraphs:
-    string[];
+  sectionKind:
+    EditorialSectionKind;
+}
 
-  takeaway: string;
+function createSlug(
+  value: string,
+): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(
+      /&/g,
+      "and",
+    )
+    .replace(
+      /['’]/g,
+      "",
+    )
+    .replace(
+      /[^a-z0-9]+/g,
+      "-",
+    )
+    .replace(
+      /^-+|-+$/g,
+      "",
+    );
+}
 
-  facts:
-    EditorialKnowledgeItem[];
+function inferBlueprintType(
+  sectionKind:
+    EditorialSectionKind,
+): GuideBlueprintType {
+  switch (sectionKind) {
+    case "MISTAKES":
+      return "MISTAKES";
 
-  tradeOffs:
-    EditorialKnowledgeItem[];
+    case "BEST_VALUE":
+    case "BUDGET":
+      return "BUDGET_GUIDE";
+
+    default:
+      return "BUYING_GUIDE";
+  }
+}
+
+function createCompatibilityBlueprint(
+  context:
+    KnowledgeContext,
+
+  goal:
+    EditorialGoal,
+
+  sectionKind:
+    EditorialSectionKind,
+): GuideBlueprint {
+  const slug =
+    createSlug(
+      context.topic,
+    );
+
+  return {
+    id:
+      `editorial-${slug}`,
+
+    slug,
+
+    title:
+      context.topic,
+
+    category:
+      context.category as GuideBlueprint["category"],
+
+    topic:
+      context.topic,
+
+    type:
+      inferBlueprintType(
+        sectionKind,
+      ),
+
+    primaryKeyword:
+      context.topic
+        .trim()
+        .toLowerCase(),
+
+    secondaryKeywords:
+      [],
+
+    audience:
+      goal.audience,
+
+    searchIntent:
+      "COMMERCIAL",
+
+    recommendationTopic:
+      context.topic,
+
+    status:
+      "READY",
+
+    priority:
+      3,
+  };
+}
+
+function calculateRulesScore(
+  result:
+    EditorialSectionResult,
+): number {
+  if (
+    result.publishable
+  ) {
+    return 100;
+  }
+
+  return Math.max(
+    0,
+    100 -
+      result.qualityIssues.length *
+        15,
+  );
+}
+
+function getSelectedFacts(
+  result:
+    EditorialSectionResult,
+
+  context:
+    KnowledgeContext,
+): string[] {
+  const factTitles =
+    new Set(
+      context.keyFacts.map(
+        (fact) =>
+          fact.title,
+      ),
+    );
+
+  return result.knowledgeUsed.filter(
+    (title) =>
+      factTitles.has(
+        title,
+      ),
+  );
+}
+
+function getSelectedTradeOffs(
+  result:
+    EditorialSectionResult,
+
+  context:
+    KnowledgeContext,
+): string[] {
+  const tradeOffTitles =
+    new Set(
+      context.tradeOffs.map(
+        (tradeOff) =>
+          tradeOff.title,
+      ),
+    );
+
+  return result.knowledgeUsed.filter(
+    (title) =>
+      tradeOffTitles.has(
+        title,
+      ),
+  );
 }
 
 export class EditorialAuthor {
-  private readonly openWithEmpathy =
-    new OpenWithEmpathy();
-
-  private readonly explainConcept =
-    new ExplainConcept();
-
-  private readonly buildConfidence =
-    new BuildConfidence();
-
-  private readonly knowledgeSelector =
-    new KnowledgeSelector();
-
-  private readonly rulesEngine =
-    new EditorialRulesEngine();
-
-  private readonly narrative =
-    new NarrativeEngine();
-
-    private readonly knowledgePreparation =
-  new KnowledgePreparationEngine();
+  private readonly brain =
+    new EditorialBrain();
 
   constructor(
     private readonly memory =
       new EditorialMemory(),
   ) {}
-private buildEditorialSection({
-  sectionId,
-  section,
-  introduction,
-  coreParagraphs,
-  takeaway,
-  facts,
-  tradeOffs,
-}: BuildEditorialSectionInput):
-  EditorialSection {
-  const narrative =
-    this.narrative.build({
-      previousHeading:
-        section.previousHeading,
 
-      currentHeading:
-        section.currentHeading,
+  private rememberKnowledge(
+    result:
+      EditorialSectionResult,
 
-      nextHeading:
-        section.nextHeading,
-    });
+    context: KnowledgeContext,
 
-  const paragraphs = [
-    ...(narrative.opening
-      ? [
-          narrative.opening,
-        ]
-      : []),
-
-    ...coreParagraphs,
-
-    takeaway,
-
-    ...(narrative.closing
-      ? [
-          narrative.closing,
-        ]
-      : []),
-  ];
-
-  facts.forEach(
-    (fact) => {
-      this.memory.markFactCovered(
-        fact.title,
-        sectionId,
-        fact.explanation,
+    sectionId:
+      string,
+  ): void {
+    const factsByTitle =
+      new Map(
+        context.keyFacts.map(
+          (fact) => [
+            fact.title,
+            fact,
+          ],
+        ),
       );
-    },
-  );
 
-  tradeOffs.forEach(
-    (tradeOff) => {
-      this.memory
-        .markTradeOffCovered(
-          tradeOff.title,
+    const tradeOffsByTitle =
+      new Map(
+        context.tradeOffs.map(
+          (tradeOff) => [
+            tradeOff.title,
+            tradeOff,
+          ],
+        ),
+      );
+
+    const mistakesByTitle =
+      new Map(
+        context.commonMistakes.map(
+          (mistake) => [
+            mistake.title,
+            mistake,
+          ],
+        ),
+      );
+
+    const productsByName =
+      new Map(
+        context.products.map(
+          (product) => [
+            product.name,
+            product,
+          ],
+        ),
+      );
+
+    result.knowledgeUsed.forEach(
+      (title) => {
+        const fact =
+          factsByTitle.get(
+            title,
+          );
+
+        if (fact) {
+          this.memory
+            .markFactCovered(
+              fact.title,
+              sectionId,
+              fact.explanation,
+            );
+
+          return;
+        }
+
+        const tradeOff =
+          tradeOffsByTitle.get(
+            title,
+          );
+
+        if (tradeOff) {
+          this.memory
+            .markTradeOffCovered(
+              tradeOff.title,
+              sectionId,
+              tradeOff.explanation,
+            );
+
+          return;
+        }
+
+        const mistake =
+          mistakesByTitle.get(
+            title,
+          );
+
+        if (mistake) {
+          this.memory
+            .markMistakeCovered(
+              mistake.title,
+              sectionId,
+              mistake.explanation,
+            );
+
+          return;
+        }
+
+        const product =
+          productsByName.get(
+            title,
+          );
+
+        if (product) {
+          this.memory.remember({
+            kind:
+              "PRODUCT",
+
+            title:
+              product.name,
+
+            sectionId,
+
+            detail:
+              product.reason,
+          });
+
+          return;
+        }
+
+        this.memory.remember({
+          kind:
+            "IDEA",
+
+          title,
+
           sectionId,
-          tradeOff.explanation,
-        );
-    },
-  );
+        });
+      },
+    );
+  }
+  private createUncoveredContext(
+  context:
+    KnowledgeContext,
+): KnowledgeContext {
+  return {
+    ...context,
 
-  const rulesReport =
-    this.rulesEngine.evaluate([
-      {
+    keyFacts:
+      context.keyFacts.filter(
+        (fact) =>
+          !this.memory.hasCovered(
+            "FACT",
+            fact.title,
+          ),
+      ),
+
+    tradeOffs:
+      context.tradeOffs.filter(
+        (tradeOff) =>
+          !this.memory.hasCovered(
+            "TRADE_OFF",
+            tradeOff.title,
+          ),
+      ),
+
+    commonMistakes:
+      context.commonMistakes.filter(
+        (mistake) =>
+          !this.memory.hasCovered(
+            "MISTAKE",
+            mistake.title,
+          ),
+      ),
+
+    products:
+      context.products.filter(
+        (product) =>
+          !this.memory.hasCovered(
+            "PRODUCT",
+            product.name,
+          ),
+      ),
+  };
+}
+
+  private writeSection({
+    context,
+    goal,
+    section,
+    sectionId,
+    sectionKind,
+  }: WriteEditorialSectionInput):
+    EditorialSection {
+    const blueprint =
+      createCompatibilityBlueprint(
+        context,
+        goal,
+        sectionKind,
+      );
+const uncoveredContext =
+  this.createUncoveredContext(
+    context,
+  );
+    const result =
+      this.brain.writeSection({
+        blueprint,
+
+        knowledge:
+  uncoveredContext,
+
+        sectionKind,
+
         heading:
           section.currentHeading,
 
-        introduction,
-
-        paragraphs,
-
-        takeaway,
-      },
-    ]);
-
-  return {
-    heading:
-      section.currentHeading,
-
-    introduction,
-
-    paragraphs,
-
-    takeaway,
-
-    knowledgeUsed: [
-      ...tradeOffs.map(
-        (tradeOff) =>
-          tradeOff.title,
-      ),
-
-      ...facts.map(
-        (fact) =>
-          fact.title,
-      ),
-    ],
-
-    selectedKnowledge: {
-      facts:
-        facts.map(
-          (fact) =>
-            fact.title,
-        ),
-
-      tradeOffs:
-        tradeOffs.map(
-          (tradeOff) =>
-            tradeOff.title,
-        ),
-    },
-
-    memory: {
-      covered:
-        this.memory
-          .getBySection(
-            sectionId,
-          )
-          .map(
-            (entry) =>
-              entry.title,
-          ),
-
-      totalEntries:
-        this.memory.size,
-    },
-
-    rules: {
-      passed:
-        rulesReport.passed,
-
-      score:
-        rulesReport.score,
-
-      messages:
-        rulesReport.results.map(
-          (result) =>
-            result.message,
-        ),
-    },
-  };
-}
-  writeIntroduction(
-    context: KnowledgeContext,
-    goal: EditorialGoal,
-    section: SectionContext,
-  ): EditorialSection {
-    const selectedFacts =
-      this.memory.filterUncovered(
-        this.knowledgeSelector
-          .selectIntroductionFacts(
-            context,
-          ),
-        "FACT",
-        (fact) =>
-          fact.title,
-      );
-
-    const selectedTradeOffs =
-      this.memory.filterUncovered(
-        this.knowledgeSelector
-          .selectTradeOffs(
-            context,
-          ),
-        "TRADE_OFF",
-        (tradeOff) =>
-          tradeOff.title,
-      );
-
-    const opening =
-      this.openWithEmpathy.write(
-        context,
-        goal,
-      );
-
-    const concept =
-      this.explainConcept.write(
-        context,
-        goal,
-      );
-
-    const confidence =
-      this.buildConfidence.write(
-        context,
-        goal,
-      );
-
-    const preparedKnowledge =
-  this.knowledgePreparation.prepare(
-    selectedFacts,
-    selectedTradeOffs,
-    context.topic,
-    goal.audience,
-  );
-
-    const composed =
-      composeIntroduction({
-        context,
-        goal,
-        opening,
-        concept,
-        confidence,
-        selectedFacts,
-        selectedTradeOffs,
-        explainedFacts:
-  preparedKnowledge
-    .explainedFacts,
-      });
-
-    const narrative =
-      this.narrative.build({
         previousHeading:
           section.previousHeading,
-
-        currentHeading:
-          section.currentHeading,
 
         nextHeading:
           section.nextHeading,
       });
 
-    const paragraphs = [
-      ...(narrative.opening
-        ? [
-            narrative.opening,
-          ]
-        : []),
-
-      ...composed.paragraphs,
-
-      ...(narrative.closing
-        ? [
-            narrative.closing,
-          ]
-        : []),
-    ];
-
-    selectedFacts.forEach(
-      (fact) => {
-        this.memory.markFactCovered(
-          fact.title,
-          "introduction",
-          fact.explanation,
-        );
-      },
+    this.rememberKnowledge(
+      result,
+      context,
+      sectionId,
     );
 
-    selectedTradeOffs.forEach(
-      (tradeOff) => {
-        this.memory
-          .markTradeOffCovered(
-            tradeOff.title,
-            "introduction",
-            tradeOff.explanation,
-          );
-      },
-    );
+    const facts =
+      getSelectedFacts(
+        result,
+        context,
+      );
 
-    const rulesReport =
-      this.rulesEngine.evaluate([
-        {
-          heading:
-            section.currentHeading,
-
-          introduction:
-            composed.introduction,
-
-          paragraphs,
-
-          takeaway:
-            composed.takeaway,
-        },
-      ]);
+    const tradeOffs =
+      getSelectedTradeOffs(
+        result,
+        context,
+      );
 
     return {
       heading:
-        section.currentHeading,
+        result.heading,
 
       introduction:
-        composed.introduction,
+        result.introduction,
 
-      paragraphs,
+      paragraphs:
+        result.paragraphs.map(
+          (paragraph) =>
+            paragraph.text,
+        ),
 
       takeaway:
-        composed.takeaway,
+        result.takeaway,
 
       knowledgeUsed:
-        composed.knowledgeUsed,
+        result.knowledgeUsed,
 
       selectedKnowledge: {
-        facts:
-          selectedFacts.map(
-            (fact) =>
-              fact.title,
-          ),
+        facts,
 
-        tradeOffs:
-          selectedTradeOffs.map(
-            (tradeOff) =>
-              tradeOff.title,
-          ),
+        tradeOffs,
       },
 
       memory: {
         covered:
           this.memory
             .getBySection(
-              "introduction",
+              sectionId,
             )
             .map(
               (entry) =>
@@ -441,741 +537,318 @@ private buildEditorialSection({
 
       rules: {
         passed:
-          rulesReport.passed,
+          result.publishable,
 
         score:
-          rulesReport.score,
+          calculateRulesScore(
+            result,
+          ),
 
         messages:
-          rulesReport.results.map(
-            (result) =>
-              result.message,
-          ),
+          result.qualityIssues
+            .length > 0
+            ? result.qualityIssues
+            : [
+                `${result.heading} passed the Editorial Brain quality checks.`,
+              ],
       },
     };
   }
 
-  writePriorities(
-    context: KnowledgeContext,
-    goal: EditorialGoal,
-    section: SectionContext,
+  writeIntroduction(
+    context:
+      KnowledgeContext,
+
+    goal:
+      EditorialGoal,
+
+    section:
+      SectionContext,
   ): EditorialSection {
-    const selectedFacts =
-      this.memory.filterUncovered(
-        this.knowledgeSelector
-          .selectPriorityFacts(
-            context,
-          ),
-        "FACT",
-        (fact) =>
-          fact.title,
-      );
+    return this.writeSection({
+      context,
+      goal,
+      section,
 
- const preparedKnowledge =
-  this.knowledgePreparation.prepare(
-    selectedFacts,
-    [],
-    context.topic,
-    goal.audience,
-  );
+      sectionId:
+        "introduction",
 
-    const narrative =
-      this.narrative.build({
-        previousHeading:
-          section.previousHeading,
-
-        currentHeading:
-          section.currentHeading,
-
-        nextHeading:
-          section.nextHeading,
-      });
-
-    const usedFacts =
-  selectedFacts.slice(
-    0,
-    goal.maxParagraphs,
-  );
-
-const coreParagraphs =
-  usedFacts.map(
-    (fact) =>
-      preparedKnowledge
-        .explainedFacts
-        .find(
-          (explained) =>
-            explained.title ===
-            fact.title,
-        )?.paragraph ??
-      fact.explanation,
-  );
-
-    const takeaway =
-      "Prioritise the features that improve how the camera will actually be used. Anything else should justify its place in the budget before you pay extra for it.";
-
-    return this.buildEditorialSection({
-  sectionId:
-    "what-to-prioritise",
-
-  section,
-
-  introduction:
-    goal.purpose,
-
-  coreParagraphs,
-
-  takeaway,
-
-  facts:
-    selectedFacts,
-
-  tradeOffs:
-    [],
-});
-}
-
-  writeCompromises(
-    context: KnowledgeContext,
-    goal: EditorialGoal,
-    section: SectionContext,
-  ): EditorialSection {
-    const selectedFacts =
-      this.memory.filterUncovered(
-        this.knowledgeSelector
-          .selectCompromiseFacts(
-            context,
-          ),
-        "FACT",
-        (fact) =>
-          fact.title,
-
-      );
-      
-
-    const selectedTradeOffs =
-      this.memory.filterUncovered(
-        this.knowledgeSelector
-          .selectTradeOffs(
-            context,
-          ),
-        "TRADE_OFF",
-        (tradeOff) =>
-          tradeOff.title,
-      );
-
-
-
-    const preparedKnowledge =
-  this.knowledgePreparation.prepare(
-    selectedFacts,
-    selectedTradeOffs,
-    context.topic,
-    goal.audience,
-    "Decide whether this compromise will affect the way you actually use the camera. If it will not, paying more to remove it may offer very little practical value.",
-  );
-   
-
-    const usedTradeOffs =
-  selectedTradeOffs.slice(
-    0,
-    Math.min(
-      2,
-      goal.maxParagraphs,
-    ),
-  );
-
-const remainingSlots =
-  Math.max(
-    0,
-    goal.maxParagraphs -
-      usedTradeOffs.length,
-  );
-
-const usedFacts =
-  selectedFacts.slice(
-    0,
-    remainingSlots,
-  );
-
-const coreParagraphs = [
-  ...usedTradeOffs.map(
-    (tradeOff) =>
-      preparedKnowledge
-        .explainedTradeOffs
-        .find(
-          (explained) =>
-            explained.title ===
-            tradeOff.title,
-        )?.paragraph ??
-      tradeOff.explanation,
-  ),
-
-  ...usedFacts.map(
-    (fact) =>
-      preparedKnowledge
-        .explainedFacts
-        .find(
-          (explained) =>
-            explained.title ===
-            fact.title,
-        )?.paragraph ??
-      fact.explanation,
-  ),
-];
-    
-
-    const takeaway =
-      "Compromise on specifications you are unlikely to notice. Do not compromise on the things that will affect every photograph or make the camera frustrating to use.";
-
-    return this.buildEditorialSection({
-  sectionId:
-    "what-to-compromise",
-
-  section,
-
-  introduction:
-    goal.purpose,
-
-  coreParagraphs,
-
-  takeaway,
-
-  facts:
-  usedFacts,
-
-tradeOffs:
-  usedTradeOffs,
-});
-}
-  writeBestValue(
-  context: KnowledgeContext,
-  goal: EditorialGoal,
-  section: SectionContext,
-): EditorialSection {
-  const selectedFacts =
-    this.memory.filterUncovered(
-      this.knowledgeSelector
-        .selectBestValueFacts(
-          context,
-        ),
-      "FACT",
-      (fact) =>
-        fact.title,
-    );
-
-  const selectedTradeOffs =
-    this.memory.filterUncovered(
-      this.knowledgeSelector
-        .selectTradeOffs(
-          context,
-        ),
-      "TRADE_OFF",
-      (tradeOff) =>
-        tradeOff.title,
-    );
-
-  const preparedKnowledge =
-  this.knowledgePreparation.prepare(
-    selectedFacts,
-    selectedTradeOffs,
-    context.topic,
-    goal.audience,
-    "Use this point to judge whether paying more creates a meaningful improvement or merely adds features that will rarely affect the buying experience.",
-  );
-
-  
-
-  const usedFacts =
-    selectedFacts.slice(
-      0,
-      goal.maxParagraphs,
-    );
-
-  const coreParagraphs =
-    usedFacts.map(
-      (fact) =>
-        preparedKnowledge
-  .explainedFacts
-  .find(
-          (explained) =>
-            explained.title ===
-            fact.title,
-        )?.paragraph ??
-        fact.explanation,
-    );
-
-  const primaryTradeOff =
-    selectedTradeOffs[0] ??
-    null;
-
-  if (
-    primaryTradeOff &&
-    coreParagraphs.length <
-      goal.maxParagraphs
-  ) {
-    coreParagraphs.push(
-      primaryTradeOff
-        .explanation,
-    );
+      sectionKind:
+        "INTRODUCTION",
+    });
   }
 
-  const takeaway =
-    "The best-value option is not necessarily the cheapest. It is the one that covers the important needs reliably without charging heavily for improvements the buyer may never notice.";
+  writeNeed(
+    context:
+      KnowledgeContext,
 
- return this.buildEditorialSection({
-  sectionId:
-    "best-value",
+    goal:
+      EditorialGoal,section:
+      SectionContext,
+  ): EditorialSection {
+    return this.writeSection({
+      context,
+      goal,
+      section,
 
-  section,
+      sectionId:
+        "do-you-need-it",
 
-  introduction:
-    goal.purpose,
+      sectionKind:
+        "NEED",
+    });
+  }
 
-  coreParagraphs,
+  writeAudience(
+    context:
+      KnowledgeContext,
 
-  takeaway,
+    goal:
+      EditorialGoal,
 
-  facts:
-    usedFacts,
+    section:
+      SectionContext,
+  ): EditorialSection {
+    return this.writeSection({
+      context,
+      goal,
+      section,
 
-  tradeOffs:
-    primaryTradeOff
-      ? [
-          primaryTradeOff,
-        ]
-      : [],
-});
-}
-writeBuyingUsed(
-  context: KnowledgeContext,
-  goal: EditorialGoal,
-  section: SectionContext,
-): EditorialSection {
-  const selectedFacts =
-    this.memory.filterUncovered(
-      this.knowledgeSelector
-        .selectBuyingUsedFacts(
-          context,
-        ),
-      "FACT",
-      (fact) =>
-        fact.title,
-    );
+      sectionId:
+        "who-is-it-for",
 
-  const selectedTradeOffs =
-    this.memory.filterUncovered(
-      this.knowledgeSelector
-        .selectTradeOffs(
-          context,
-        ),
-      "TRADE_OFF",
-      (tradeOff) =>
-        tradeOff.title,
-    );
+      sectionKind:
+        "AUDIENCE",
+    });
+  }
 
-const preparedKnowledge =
-  this.knowledgePreparation.prepare(
-    selectedFacts,
-    selectedTradeOffs,
-    context.topic,
-    goal.audience,
-    "Use this point to decide whether the extra value of buying used is worth the added uncertainty around condition, warranty and seller protection.",
-  );
+  writePriorities(
+    context:
+      KnowledgeContext,
 
-  const usedFacts =
-    selectedFacts.slice(
-      0,
-      Math.max(
-        0,
-        goal.maxParagraphs - 1,
-      ),
-    );
+    goal:
+      EditorialGoal,
 
-  const primaryTradeOff =
-    selectedTradeOffs[0] ??
-    null;
+    section:
+      SectionContext,
+  ): EditorialSection {
+    return this.writeSection({
+      context,
+      goal,
+      section,
 
-  const coreParagraphs = [
-    "Buying used can put a more capable camera within reach, but the lower price only represents good value when condition, seller protection and the likely cost of replacing worn accessories are taken into account.",
+      sectionId:
+        "what-to-prioritise",
 
-    ...usedFacts.map(
-      (fact) =>
-        preparedKnowledge
-  .explainedFacts
-  .find(
-          (explained) =>
-            explained.title ===
-            fact.title,
-        )?.paragraph ??
-        fact.explanation,
-    ),
+      sectionKind:
+        "PRIORITIES",
+    });
+  }
 
-    ...(primaryTradeOff
-      ? [
-          primaryTradeOff
-            .explanation,
-        ]
-      : []),
-  ].slice(
-    0,
-    goal.maxParagraphs,
-  );
+  writeBudget(
+    context:
+      KnowledgeContext,
 
-  const takeaway =
-    "Buy used when the saving gives you meaningfully better capability and the condition can be verified. Buy new when certainty, warranty protection and an uncomplicated return route are worth more than the performance difference.";
+    goal:
+      EditorialGoal,
 
-  return this.buildEditorialSection({
-    sectionId:
-      "new-vs-used",
+    section:
+      SectionContext,
+  ): EditorialSection {
+    return this.writeSection({
+      context,
+      goal,
+      section,
 
-    section,
+      sectionId:
+        "budget",
 
-    introduction:
-      goal.purpose,
+      sectionKind:
+        "BUDGET",
+    });
+  }
 
-    coreParagraphs,
+  writeCompromises(
+    context:
+      KnowledgeContext,
 
-    takeaway,
+    goal:
+      EditorialGoal,
 
-    facts:
-      usedFacts,
+    section:
+      SectionContext,
+  ): EditorialSection {
+    return this.writeSection({
+      context,
+      goal,
+      section,
 
-    tradeOffs:
-      primaryTradeOff
-        ? [
-            primaryTradeOff,
-          ]
-        : [],
-  });
-}
-writeMistakes(
-  context: KnowledgeContext,
-  goal: EditorialGoal,
-  section: SectionContext,
-): EditorialSection {
-  const selectedFacts =
-    this.memory.filterUncovered(
-      this.knowledgeSelector
-        .selectMistakeFacts(
-          context,
-        ),
-      "FACT",
-      (fact) =>
-        fact.title,
-    );
+      sectionId:
+        "what-to-compromise",
 
-  const selectedMistakes =
-    this.memory.filterUncovered(
-      this.knowledgeSelector
-        .selectMistakes(
-          context,
-        ),
-      "MISTAKE",
-      (mistake) =>
-        mistake.title,
-    );
+      sectionKind:
+        "COMPROMISES",
+    });
+  }
 
- const preparedKnowledge =
-  this.knowledgePreparation.prepare(
-    selectedFacts,
-    [],
-    context.topic,
-    goal.audience,
-    "Use this as a warning sign. If a purchase ignores this point, it may look attractive initially but become poor value once the wider cost or limitation becomes clear.",
-  );
+  writeBestValue(
+    context:
+      KnowledgeContext,
 
-  const usedMistakes =
-    selectedMistakes.slice(
-      0,
-      Math.min(
-        2,
-        goal.maxParagraphs,
-      ),
-    );
+    goal:
+      EditorialGoal,
 
-  const remainingSlots =
-    Math.max(
-      0,
-      goal.maxParagraphs -
-        usedMistakes.length,
-    );
+    section:
+      SectionContext,
+  ): EditorialSection {
+    return this.writeSection({
+      context,
+      goal,
+      section,
 
-  const usedFacts =
-    selectedFacts.slice(
-      0,
-      remainingSlots,
-    );
+      sectionId:
+        "best-value",
 
-  const coreParagraphs = [
-    ...usedMistakes.map(
-      (mistake) =>
-        `${mistake.title}. ${mistake.explanation}`,
-    ),
+      sectionKind:
+        "BEST_VALUE",
+    });
+  }
 
-    ...usedFacts.map(
-      (fact) =>
-        preparedKnowledge
-  .explainedFacts
-  .find(
-          (explained) =>
-            explained.title ===
-            fact.title,
-        )?.paragraph ??
-        fact.explanation,
-    ),
-  ];
+  writeBuyingUsed(
+    context:
+      KnowledgeContext,
 
-  const takeaway =
-    "Most bad purchases are not caused by choosing a terrible camera. They happen when the buyer ignores total cost, chooses around marketing or pays for features that do not solve a real need.";
+    goal:
+      EditorialGoal,
 
-  const sectionResult =
-    this.buildEditorialSection({
+    section:
+      SectionContext,
+  ): EditorialSection {
+    return this.writeSection({
+      context,
+      goal,
+      section,
+
+      sectionId:
+        "new-vs-used",
+
+      sectionKind:
+        "BUYING_USED",
+    });
+  }
+
+  writeMistakes(
+    context:
+      KnowledgeContext,
+
+    goal:
+      EditorialGoal,
+
+    section:
+      SectionContext,
+  ): EditorialSection {
+    return this.writeSection({
+      context,
+      goal,
+      section,
+
       sectionId:
         "mistakes",
 
+      sectionKind:
+        "MISTAKES",
+    });
+  }
+
+  writeRecommendations(
+    context:
+      KnowledgeContext,
+
+    goal:
+      EditorialGoal,
+
+    section:
+      SectionContext,
+  ): EditorialSection {
+    return this.writeSection({
+      context,
+      goal,
       section,
 
-      introduction:
-        goal.purpose,
+      sectionId:
+        "recommendations",
 
-      coreParagraphs,
-
-      takeaway,
-
-      facts:
-        usedFacts,
-
-      tradeOffs:
-        [],
+      sectionKind:
+        "RECOMMENDATIONS",
     });
+  }
 
-  usedMistakes.forEach(
-    (mistake) => {
-      this.memory.markMistakeCovered(
-        mistake.title,
-        "mistakes",
-        mistake.explanation,
-      );
-    },
-  );
+  writeAlternatives(
+    context:
+      KnowledgeContext,
 
-  return {
-    ...sectionResult,
+    goal:
+      EditorialGoal,
 
-    knowledgeUsed: [
-      ...usedMistakes.map(
-        (mistake) =>
-          mistake.title,
-      ),
+    section:
+      SectionContext,
+  ): EditorialSection {
+    return this.writeSection({
+      context,
+      goal,
+      section,
 
-      ...sectionResult
-        .knowledgeUsed,
-    ],
+      sectionId:
+        "alternatives",
 
-    memory: {
-      covered:
-        this.memory
-          .getBySection(
-            "mistakes",
-          )
-          .map(
-            (entry) =>
-              entry.title,
-          ),
+      sectionKind:
+        "ALTERNATIVES",
+    });
+  }
 
-      totalEntries:
-        this.memory.size,
-    },
-  };
-}
-writeRecommendations(
-  context: KnowledgeContext,
-  goal: EditorialGoal,
-  section: SectionContext,
-): EditorialSection {
-  const selectedFacts =
-    this.memory.filterUncovered(
-      this.knowledgeSelector
-        .selectRecommendationFacts(
-          context,
-        ),
-      "FACT",
-      (fact) =>
-        fact.title,
-    );
+  writeChecklist(
+    context:
+      KnowledgeContext,
 
- const preparedKnowledge =
-  this.knowledgePreparation.prepare(
-    selectedFacts,
-    [],
-    context.topic,
-    goal.audience,
-    "Use this point to define who a recommendation should suit, what problem it should solve and which weakness must be accepted before a specific product can be recommended.",
-  );
+    goal:
+      EditorialGoal,
 
-  const usedFacts =
-    selectedFacts.slice(
-      0,
-      goal.maxParagraphs,
-    );
-    const recommendedProducts =
-  context.products
-    .slice(
-      0,
-      goal.maxParagraphs,
-    );
+    section:
+      SectionContext,
+  ): EditorialSection {
+    return this.writeSection({
+      context,
+      goal,
+      section,
 
- const productParagraphs =
-  recommendedProducts.map(
-    (product) =>
-      `${product.name} is worth considering because ${product.reason}`,
-  );
+      sectionId:
+        "before-you-buy",
 
-const factParagraphs =
-  usedFacts.map(
-    (fact) =>
-      preparedKnowledge
-        .explainedFacts
-        .find(
-          (explained) =>
-            explained.title ===
-            fact.title,
-        )?.paragraph ??
-      fact.explanation,
-  );
+      sectionKind:
+        "CHECKLIST",
+    });
+  }
 
-const coreParagraphs = [
-  ...productParagraphs,
+  writeVerdict(
+    context:
+      KnowledgeContext,
 
-  ...factParagraphs,
-].slice(
-  0,
-  goal.maxParagraphs,
-);
+    goal:
+      EditorialGoal,
 
-  const takeaway =
-  recommendedProducts.length > 0
-    ? "These recommendations are starting points rather than automatic winners. Choose the camera whose strengths match your photography and whose weaknesses you can accept."
-    : "Do not recommend a camera simply because it is popular. Recommend it only when the evidence shows who it suits, why it offers value and which limitation the buyer must accept.";
-  return this.buildEditorialSection({
-    sectionId:
-      "recommendations",
+    section:
+      SectionContext,
+  ): EditorialSection {
+    return this.writeSection({
+      context,
+      goal,
+      section,
 
-    section,
+      sectionId:
+        "final-verdict",
 
-    introduction:
-      goal.purpose,
-
-    coreParagraphs,
-
-    takeaway,
-
-    facts:
-      usedFacts,
-
-    tradeOffs:
-      [],
-  });
-}
-writeVerdict(
-  context: KnowledgeContext,
-  goal: EditorialGoal,
-  section: SectionContext,
-): EditorialSection {
-  const selectedFacts =
-    this.memory.filterUncovered(
-      this.knowledgeSelector
-        .selectVerdictFacts(
-          context,
-        ),
-      "FACT",
-      (fact) =>
-        fact.title,
-    );
-
-  const selectedTradeOffs =
-    this.memory.filterUncovered(
-      this.knowledgeSelector
-        .selectTradeOffs(
-          context,
-        ),
-      "TRADE_OFF",
-      (tradeOff) =>
-        tradeOff.title,
-    );
-
- const preparedKnowledge =
-  this.knowledgePreparation.prepare(
-    selectedFacts,
-    selectedTradeOffs,
-    context.topic,
-    goal.audience,
-    "Use this point to support a clear final decision. The verdict should explain what the buyer should do, why that route offers the best value and which circumstances would justify choosing differently.",
-  );
-
-  const usedFacts =
-    selectedFacts.slice(
-      0,
-      Math.max(
-        0,
-        goal.maxParagraphs - 1,
-      ),
-    );
-
-  const primaryTradeOff =
-    selectedTradeOffs[0] ??
-    null;
-
-  const coreParagraphs = [
-    "The clearest buying decision is the one that satisfies the important needs without forcing the buyer to pay for improvements they are unlikely to notice.",
-
-    ...usedFacts.map(
-      (fact) =>
-        preparedKnowledge
-  .explainedFacts
-  .find(
-          (explained) =>
-            explained.title ===
-            fact.title,
-        )?.paragraph ??
-        fact.explanation,
-    ),
-
-    ...(primaryTradeOff
-      ? [
-          `The main trade-off is ${primaryTradeOff.explanation}`,
-        ]
-      : []),
-  ].slice(
-    0,
-    goal.maxParagraphs,
-  );
-
-  const takeaway =
-    "If it were our money, we would choose the option that delivers the strongest complete setup rather than spending the entire budget on the most impressive body. Spend more only when the extra cost solves a limitation you will genuinely notice.";
-
-  return this.buildEditorialSection({
-    sectionId:
-      "final-verdict",
-
-    section,
-
-    introduction:
-      goal.purpose,
-
-    coreParagraphs,
-
-    takeaway,
-
-    facts:
-      usedFacts,
-
-    tradeOffs:
-      primaryTradeOff
-        ? [
-            primaryTradeOff,
-          ]
-        : [],
-  });
-}
+      sectionKind:
+        "VERDICT",
+    });
+  }
 }

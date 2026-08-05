@@ -32,13 +32,16 @@ export function generateStaticParams() {
   const slugs =
     new Set<string>([
       ...blogPosts.map(
-        (post) => post.slug,
+        (post) =>
+          post.slug,
       ),
 
       ...getBuyingGuideSlugs(),
     ]);
 
-  return Array.from(slugs).map(
+  return Array.from(
+    slugs,
+  ).map(
     (slug) => ({
       slug,
     }),
@@ -53,7 +56,9 @@ export async function generateMetadata({
   } = await params;
 
   const guide =
-    getBuyingGuideForPage(slug);
+    getBuyingGuideForPage(
+      slug,
+    );
 
   if (guide) {
     const canonicalPath =
@@ -131,7 +136,9 @@ export async function generateMetadata({
   }
 
   const post =
-    getBlogPost(slug);
+    getBlogPost(
+      slug,
+    );
 
   if (!post) {
     return {
@@ -186,7 +193,11 @@ export default async function BlogPostPage({
    * Factory buying guides take priority.
    */
   const guide =
-    getBuyingGuideForPage(slug);
+    getBuyingGuideForPage(
+      slug,
+    );
+
+  
 
   if (guide) {
     return (
@@ -201,7 +212,9 @@ export default async function BlogPostPage({
    * using the original renderer.
    */
   const post =
-    getBlogPost(slug);
+    getBlogPost(
+      slug,
+    );
 
   if (!post) {
     notFound();
@@ -294,7 +307,10 @@ export default async function BlogPostPage({
 
       <header className="border-b border-white/10">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 lg:px-10">
-          <Link href="/">
+          <Link
+            href="/"
+            aria-label="Blinlx homepage"
+          >
             <div className="text-3xl font-extrabold tracking-tight">
               Blin
               <span className="text-[#2ee866]">

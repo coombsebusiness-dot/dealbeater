@@ -19,6 +19,7 @@ import ProductFAQ from "@/app/components/product/ProductFAQ";
 import BlinlxIntelligenceScore from "@/app/components/product/BlinlxIntelligenceScore";
 import BlinlxGauge from "@/app/components/results/BlinlxGauge";
 import ShareReport from "@/app/components/product/ShareReport";
+import ProductComparisons from "@/app/components/products/ProductComparisons";
 
 
 
@@ -225,11 +226,15 @@ if (!product) {
           product={product}
         />
 
-        <ProductAlternatives
-          product={product}
-        />
+       <ProductAlternatives
+  product={product}
+/>
 
-        <SectionDivider />
+<ProductComparisons
+  productId={product.id}
+/>
+
+<SectionDivider />
 
         <ProductFAQ
           product={product}

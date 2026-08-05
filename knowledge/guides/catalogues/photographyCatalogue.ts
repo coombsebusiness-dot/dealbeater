@@ -40,11 +40,13 @@ export const photographyCatalogue:
     recommendationTopic:
       "Beginner cameras",
 
-    status:
-      "PLANNED",
+     status:
+          "READY",
 
     priority:
       3,
+
+      
   },
 
   items: [
@@ -187,6 +189,9 @@ export const photographyCatalogue:
 
       priority:
         5,
+
+        status:
+          "READY",
     },
 
     {
@@ -215,6 +220,9 @@ export const photographyCatalogue:
 
       priority:
         5,
+
+         status:
+          "READY",
     },
 
     {
@@ -243,6 +251,9 @@ export const photographyCatalogue:
 
       priority:
         5,
+
+         status:
+          "READY",
     },
 
     {
@@ -271,6 +282,9 @@ export const photographyCatalogue:
 
       priority:
         5,
+
+         status:
+          "READY",
     },
 
     {
@@ -299,6 +313,9 @@ export const photographyCatalogue:
 
       priority:
         5,
+
+         status:
+          "READY",
     },
 
     {
@@ -324,6 +341,9 @@ export const photographyCatalogue:
 
       priority:
         4,
+
+         status:
+          "READY",
     },
 
     {
@@ -352,6 +372,9 @@ export const photographyCatalogue:
 
       priority:
         4,
+
+         status:
+          "READY",
     },
        {
   title:
@@ -412,6 +435,9 @@ export const photographyCatalogue:
 
       priority:
         5,
+
+         status:
+          "READY",
     },
 
     {
@@ -441,6 +467,9 @@ export const photographyCatalogue:
 
       priority:
         4,
+
+         status:
+          "READY",
     },
 
     {
@@ -470,6 +499,9 @@ export const photographyCatalogue:
 
       priority:
         5,
+
+         status:
+          "READY",
     },
 
     {
@@ -499,6 +531,11 @@ export const photographyCatalogue:
 
       priority:
         4,
+
+        status:
+          "READY",
+
+        
     },
 
     {
@@ -528,6 +565,9 @@ export const photographyCatalogue:
 
       priority:
         5,
+
+        status:
+          "READY",
     },
 
     {
@@ -557,6 +597,9 @@ export const photographyCatalogue:
 
       priority:
         5,
+
+        status:
+          "READY",
     },
 
     {
@@ -586,6 +629,9 @@ export const photographyCatalogue:
 
       priority:
         4,
+
+        status:
+          "READY",
     },
 
     {
@@ -615,6 +661,9 @@ export const photographyCatalogue:
 
       priority:
         4,
+
+        status:
+          "READY",
     },
 
     {
@@ -644,6 +693,9 @@ export const photographyCatalogue:
 
       priority:
         4,
+
+        status:
+          "READY",
     },
         {
       title:
@@ -672,6 +724,9 @@ export const photographyCatalogue:
 
       priority:
         5,
+
+        status:
+          "READY",
     },
 
     {
@@ -701,6 +756,9 @@ export const photographyCatalogue:
 
       priority:
         5,
+
+        status:
+          "READY",
     },
 
     {
@@ -730,6 +788,9 @@ export const photographyCatalogue:
 
       priority:
         4,
+
+        status:
+          "READY",
     },
 
     {
@@ -759,6 +820,9 @@ export const photographyCatalogue:
 
       priority:
         5,
+
+        status:
+          "READY",
     },
 
     {
@@ -788,6 +852,9 @@ export const photographyCatalogue:
 
       priority:
         4,
+
+        status:
+          "READY",
     },
 
     {
@@ -817,6 +884,9 @@ export const photographyCatalogue:
 
       priority:
         5,
+
+        status:
+          "READY",
     },
 
     {
@@ -875,6 +945,9 @@ export const photographyCatalogue:
 
       priority:
         4,
+
+        status:
+          "READY",
     },
 
     {
@@ -904,6 +977,9 @@ export const photographyCatalogue:
 
       priority:
         4,
+
+        status:
+          "READY",
     },
 
     {
@@ -933,6 +1009,9 @@ export const photographyCatalogue:
 
       priority:
         4,
+
+        status:
+          "READY",
     },
     {
   title:
@@ -961,6 +1040,9 @@ export const photographyCatalogue:
 
   priority:
     4,
+
+    status:
+          "READY",
 },
 
 {
@@ -990,6 +1072,9 @@ export const photographyCatalogue:
 
   priority:
     5,
+
+    status:
+          "READY",
 },
 
 {
@@ -1019,6 +1104,9 @@ export const photographyCatalogue:
 
   priority:
     4,
+
+    status:
+          "READY",
 },
 
 {
@@ -1048,6 +1136,9 @@ export const photographyCatalogue:
 
   priority:
     4,
+
+    status:
+          "READY",
 },
 
 {
@@ -1077,6 +1168,9 @@ export const photographyCatalogue:
 
   priority:
     4,
+
+    status:
+          "READY",
 },
 
 {
@@ -1106,6 +1200,9 @@ export const photographyCatalogue:
 
   priority:
     4,
+
+    status:
+          "READY",
 },
 
 {
@@ -1135,6 +1232,9 @@ export const photographyCatalogue:
 
   priority:
     4,
+
+    status:
+          "READY",
 },
 
 {
@@ -1164,6 +1264,9 @@ export const photographyCatalogue:
 
   priority:
     4,
+
+    status:
+          "READY",
 },
 
 {
@@ -1193,6 +1296,9 @@ export const photographyCatalogue:
 
   priority:
     4,
+
+    status:
+          "READY",
 },
 
 {
@@ -1222,6 +1328,9 @@ export const photographyCatalogue:
 
   priority:
     4,
+
+    status:
+          "READY",
 },
 {
   title:
@@ -1250,6 +1359,9 @@ export const photographyCatalogue:
 
   priority:
     4,
+
+    status:
+          "READY",
 },
 
 {
@@ -1279,6 +1391,9 @@ export const photographyCatalogue:
 
   priority:
     4,
+
+    status:
+          "READY",
 },
 
 {
@@ -1308,6 +1423,9 @@ export const photographyCatalogue:
 
   priority:
     4,
+
+    status:
+          "READY",
 },
 
 {
@@ -1337,6 +1455,9 @@ export const photographyCatalogue:
 
   priority:
     4,
+
+    status:
+          "READY",
 },
 
 {
@@ -1366,6 +1487,9 @@ export const photographyCatalogue:
 
   priority:
     4,
+
+    status:
+          "READY",
 },
 
 {
@@ -1395,6 +1519,9 @@ export const photographyCatalogue:
 
   priority:
     5,
+
+    status:
+          "READY",
 },
 
 {
@@ -1424,6 +1551,9 @@ export const photographyCatalogue:
 
   priority:
     5,
+
+    status:
+          "READY",
 },
 
 {
@@ -1453,6 +1583,9 @@ export const photographyCatalogue:
 
   priority:
     5,
+
+    status:
+          "READY",
 },
 
 {
@@ -1482,6 +1615,9 @@ export const photographyCatalogue:
 
   priority:
     4,
+
+    status:
+          "READY",
 },
 
 {
@@ -1511,6 +1647,9 @@ export const photographyCatalogue:
 
   priority:
     3,
+     status:
+          "READY",
+    
 },
     ...generatedPhotographyItems,
   ],

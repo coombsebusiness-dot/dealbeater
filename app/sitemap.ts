@@ -3,6 +3,18 @@ import type {
 } from "next";
 
 import {
+  getAllBrands,
+} from "@/knowledge/brands/BrandRegistry";
+
+import {
+  getAllCategories,
+} from "@/knowledge/categories/CategoryRegistry";
+
+import {
+  getAllComparisons,
+} from "@/knowledge/comparisons/ComparisonRegistry";
+
+import {
   blogPosts,
 } from "@/app/components/lib/blog-posts";
 
@@ -456,6 +468,86 @@ export default function sitemap():
       }),
     );
 
+    const brandPages:
+  MetadataRoute.Sitemap = [
+  {
+    url:
+      `${baseUrl}/brands`,
+
+    lastModified:
+      new Date(
+        "2026-08-04",
+      ),
+
+    changeFrequency:
+      "weekly",
+
+    priority:
+      0.8,
+  },
+
+  ...getAllBrands().map(
+    (brand) => ({
+      url:
+        `${baseUrl}${brand.seo.canonicalPath}`,
+
+      lastModified:
+        createValidDate(
+          brand.updatedAt,
+          "2026-08-04",
+        ),
+
+      changeFrequency:
+        "weekly" as const,
+
+      priority:
+        0.85,
+    }),
+  ),
+];
+
+const categoryPages:
+  MetadataRoute.Sitemap =
+  getAllCategories().map(
+    (category) => ({
+      url:
+        `${baseUrl}${category.seo.canonicalPath}`,
+
+      lastModified:
+        createValidDate(
+          category.updatedAt,
+          "2026-08-04",
+        ),
+
+      changeFrequency:
+        "weekly",
+
+      priority:
+        0.85,
+    }),
+  );
+
+const comparisonPages:
+  MetadataRoute.Sitemap =
+  getAllComparisons().map(
+    (comparison) => ({
+      url:
+        `${baseUrl}/comparisons/${comparison.slug}`,
+
+      lastModified:
+        createValidDate(
+          comparison.updatedAt,
+          "2026-08-04",
+        ),
+
+      changeFrequency:
+        "monthly",
+
+      priority:
+        0.85,
+    }),
+  );
+
   const productPages:
     MetadataRoute.Sitemap =
     products
@@ -520,9 +612,12 @@ export default function sitemap():
       );
 
   return removeDuplicateUrls([
-    ...staticPages,
-    ...blogPages,
-    ...guidePages,
-    ...productPages,
-  ]);
+  ...staticPages,
+  ...blogPages,
+  ...guidePages,
+  ...productPages,
+  ...brandPages,
+  ...categoryPages,
+  ...comparisonPages,
+]);
 }

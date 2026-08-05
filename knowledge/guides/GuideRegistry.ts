@@ -35,60 +35,99 @@ function createGeneratedBuyingGuides():
   BuyingGuide[] {
   bootstrapGuideBlueprints();
 
-  const blueprint =
-    getAllGuideBlueprints()
-      .find(
-        (candidate) =>
-          candidate.slug ===
-          "best-mirrorless-cameras-under-500",
-      );
+  const MAX_GENERATED_GUIDES =
+  50;
 
-  if (!blueprint) {
-    return [];
-  }
-
-  const publishedGuide =
-    publishGuide(
-      blueprint,
-      {
-        subtitle:
-          "Independent Blinlx buying advice for mirrorless cameras under £500, including the features, trade-offs and mistakes that matter.",
-
-        heroImage: {
-          src:
-            "/images/guides/photography/beginner-photography-buying-guide-hero.webp",
-
-          alt:
-            "Best Mirrorless Cameras Under £500 hero image.",
-        },
-      },
+const readyBlueprints =
+  getAllGuideBlueprints()
+    .filter(
+      (blueprint) =>
+        blueprint.status ===
+        "READY",
+    )
+    .slice(
+      0,
+      MAX_GENERATED_GUIDES,
     );
 
-  if (
-    !publishedGuide.publishable
-  ) {
-    if (
-      process.env.NODE_ENV ===
-      "development"
-    ) {
-      console.warn(
-        [
-          `Generated guide is not publishable: ${blueprint.slug}`,
-          `Status: ${publishedGuide.status}`,
-          `Quality: ${publishedGuide.quality.status}`,
-          ...publishedGuide.quality.errors,
-        ].join(
-          "\n",
-        ),
-      );
-    }
+  const generatedGuides:
+    BuyingGuide[] = [];
 
-    return [];
-  }
+  readyBlueprints.forEach(
+    (blueprint) => {
+      try {
+        const publishedGuide =
+          publishGuide(
+            blueprint,
+            {
+              subtitle:
+                [
+                  "Independent Blinlx buying advice for",
+                  blueprint.topic.toLowerCase(),
+                  "including the products, features, trade-offs and buying mistakes that matter.",
+                ].join(
+                  " ",
+                ),
 
-  return [
-    publishedGuide.buyingGuide,
-  ];
+              heroImage: {
+                src:
+                  "/images/guides/photography/beginner-photography-buying-guide-hero.webp",
+
+                alt:
+                  `${blueprint.title} hero image.`,
+              },
+            },
+          );
+
+        if (
+          !publishedGuide.publishable
+        ) {
+          if (
+            process.env.NODE_ENV ===
+            "development"
+          ) {
+            console.warn(
+              [
+                `Generated guide is not publishable: ${blueprint.slug}`,
+                `Blueprint status: ${blueprint.status}`,
+                `Publisher status: ${publishedGuide.status}`,
+                `Quality status: ${publishedGuide.quality.status}`,
+                ...publishedGuide.quality.errors,
+              ].join(
+                "\n",
+              ),
+            );
+          }
+
+          return;
+        }
+
+        generatedGuides.push(
+          publishedGuide.buyingGuide,
+        );
+      } catch (error) {
+        if (
+          process.env.NODE_ENV ===
+          "development"
+        ) {
+          console.warn(
+            [
+              `Failed to generate guide: ${blueprint.slug}`,
+              error instanceof Error
+                ? error.message
+                : String(
+                    error,
+                  ),
+            ].join(
+              "\n",
+            ),
+          );
+        }
+      }
+    },
+  );
+
+  return generatedGuides;
 }
 
 const manualGuides:
@@ -101,11 +140,59 @@ const manualGuides:
 const generatedGuides =
   createGeneratedBuyingGuides();
 
+  if (
+  process.env.NODE_ENV ===
+  "development"
+) {
+  console.info(
+    [
+      "Guide Registry Report",
+      `Manual guides: ${manualGuides.length}`,
+      `Generated guides: ${generatedGuides.length}`,
+      `Total guides: ${manualGuides.length + generatedGuides.length}`,
+    ].join(
+      "\n",
+    ),
+  );
+}
+
+const guidesBySlug =
+  new Map<
+    string,
+    BuyingGuide
+  >();
+
+manualGuides.forEach(
+  (guide) => {
+    guidesBySlug.set(
+      guide.slug,
+      guide,
+    );
+  },
+);
+
+generatedGuides.forEach(
+  (guide) => {
+    if (
+      !guidesBySlug.has(
+        guide.slug,
+      )
+    ) {
+      guidesBySlug.set(
+        guide.slug,
+        guide,
+      );
+    }
+  },
+);
+
 const guides:
-  BuyingGuide[] = [
-    ...manualGuides,
-    ...generatedGuides,
-  ];
+  BuyingGuide[] =
+    Array.from(
+      guidesBySlug.values(),
+    );
+
+
 
 function validateRegisteredGuides():
   void {

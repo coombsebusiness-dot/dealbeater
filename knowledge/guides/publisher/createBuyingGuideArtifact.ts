@@ -22,9 +22,7 @@ import {
   writeVerdict,
 } from "@/knowledge/guides/factory/editorial/writers/VerdictWriter";
 
-import {
-  writeIntroduction,
-} from "@/knowledge/guides/factory/editorial/writers/IntroductionWriter";
+
 
 import type {
   GuideBlueprint,
@@ -565,9 +563,7 @@ function createFaqAnswer(
   }
 
   return `${purpose} The final decision should be based on verified product suitability, meaningful trade-offs and complete ownership cost rather than marketing claims alone.`;
-}
-
-export function createBuyingGuideArtifact(
+}export function createBuyingGuideArtifact(
   input:
     CreateBuyingGuideArtifactInput,
 ): BuyingGuide {
@@ -588,12 +584,31 @@ export function createBuyingGuideArtifact(
         section.id ===
         "introduction",
     );
+      const needSection =
+    input.content.sections.find(
+      (section) =>
+        section.id ===
+        "do-you-need-it",
+    );
+
+  const audienceSection =
+    input.content.sections.find(
+      (section) =>
+        section.id ===
+        "who-is-it-for",
+    );
 
   const prioritiesSection =
     input.content.sections.find(
       (section) =>
         section.id ===
         "what-to-prioritise",
+    );
+     const budgetSection =
+    input.content.sections.find(
+      (section) =>
+        section.id ===
+        "budget",
     );
 
   const compromisesSection =
@@ -630,6 +645,19 @@ export function createBuyingGuideArtifact(
         section.id ===
         "recommendations",
     );
+      const alternativesSection =
+    input.content.sections.find(
+      (section) =>
+        section.id ===
+        "alternatives",
+    );
+
+  const checklistSection =
+    input.content.sections.find(
+      (section) =>
+        section.id ===
+        "before-you-buy",
+    );
 
   const verdictSection =
     input.content.sections.find(
@@ -642,7 +670,105 @@ export function createBuyingGuideArtifact(
     input.blueprint.audience ??
     "Camera buyers";
 
- 
+   const needGoal =
+    createEditorialGoal({
+      purpose:
+        "Help the reader decide whether buying now will solve a real limitation.",
+
+      audience,
+
+      desiredOutcome:
+        "The reader knows whether to buy, wait or improve the current setup first.",
+
+      tone:
+        "Helpful, honest and practical.",
+
+      includeTradeOffs:
+        true,
+
+      includeRecommendation:
+        false,
+    });
+
+  const audienceGoal =
+    createEditorialGoal({
+      purpose:
+        "Explain which buyers will genuinely benefit from this purchase.",
+
+      audience,
+
+      desiredOutcome:
+        "The reader knows whether the product suits their experience, priorities and intended use.",
+
+      tone:
+        "Clear, inclusive and practical.",
+
+      includeTradeOffs:
+        true,
+
+      includeRecommendation:
+        false,
+    });
+
+  const budgetGoal =
+    createEditorialGoal({
+      purpose:
+        "Explain how much the reader should realistically spend.",
+
+      audience,
+
+      desiredOutcome:
+        "The reader understands where good value ends and diminishing returns begin.",
+
+      tone:
+        "Direct, realistic and money-conscious.",
+
+      includeTradeOffs:
+        true,
+
+      includeRecommendation:
+        true,
+    });
+
+  const alternativesGoal =
+    createEditorialGoal({
+      purpose:
+        "Show when another product type, older model or cheaper route may be better.",
+
+      audience,
+
+      desiredOutcome:
+        "The reader understands the strongest alternatives to the obvious purchase.",
+
+      tone:
+        "Open-minded, practical and honest.",
+
+      includeTradeOffs:
+        true,
+
+      includeRecommendation:
+        true,
+    });
+
+  const checklistGoal =
+    createEditorialGoal({
+      purpose:
+        "Give the reader a final checklist before spending money.",
+
+      audience,
+
+      desiredOutcome:
+        "The reader confirms suitability, complete cost and important limitations before buying.",
+
+      tone:
+        "Concise, practical and decisive.",
+
+      includeTradeOffs:
+        true,
+
+      includeRecommendation:
+        false,
+    });
 
   const prioritiesGoal =
     createEditorialGoal({
@@ -783,21 +909,93 @@ export function createBuyingGuideArtifact(
       includeRecommendation:
         true,
     });
-
-  const authoredSections =
+const authoredSections =
     new Map<
       string,
       AuthoredSection
     >();
 
- if (introductionSection) {
+if (introductionSection) {
   authoredSections.set(
     "introduction",
-    writeIntroduction(
-      knowledgeContext,
-    ),
+    editorialAuthor
+      .writeIntroduction(
+        knowledgeContext,
+        createEditorialGoal({
+          purpose:
+            "Introduce the buying decision clearly.",
+
+          audience,
+
+          desiredOutcome:
+            "The reader understands what matters before comparing products.",
+
+          tone:
+            "Helpful, practical and conversational.",
+
+          includeTradeOffs:
+            true,
+
+          includeRecommendation:
+            false,
+        }),
+        {
+          currentHeading:
+            introductionSection.heading,
+
+          nextHeading:
+            input.content.sections[1]
+              ?.heading,
+        },
+      ),
   );
 }
+  if (needSection) {
+    authoredSections.set(
+      "do-you-need-it",
+      editorialAuthor
+        .writeNeed(
+          knowledgeContext,
+          needGoal,
+          {
+            previousHeading:
+              introductionSection
+                ?.heading,
+
+            currentHeading:
+              needSection.heading,
+
+            nextHeading:
+              audienceSection
+                ?.heading,
+          },
+        ),
+    );
+  }
+
+  if (audienceSection) {
+    authoredSections.set(
+      "who-is-it-for",
+      editorialAuthor
+        .writeAudience(
+          knowledgeContext,
+          audienceGoal,
+          {
+            previousHeading:
+              needSection
+                ?.heading,
+
+            currentHeading:
+              audienceSection
+                .heading,
+
+            nextHeading:
+              prioritiesSection
+                ?.heading,
+          },
+        ),
+    );
+  }
 
   if (prioritiesSection) {
     authoredSections.set(
@@ -814,6 +1012,28 @@ export function createBuyingGuideArtifact(
             currentHeading:
               prioritiesSection
                 .heading,
+
+            nextHeading:
+              compromisesSection
+                ?.heading,
+          },
+        ),
+    );
+  }
+    if (budgetSection) {
+    authoredSections.set(
+      "budget",
+      editorialAuthor
+        .writeBudget(
+          knowledgeContext,
+          budgetGoal,
+          {
+            previousHeading:
+              prioritiesSection
+                ?.heading,
+
+            currentHeading:
+              budgetSection.heading,
 
             nextHeading:
               compromisesSection
@@ -944,8 +1164,55 @@ export function createBuyingGuideArtifact(
         ),
     );
   }
+    if (alternativesSection) {
+    authoredSections.set(
+      "alternatives",
+      editorialAuthor
+        .writeAlternatives(
+          knowledgeContext,
+          alternativesGoal,
+          {
+            previousHeading:
+              recommendationsSection
+                ?.heading,
 
-  if (verdictSection) {
+            currentHeading:
+              alternativesSection
+                .heading,
+
+            nextHeading:
+              checklistSection
+                ?.heading,
+          },
+        ),
+    );
+  }
+
+  if (checklistSection) {
+    authoredSections.set(
+      "before-you-buy",
+      editorialAuthor
+        .writeChecklist(
+          knowledgeContext,
+          checklistGoal,
+          {
+            previousHeading:
+              alternativesSection
+                ?.heading,
+
+            currentHeading:
+              checklistSection
+                .heading,
+
+            nextHeading:
+              verdictSection
+                ?.heading,
+          },
+        ),
+    );
+  }
+
+   if (verdictSection) {
     authoredSections.set(
       "final-verdict",
       editorialAuthor
@@ -954,6 +1221,10 @@ export function createBuyingGuideArtifact(
           verdictGoal,
           {
             previousHeading:
+              checklistSection
+                ?.heading ??
+              alternativesSection
+                ?.heading ??
               recommendationsSection
                 ?.heading,
 
@@ -981,68 +1252,134 @@ export function createBuyingGuideArtifact(
     );
 
   const sections:
-    BuyingGuide["sections"] =
-    input.content.sections.map(
-      (section) => {
+  BuyingGuide["sections"] =
+  input.content.sections.map(
+    (
+      section,
+    ): BuyingGuide["sections"][number] => {
         const authoredSection =
           authoredSections.get(
             section.id,
           );
 
         if (authoredSection) {
-          return {
-            id:
-              section.id,
+  const introduction =
+    removeDraftPrefix(
+      authoredSection.introduction,
+    ).trim();
 
-            heading:
-              authoredSection.heading,
+  const paragraphs =
+    authoredSection.paragraphs
+      .map(
+        removeDraftPrefix,
+      )
+      .map(
+        (paragraph) =>
+          paragraph.trim(),
+      )
+      .filter(
+        Boolean,
+      );
 
-            introduction:
-              removeDraftPrefix(
-                authoredSection
-                  .introduction,
-              ),
+  if (
+    !introduction ||
+    paragraphs.length === 0
+  ) {
+    throw new Error(
+      [
+        `Incomplete authored section: ${section.id}`,
+        `Guide: ${input.content.slug}`,
+        `Heading: ${authoredSection.heading}`,
+      ].join(
+        "\n",
+      ),
+    );
+  }
 
-            blocks: [
-              {
-                type:
-                  "TEXT",
+  return {
+    id:
+      section.id,
 
-                id:
-                  `${section.id}-authored`,
+    heading:
+      authoredSection.heading,
 
-                heading:
-                  authoredSection.heading,
+    introduction,
 
-                paragraphs:
-                  authoredSection
-                    .paragraphs
-                    .map(
-                      removeDraftPrefix,
-                    ),
-              },
-            ],
-          };
-        }
+    blocks: [
+      {
+        type:
+          "TEXT",
+
+        id:
+          `${section.id}-authored`,
+
+        heading:
+          authoredSection.heading,
+
+        paragraphs,
+      },
+    ],
+  };
+}
 
         const writtenSection =
-          writtenSectionsById.get(
-            section.id,
-          );
+  writtenSectionsById.get(
+    section.id,
+  );
 
-        return {
+if (!writtenSection) {
+  throw new Error(
+    [
+      `Missing finished section content: ${section.id}`,
+      `Guide: ${input.content.slug}`,
+      `Heading: ${section.heading}`,
+    ].join(
+      "\n",
+    ),
+  );
+}
+
+const introduction =
+  removeDraftPrefix(
+    writtenSection.introduction,
+  ).trim();
+
+const paragraphs =
+  writtenSection.paragraphs
+    .map(
+      removeDraftPrefix,
+    )
+    .map(
+      (paragraph) =>
+        paragraph.trim(),
+    )
+    .filter(
+      Boolean,
+    );
+
+if (
+  !introduction ||
+  paragraphs.length === 0
+) {
+  throw new Error(
+    [
+      `Incomplete finished section content: ${section.id}`,
+      `Guide: ${input.content.slug}`,
+      `Heading: ${section.heading}`,
+    ].join(
+      "\n",
+    ),
+  );
+}
+
+return {
           id:
             section.id,
 
           heading:
             section.heading,
 
-          introduction:
-            removeDraftPrefix(
-              writtenSection
-                ?.introduction ??
-              section.purpose,
-            ),
+          introduction,
 
           blocks: [
             {
@@ -1055,22 +1392,14 @@ export function createBuyingGuideArtifact(
               heading:
                 section.heading,
 
-              paragraphs:
-                (
-                  writtenSection
-                    ?.paragraphs ??
-                  [
-                    section.purpose,
-                  ]
-                ).map(
-                  removeDraftPrefix,
-                ),
+              paragraphs,
             },
           ],
         };
       },
     );
-const recommendations =
+
+  const recommendations =
   writeRecommendations(
     knowledgeContext,
   );

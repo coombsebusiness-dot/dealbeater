@@ -13,3 +13,23 @@ export {
 export {
   nikonZfc,
 } from "./NikonZfc";
+
+export {
+  nikonZ6III,
+} from "./NikonZ6III";
+
+export {
+  nikonZ6II,
+} from "./NikonZ6II";
+
+export {
+  nikonZ8,
+} from "./NikonZ8";
+
+export {
+  nikonZ9,
+} from "./NikonZ9";
+
+export {
+  nikonZ5II,
+} from "./NikonZ5II";
