@@ -33,6 +33,59 @@ const sectionKinds:
       sectionKind:
         "INTRODUCTION",
     },
+    {
+  sectionId:
+    "premium-options",
+
+  sectionKind:
+    "ALTERNATIVES",
+},
+    {
+  sectionId:
+    "budget-options",
+
+  sectionKind:
+    "BUDGET",
+},
+{
+  sectionId:
+    "best-overall",
+
+  sectionKind:
+    "RECOMMENDATIONS",
+},
+
+{
+  sectionId:
+    "how-to-avoid-them",
+
+  sectionKind:
+    "PREVENTION",
+},
+
+{
+  sectionId:
+    "mistakes",
+
+  sectionKind:
+    "MISTAKES",
+},
+
+{
+  sectionId:
+    "new-vs-used",
+
+  sectionKind:
+    "BUYING_USED",
+},
+
+{
+  sectionId:
+    "why-they-happen",
+
+  sectionKind:
+    "NEED",
+},
 
     {
       sectionId:
@@ -57,6 +110,29 @@ const sectionKinds:
       sectionKind:
         "PRIORITIES",
     },
+    {
+  sectionId:
+    "what-matters",
+
+  sectionKind:
+    "PRIORITIES",
+},
+
+{
+  sectionId:
+    "biggest-mistakes",
+
+  sectionKind:
+    "MISTAKES",
+},
+
+{
+  sectionId:
+    "what-it-means",
+
+  sectionKind:
+    "EXPLANATION",
+},
 
     {
       sectionId:
@@ -137,6 +213,13 @@ const sectionKinds:
       sectionKind:
         "CHECKLIST",
     },
+    {
+  sectionId:
+    "how-it-works",
+
+  sectionKind:
+    "EXPLANATION",
+},
 
     {
       sectionId:
@@ -149,15 +232,88 @@ const sectionKinds:
 
   
 
+function normaliseSectionId(
+  value: string,
+): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(
+      /[_\s]+/g,
+      "-",
+    )
+    .replace(
+      /-+/g,
+      "-",
+    );
+}
+
 function getSectionKind(
   sectionId:
     string,
 ): EditorialSectionKind | undefined {
-  return sectionKinds.find(
-    (entry) =>
-      entry.sectionId ===
-      sectionId,
-  )?.sectionKind;
+  const normalisedSectionId =
+    sectionId
+      .trim()
+      .toLowerCase()
+      .replace(
+        /[_\s]+/g,
+        "-",
+      )
+      .replace(
+        /-+/g,
+        "-",
+      );
+
+  switch (
+    normalisedSectionId
+  ) {
+    case "what-matters":
+      return "PRIORITIES";
+
+      case "how-it-works":
+  return "EXPLANATION";
+
+      case "what-it-means":
+  return "EXPLANATION";
+
+case "how-to-avoid-them":
+  return "PREVENTION";
+
+      case "premium-options":
+  return "ALTERNATIVES";
+
+    case "biggest-mistakes":
+      return "MISTAKES";
+
+    case "what-it-means":
+      return "INTRODUCTION";
+
+      case "best-overall":
+  return "RECOMMENDATIONS";
+
+case "how-to-avoid-them":
+  return "CHECKLIST";
+
+case "mistakes":
+  return "MISTAKES";
+
+      case "budget-options":
+  return "BUDGET";
+
+case "new-vs-used":
+  return "BUYING_USED";
+
+case "why-they-happen":
+  return "NEED";
+
+    default:
+      return sectionKinds.find(
+        (entry) =>
+          entry.sectionId ===
+          normalisedSectionId,
+      )?.sectionKind;
+  }
 }
 
 function removeDuplicateText(

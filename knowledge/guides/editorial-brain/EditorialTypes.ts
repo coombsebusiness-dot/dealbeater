@@ -9,6 +9,7 @@ import type {
 
 export type EditorialSectionKind =
   | "INTRODUCTION"
+  | "EXPLANATION"
   | "NEED"
   | "AUDIENCE"
   | "PRIORITIES"
@@ -17,6 +18,7 @@ export type EditorialSectionKind =
   | "BEST_VALUE"
   | "BUYING_USED"
   | "MISTAKES"
+  | "PREVENTION"
   | "RECOMMENDATIONS"
   | "ALTERNATIVES"
   | "CHECKLIST"

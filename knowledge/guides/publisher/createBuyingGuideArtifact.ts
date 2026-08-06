@@ -1262,13 +1262,36 @@ if (introductionSection) {
     ),
   );
 
-const sectionKindById:
-  Record<
-    string,
-    EditorialSectionKind
-  > = {
+const sectionKindById: Record<
+  string,
+  EditorialSectionKind
+> = {
   introduction:
     "INTRODUCTION",
+
+    "budget-options":
+  "BUDGET",
+
+"new-vs-used":
+  "BUYING_USED",
+
+  "how-it-works":
+  "EXPLANATION",
+
+  "premium-options":
+  "ALTERNATIVES",
+
+  "best-overall":
+  "RECOMMENDATIONS",
+
+"how-to-avoid-them":
+  "CHECKLIST",
+
+mistakes:
+  "MISTAKES",
+
+"why-they-happen":
+  "NEED",
 
   "do-you-need-it":
     "NEED",
@@ -1282,6 +1305,9 @@ const sectionKindById:
   "what-to-look-for":
     "PRIORITIES",
 
+  "what-matters":
+    "PRIORITIES",
+
   budget:
     "BUDGET",
 
@@ -1291,14 +1317,17 @@ const sectionKindById:
   "best-value":
     "BEST_VALUE",
 
-  "new-vs-used":
+  "buying-used":
     "BUYING_USED",
-
-  mistakes:
-    "MISTAKES",
 
   "common-mistakes":
     "MISTAKES",
+
+  "biggest-mistakes":
+    "MISTAKES",
+
+  "what-it-means":
+    "INTRODUCTION",
 
   recommendations:
     "RECOMMENDATIONS",
@@ -1350,31 +1379,63 @@ const sections:
           .introduction
           .trim();
 
-      const paragraphs =
-        editorialSection
-          .paragraphs
-          .map(
-            (paragraph) =>
-              paragraph.text.trim(),
-          )
-          .filter(
-            Boolean,
-          );
+     const writtenParagraphs =
+  editorialSection
+    .paragraphs
+    .map(
+      (paragraph) =>
+        paragraph.text.trim(),
+    )
+    .filter(
+      Boolean,
+    );
+
+const takeaway =
+  editorialSection
+    .takeaway
+    .trim();
+
+const paragraphs =
+  writtenParagraphs.length > 0
+    ? writtenParagraphs
+    : (
+        takeaway &&
+        takeaway !==
+          introduction
+      )
+      ? [
+          takeaway,
+        ]
+      : [];
 
       if (
-        !introduction ||
-        paragraphs.length === 0
-      ) {
-        throw new Error(
-          [
-            `Incomplete Editorial Brain section: ${section.id}`,
-            `Guide: ${input.content.slug}`,
-            `Heading: ${section.heading}`,
-          ].join(
-            "\n",
-          ),
-        );
-      }
+  !introduction ||
+  paragraphs.length === 0
+) {
+  throw new Error(
+    [
+      `Incomplete Editorial Brain section: ${section.id}`,
+      `Guide: ${input.content.slug}`,
+      `Heading: ${section.heading}`,
+      `Section kind: ${sectionKind ?? "UNKNOWN"}`,
+      `Introduction length: ${introduction.length}`,
+      `Written paragraph count: ${writtenParagraphs.length}`,
+      `Final paragraph count: ${paragraphs.length}`,
+      `Takeaway length: ${takeaway.length}`,
+      `Editorial paragraph roles: ${
+        editorialSection.paragraphs
+          .map(
+            (paragraph) =>
+              paragraph.role,
+          )
+          .join(", ") ||
+        "NONE"
+      }`,
+    ].join(
+      "\n",
+    ),
+  );
+}
 
        return {
         id:

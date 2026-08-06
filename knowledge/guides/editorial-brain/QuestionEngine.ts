@@ -69,6 +69,17 @@ export class QuestionEngine {
         desiredOutcome:
           "The reader understands what matters before comparing individual products.",
       };
+      case "EXPLANATION":
+  return {
+    question:
+      `What does ${topic} mean in practical buying terms?`,
+
+    buyerDecision:
+      "How the feature or concept should influence the reader's choice.",
+
+    desiredOutcome:
+      "The reader understands the meaning, real-world effect and why it matters before buying.",
+  };
 
     case "NEED":
       return {
@@ -165,6 +176,17 @@ export class QuestionEngine {
         desiredOutcome:
           "The reader avoids unsuitable products, hidden costs and unnecessary upgrades.",
       };
+      case "PREVENTION":
+  return {
+    question:
+      `How can ${audience.toLowerCase()} avoid the most common mistakes when buying ${topic}?`,
+
+    buyerDecision:
+      "Which checks and safeguards should be completed before paying.",
+
+    desiredOutcome:
+      "The reader turns each warning into a practical action that reduces the risk of a poor purchase.",
+  };
 
     case "RECOMMENDATIONS":
       return {

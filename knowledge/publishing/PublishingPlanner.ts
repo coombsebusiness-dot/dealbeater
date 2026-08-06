@@ -1,7 +1,6 @@
 import {
-  bootstrapGuideBlueprints,
-  getPublishableBlueprints,
-} from "@/knowledge/guides/blueprints";
+  getAllBuyingGuides,
+} from "@/knowledge/guides/GuideRegistry";
 
 import {
   getAllComparisons,
@@ -63,19 +62,17 @@ function createProductItems():
 
 function createBuyingGuideItems():
   PublishingQueueItem[] {
-  bootstrapGuideBlueprints();
-
-  return getPublishableBlueprints()
+  return getAllBuyingGuides()
     .map(
-      (blueprint) => ({
+      (guide) => ({
         id:
-          `guide:${blueprint.id}`,
+          `guide:${guide.slug}`,
 
         slug:
-          blueprint.slug,
+          guide.slug,
 
         title:
-          blueprint.title,
+          guide.title,
 
         type:
           "BUYING_GUIDE",
@@ -84,11 +81,11 @@ function createBuyingGuideItems():
           "READY",
 
         href:
-          `/blog/${blueprint.slug}`,
+          guide.seo
+            .canonicalPath,
       }),
     );
 }
-
 function createComparisonItems():
   PublishingQueueItem[] {
   return getAllComparisons()

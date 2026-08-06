@@ -386,6 +386,9 @@ function createOpening(
     INTRODUCTION:
       `Choosing ${topic} can feel confusing because specifications, prices and competing recommendations quickly create more noise than clarity. Start with the result you want, then work backwards to the features that will genuinely help you achieve it.`,
 
+    EXPLANATION:
+      `Understanding ${topic} is useful only when the explanation connects the term to real use. Focus on what it changes, when it matters and how it should influence the buying decision.`,
+
     NEED:
       `Before spending any money, identify the limitation you are trying to solve. A new purchase is worthwhile when your current setup is regularly preventing you from getting the result you want.`,
 
@@ -409,6 +412,9 @@ function createOpening(
 
     MISTAKES:
       `Most poor buying decisions begin before the product is chosen. Buyers often focus on popularity, headline specifications or discounts before deciding what they actually need.`,
+
+    PREVENTION:
+      `Avoiding a buying mistake is easier when every concern becomes a practical check. Slow the decision down, confirm the intended use and reject any option that fails an essential requirement.`,
 
     RECOMMENDATIONS:
       `A responsible recommendation must match a real buyer, use case and budget. Every shortlisted product should have a clear reason to exist and an honest limitation.`,
@@ -446,6 +452,9 @@ function createNextStep(
     INTRODUCTION:
       "Define what you want the purchase to help you achieve before comparing individual products.",
 
+    EXPLANATION:
+      "Connect the technical meaning to the practical effect it will have before comparing products.",
+
     NEED:
       "Do not buy until you can describe the specific problem the new purchase will solve.",
 
@@ -469,6 +478,9 @@ function createNextStep(
 
     MISTAKES:
       "Before paying, check that the decision is based on your needs rather than popularity, urgency or a headline discount.",
+
+    PREVENTION:
+      "Turn every warning into a practical check and complete those checks before paying.",
 
     RECOMMENDATIONS:
       "Shortlist only the products whose strengths match your intended use and whose weaknesses you can comfortably accept.",
@@ -565,6 +577,18 @@ export class ParagraphComposer {
           evidence,
         );
 
+      case "EXPLANATION":
+        return this.composeExplanation(
+          blueprint,
+          evidence,
+        );
+
+      case "PREVENTION":
+        return this.composePrevention(
+          blueprint,
+          evidence,
+        );
+
       case "NEED":
         return this.composeNeed(
           blueprint,
@@ -639,6 +663,140 @@ export class ParagraphComposer {
     }
   }
 
+  private composeExplanation(
+    blueprint:
+      GuideBlueprint,
+
+    evidence:
+      EditorialEvidence,
+  ): EditorialParagraph[] {
+    const paragraphs = [
+      createOpening(
+        blueprint,
+        "EXPLANATION",
+      ),
+    ];
+
+    const firstFact =
+      getFirstFact(
+        evidence,
+      );
+
+    const secondFact =
+      getSecondFact(
+        evidence,
+      );
+
+    if (firstFact) {
+      paragraphs.push(
+        createEvidenceParagraph(
+          "explanation-meaning",
+
+          firstFact.explanation,
+
+          firstFact.title,
+        ),
+      );
+    }
+
+    if (secondFact) {
+      paragraphs.push(
+        createEvidenceParagraph(
+          "explanation-practical-example",
+
+          secondFact.explanation,
+
+          secondFact.title,
+        ),
+      );
+    }
+
+    paragraphs.push(
+      createParagraph(
+        "explanation-practical-effect",
+
+        [
+          `In practical terms, ${createReaderTopic(
+            blueprint,
+          )} matters because it changes how equipment behaves and which option will suit the buyer.`,
+
+          "The useful question is how the feature affects normal photography, rather than simply remembering the technical definition.",
+        ].join(
+          " ",
+        ),
+
+        "EVIDENCE",
+      ),
+    );
+
+    paragraphs.push(
+      createNextStep(
+        "EXPLANATION",
+      ),
+    );
+
+    return paragraphs;
+  }
+
+  private composePrevention(
+    blueprint:
+      GuideBlueprint,
+
+    evidence:
+      EditorialEvidence,
+  ): EditorialParagraph[] {
+    const paragraphs = [
+      createOpening(
+        blueprint,
+        "PREVENTION",
+      ),
+    ];
+
+    evidence.warnings
+      .slice(
+        0,
+        2,
+      )
+      .forEach(
+        (
+          warning,
+          index,
+        ) => {
+          paragraphs.push(
+            createWarningParagraph(
+              `prevention-warning-${index + 1}`,
+
+              warning.title,
+
+              warning.explanation,
+
+              warning.role,
+            ),
+          );
+        },
+      );
+
+    paragraphs.push(
+      createParagraph(
+        "prevention-action",
+
+        [
+          `To avoid mistakes when buying ${createReaderTopic(
+            blueprint,
+          )}, turn every concern into a check that can be completed before paying.`,
+
+          "Confirm the intended use, essential requirements, acceptable compromises and complete cost, then reject any option that fails an essential requirement.",
+        ].join(
+          " ",
+        ),
+
+        "NEXT_STEP",
+      ),
+    );
+
+    return paragraphs;
+  }
+
   private composeIntroduction(
     blueprint:
       GuideBlueprint,
@@ -700,6 +858,23 @@ export class ParagraphComposer {
           tradeOff.explanation,
 
           tradeOff.title,
+        ),
+      );
+    }
+
+    if (
+      paragraphs.length ===
+        1
+    ) {
+      paragraphs.push(
+        createParagraph(
+          "introduction-explanation",
+
+          `Understanding ${createReaderTopic(
+            blueprint,
+          )} starts with knowing what it changes in practical use and how that should influence the buying decision.`,
+
+          "EVIDENCE",
         ),
       );
     }
@@ -1351,7 +1526,27 @@ mistakeWarnings
         );
       },
     );
+paragraphs.push(
+  createParagraph(
+    "checklist-prevention",
 
+    [
+      `To avoid the most common mistakes when buying ${createReaderTopic(
+        blueprint,
+      )}, turn each warning into a practical check before paying.`,
+
+      `Confirm that the option suits the intended use, meets every essential requirement and stays within the complete budget for ${createReaderTopic(
+        blueprint,
+      )}.`,
+
+      "A popular product or attractive discount is not enough reason to overlook a limitation that will affect normal use.",
+    ].join(
+      " ",
+    ),
+
+    "WARNING",
+  ),
+);
   paragraphs.push(
     createNextStep(
       "CHECKLIST",

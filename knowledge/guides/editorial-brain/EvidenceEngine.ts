@@ -318,6 +318,30 @@ function evidenceMatchesSection(
       "result",
     ],
 
+    EXPLANATION: [
+  "meaning",
+  "definition",
+  "explained",
+  "practical",
+  "effect",
+  "impact",
+  "specification",
+  "feature",
+  "use",
+],
+
+PREVENTION: [
+  "avoid",
+  "mistake",
+  "warning",
+  "check",
+  "verify",
+  "before buying",
+  "compatibility",
+  "budget",
+  "requirement",
+],
+
     NEED: [
       "limitation",
       "kit lens",

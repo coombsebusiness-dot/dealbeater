@@ -9,7 +9,9 @@
     "lint": "eslint",
     "test:products": "tsx product-intelligence/__tests__/runner.ts",
     "media:import": "tsx scripts/import-product-images.ts",
-    "publishing:report": "tsx scripts/publishing-report.ts"
+    "publishing:report": "tsx scripts/publishing-report.ts",
+    "blueprints:report": "tsx scripts/blueprint-report.ts",
+    "guides:publication-report": "tsx scripts/guide-publication-report.ts"
   },
   "dependencies": {
     "@next/third-parties": "^16.2.11",
